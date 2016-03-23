@@ -11,6 +11,7 @@
 		66A9C4391CA2EF3800936DBC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 66A9C4381CA2EF3800936DBC /* Assets.xcassets */; };
 		66A9C43C1CA2EF3800936DBC /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 66A9C43A1CA2EF3800936DBC /* MainMenu.xib */; };
 		66A9C4471CA2EF3800936DBC /* SimpleNESTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4461CA2EF3800936DBC /* SimpleNESTests.swift */; };
+		66A9C4531CA2EF6F00936DBC /* CPU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4521CA2EF6F00936DBC /* CPU.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +33,7 @@
 		66A9C4421CA2EF3800936DBC /* SimpleNESTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimpleNESTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		66A9C4461CA2EF3800936DBC /* SimpleNESTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleNESTests.swift; sourceTree = "<group>"; };
 		66A9C4481CA2EF3800936DBC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		66A9C4521CA2EF6F00936DBC /* CPU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CPU.swift; path = Implementation/CPU.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +76,7 @@
 			isa = PBXGroup;
 			children = (
 				66A9C4361CA2EF3800936DBC /* AppDelegate.swift */,
+				66A9C4511CA2EF4900936DBC /* Implementation */,
 				66A9C4381CA2EF3800936DBC /* Assets.xcassets */,
 				66A9C43A1CA2EF3800936DBC /* MainMenu.xib */,
 				66A9C43D1CA2EF3800936DBC /* Info.plist */,
@@ -88,6 +91,14 @@
 				66A9C4481CA2EF3800936DBC /* Info.plist */,
 			);
 			path = SimpleNESTests;
+			sourceTree = "<group>";
+		};
+		66A9C4511CA2EF4900936DBC /* Implementation */ = {
+			isa = PBXGroup;
+			children = (
+				66A9C4521CA2EF6F00936DBC /* CPU.swift */,
+			);
+			name = Implementation;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -190,6 +201,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				66A9C4531CA2EF6F00936DBC /* CPU.swift in Sources */,
 				66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
