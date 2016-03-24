@@ -16,6 +16,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         // Insert code here to initialize your application
+		var mainMemory = Memory();
+		var ppuMemory = Memory(memoryType: true);
+		var fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
+		fileIO.loadFile("/Users/adam/Downloads/dk.nes");
+		
+		print("First instruction: \(mainMemory.readMemory(0x8000))");
     }
 
     func applicationWillTerminate(aNotification: NSNotification) {
