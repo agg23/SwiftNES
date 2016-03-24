@@ -82,18 +82,18 @@ class FileIO: NSObject {
 		
 		var i = 0;
 		
-		while(b != 0xFFFFFFFF) {
+		let romEndingOffset = Int(romBanks) * 0x4000;
+		
+		while(i + 4 < count) {
 			let offset = i * 4;
 			
-			if(offset > Int(romBanks) * 0x4000) {
-				
-				print(offset);
+			if(offset+3 > romEndingOffset) {
 				// Remaining data is VROM
 				
-				self.ppuMemory.writeMemory(0x0 + offset, data: UInt8(b & 0xFF));
-				self.ppuMemory.writeMemory(0x1 + offset, data: UInt8((b & 0xFF00) >> 8));
-				self.ppuMemory.writeMemory(0x2 + offset, data: UInt8((b & 0xFF0000) >> 16));
-				self.ppuMemory.writeMemory(0x3 + offset, data: UInt8((b & 0xFF000000) >> 24));
+				self.ppuMemory.writeMemory(0x0 + offset - romEndingOffset, data: UInt8(b & 0xFF));
+				self.ppuMemory.writeMemory(0x1 + offset - romEndingOffset, data: UInt8((b & 0xFF00) >> 8));
+				self.ppuMemory.writeMemory(0x2 + offset - romEndingOffset, data: UInt8((b & 0xFF0000) >> 16));
+				self.ppuMemory.writeMemory(0x3 + offset - romEndingOffset, data: UInt8((b & 0xFF000000) >> 24));
 
 			} else {
 				self.mainMemory.writeMemory(0x8000 + offset, data: UInt8(b & 0xFF));

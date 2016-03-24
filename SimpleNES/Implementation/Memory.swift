@@ -101,9 +101,13 @@ class Memory: NSObject {
 		return self.memory[address];
 	}
 	
+	func readTwoBytesMemory(address: Int) -> UInt16 {
+		return UInt16(self.memory[address + 1]) << 8 | UInt16(self.memory[address]);
+	}
+	
 	func writeMemory(address: Int, data: UInt8) {
 		if((!self.type && (address > 0xFFFF)) || (self.type && address > 0x3FFF)) {
-			print("ERROR: Memory address \(address) in out of bounds");
+			print("ERROR: Memory address \(address) in out of bounds for PPU Memory: \(self.type)");
 			
 			return;
 		}

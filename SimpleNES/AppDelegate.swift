@@ -21,7 +21,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		var fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
 		fileIO.loadFile("/Users/adam/Downloads/dk.nes");
 		
-		print("First instruction: \(mainMemory.readMemory(0x8000))");
+		print("First instruction: \(mainMemory.readTwoBytesMemory(0xFFFC))");
     }
 
     func applicationWillTerminate(aNotification: NSNotification) {
