@@ -47,12 +47,13 @@ class CPU: NSObject {
 	*/
 	var Y: UInt8;
 
-	var memory: Memory;
+	var mainMemory: Memory;
+    var ppuMemory: Memory;
 
 	/**
 	 Initializes the CPU
 	*/
-	override init() {
+    init(mainMemory: Memory, ppuMemory: Memory) {
 		self.PCL = 0;
 		self.PCH = 0;
 
@@ -64,8 +65,24 @@ class CPU: NSObject {
 		self.X = 0;
 		self.Y = 0;
 		
-		self.memory = Memory();
-	}
+		self.mainMemory = mainMemory;
+        self.ppuMemory = ppuMemory;
+    }
+    
+    func setPC(address: UInt16) {
+        self.PCL = UInt8(address & 0xFF);
+        self.PCH = UInt8((address & 0xFF00) >> 8);
+    }
+    
+    func reset() {
+        // Load program start address from RESET vector (0xFFFC)
+        let programStartAddress = self.mainMemory.readTwoBytesMemory(0xFFFC);
+        
+        // Set PC to program start address
+        setPC(programStartAddress);
+        
+        print("PC initialized to \((UInt16(self.PCH) << 8) | UInt16(self.PCL))");
+    }
 
 	/**
 	 Executes one CPU cycle

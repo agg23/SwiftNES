@@ -20,8 +20,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		var ppuMemory = Memory(memoryType: true);
 		var fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
 		fileIO.loadFile("/Users/adam/Downloads/dk.nes");
+        
+        var cpu = CPU(mainMemory: mainMemory, ppuMemory: ppuMemory);
+        cpu.reset();
 		
-		print("First instruction: \(mainMemory.readTwoBytesMemory(0xFFFC))");
+		print("Reset Vector: \(mainMemory.readTwoBytesMemory(0xFFFC))");
+        print("First Opcode: \(mainMemory.readMemory(0xf415))");
     }
 
     func applicationWillTerminate(aNotification: NSNotification) {
