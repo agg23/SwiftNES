@@ -49,6 +49,29 @@ class CPU: NSObject {
 
 	var mainMemory: Memory;
     var ppuMemory: Memory;
+    
+    enum AddressingMode {
+        case Implied
+        
+        case Immediate
+        
+        case Absolute
+        case AbsoluteIndexedX
+        case AbsoluteIndexedY
+        
+        /**
+         For JMP only
+         */
+        case AbsoluteIndirect
+        
+        case ZeroPage
+        case ZeroPageIndexed
+        
+        case IndirectX
+        case IndirectY
+        
+        case Relative
+    }
 
 	/**
 	 Initializes the CPU
@@ -86,6 +109,19 @@ class CPU: NSObject {
 		
 	}
     
+    func address(lower:UInt8, upper:UInt8) -> Int {
+        return Int(lower) | (Int(upper) << 8);
+    }
+    
+    func setPBit(index: Int, value: Bool) {
+        let bit: UInt8 = value ? 0xFF : 0;
+        self.P ^= (bit ^ self.P) & (1 << UInt8(index));
+    }
+    
+    func getPBit(index: Int) -> Bool {
+        return ((self.P >> UInt8(index)) & 0x1) == 1;
+    }
+    
     // MARK: PC Operations
     func setPC(address: UInt16) {
         self.PCL = UInt8(address & 0xFF);
@@ -93,7 +129,7 @@ class CPU: NSObject {
     }
     
     func getPC() -> UInt16 {
-        return UInt16(self.PCL & 0xFF) | ((UInt16(self.PCH) & UInt16(0xFF00)) >> 8);
+        return UInt16(self.PCL) | (UInt16(self.PCH) << 8);
     }
     
     func incrementPC() {
@@ -224,5 +260,109 @@ class CPU: NSObject {
         self.PCH = fetchPC();
         
         return 6;
+    }
+    
+    // MARK: Absolute Addressing
+    
+    /**
+     JuMP
+    */
+    func JMP(mode: AddressingMode) -> Int {
+        switch mode {
+            case AddressingMode.Absolute:
+                let lowByte = fetchPC();
+                
+                self.PCH = fetchPC();
+                self.PCL = lowByte;
+            case AddressingMode.AbsoluteIndirect:
+                let zeroPageAddress = fetchPC();
+                
+                self.PCL = self.mainMemory.readMemory(Int(zeroPageAddress));
+                self.PCH = self.mainMemory.readMemory(Int(zeroPageAddress) + 1);
+            default:
+                print("Invalid AddressingMode on JMP");
+        }
+        
+        return 3;
+    }
+    
+    /**
+     Load A from Memory
+    */
+    func LDA(mode: AddressingMode) -> Int {
+        // TODO: Handle addressing modes
+        
+        var length = 4;
+        
+        switch mode {
+            case AddressingMode.Immediate:
+                length = 2;
+                self.A = fetchPC();
+            
+            case AddressingMode.ZeroPage:
+                length = 3;
+                self.A = self.mainMemory.readMemory(Int(fetchPC()));
+            
+            case AddressingMode.ZeroPageIndexed:
+                self.A = self.mainMemory.readMemory(Int((fetchPC() + self.X) & 0xFF));
+            
+            case AddressingMode.Absolute:
+                let lowByte = fetchPC();
+                let highByte = fetchPC();
+            
+                self.A = self.mainMemory.readMemory(address(lowByte, upper: highByte));
+            
+            case AddressingMode.AbsoluteIndexedX, .AbsoluteIndexedY:
+                let lowByte = fetchPC();
+                let highByte = fetchPC();
+                
+                var index = self.X;
+                
+                if(mode == AddressingMode.AbsoluteIndexedY) {
+                    index = self.Y;
+                }
+                
+                let originalAddress = address(lowByte, upper: highByte);
+                
+                self.A = self.mainMemory.readMemory(Int((UInt16(originalAddress) + UInt16(index)) & 0xFFFF));
+            
+            case AddressingMode.IndirectX:
+                length = 6;
+                
+                let immediate = fetchPC();
+            
+                let lowByte = self.mainMemory.readMemory(Int((immediate + self.X) & 0xFF));
+                let highByte = self.mainMemory.readMemory(Int((immediate + self.X + 1) & 0xFF));
+            
+                self.A = self.mainMemory.readMemory(address(lowByte, upper: highByte));
+            
+            case AddressingMode.IndirectY:
+                length = 5;
+            
+                let immediate = fetchPC();
+            
+                let lowByte = self.mainMemory.readMemory(Int(immediate));
+                let highByte = self.mainMemory.readMemory(Int(UInt8((immediate + 1) & 0xFF)));
+                
+                let originalAddress = address(lowByte, upper: highByte);
+            
+                self.A = self.mainMemory.readMemory(Int((UInt16(originalAddress) + UInt16(self.Y)) & 0xFFFF));
+
+            default:
+                print("Invalid AddressingMode on LDA");
+        }
+        
+        // Set negative flag
+        setPBit(7, value: (self.A >> 8) == 1);
+        
+        // Set zero flag
+        setPBit(1, value: (A == 0));
+        
+        let lowByte = fetchPC();
+        let highByte = fetchPC();
+        
+        self.A = self.mainMemory.readMemory(address(lowByte, upper: highByte));
+        
+        return length;
     }
 }
