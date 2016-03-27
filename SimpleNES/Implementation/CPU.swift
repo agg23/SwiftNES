@@ -342,12 +342,44 @@ class CPU: NSObject {
         switch mode {
             case AddressingMode.Immediate:
                 length = 2;
-                register.memory = fetchPC();
             
             case AddressingMode.ZeroPage:
                 length = 3;
-                register.memory = self.mainMemory.readMemory(Int(fetchPC()));
             
+            case AddressingMode.IndirectX:
+                length = 6;
+
+            case AddressingMode.IndirectY:
+                length = 5;
+            
+            case AddressingMode.ZeroPageIndexedX, .ZeroPageIndexedY,
+                 .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY:
+                length = 4;
+            
+            default:
+                print("Invalid AddressingMode on LOAD");
+                return -1;
+        }
+        
+        register.memory = readFromMemoryUsingAddressingMode(mode);
+        
+        // Set negative flag
+        setPBit(7, value: (self.A >> 8) == 1);
+        
+        // Set zero flag
+        setPBit(1, value: (A == 0));
+        
+        return length;
+    }
+    
+    func readFromMemoryUsingAddressingMode(mode: AddressingMode) -> UInt8 {
+        switch mode {
+            case AddressingMode.Immediate:
+                return fetchPC();
+                
+            case AddressingMode.ZeroPage:
+                return self.mainMemory.readMemory(Int(fetchPC()));
+                
             case AddressingMode.ZeroPageIndexedX, .ZeroPageIndexedY:
                 var index = self.X;
                 
@@ -355,14 +387,14 @@ class CPU: NSObject {
                     index = self.Y;
                 }
                 
-                register.memory = self.mainMemory.readMemory(Int((fetchPC() + index) & 0xFF));
-            
+                return self.mainMemory.readMemory(Int((fetchPC() + index) & 0xFF));
+                
             case AddressingMode.Absolute:
                 let lowByte = fetchPC();
                 let highByte = fetchPC();
-            
-                register.memory = self.mainMemory.readMemory(address(lowByte, upper: highByte));
-            
+                
+                return self.mainMemory.readMemory(address(lowByte, upper: highByte));
+                
             case AddressingMode.AbsoluteIndexedX, .AbsoluteIndexedY:
                 let lowByte = fetchPC();
                 let highByte = fetchPC();
@@ -375,44 +407,63 @@ class CPU: NSObject {
                 
                 let originalAddress = address(lowByte, upper: highByte);
                 
-                register.memory = self.mainMemory.readMemory(Int((UInt16(originalAddress) + UInt16(index)) & 0xFFFF));
-            
-            case AddressingMode.IndirectX:
-                length = 6;
+                return self.mainMemory.readMemory(Int((UInt16(originalAddress) + UInt16(index)) & 0xFFFF));
                 
+            case AddressingMode.IndirectX:
                 let immediate = fetchPC();
-            
+                
                 let lowByte = self.mainMemory.readMemory(Int((immediate + self.X) & 0xFF));
                 let highByte = self.mainMemory.readMemory(Int((immediate + self.X + 1) & 0xFF));
-            
-                register.memory = self.mainMemory.readMemory(address(lowByte, upper: highByte));
-            
+                
+                return self.mainMemory.readMemory(address(lowByte, upper: highByte));
+                
             case AddressingMode.IndirectY:
-                length = 5;
-            
                 let immediate = fetchPC();
-            
+                
                 let lowByte = self.mainMemory.readMemory(Int(immediate));
                 let highByte = self.mainMemory.readMemory(Int(UInt8((immediate + 1) & 0xFF)));
                 
                 let originalAddress = address(lowByte, upper: highByte);
-            
-                register.memory = self.mainMemory.readMemory(Int((UInt16(originalAddress) + UInt16(self.Y)) & 0xFFFF));
-
+                
+                return self.mainMemory.readMemory(Int((UInt16(originalAddress) + UInt16(self.Y)) & 0xFFFF));
+                
             default:
-                print("Invalid AddressingMode on LOAD");
+                print("Invalid AddressingMode on loadMemory");
+                return 0;
+        }
+    }
+    
+    // MARK: Logical
+    
+    /**
+     Bitwise XOR A with Memory
+    */
+    func EOR(mode: AddressingMode) -> Int {
+        var length = 4;
+        
+        switch mode {
+            case .Immediate:
+                length = 2;
+            
+            case .ZeroPage:
+                length = 3;
+            
+            case .ZeroPageIndexedX, .Absolute, .AbsoluteIndexedX,
+                 .AbsoluteIndexedY:
+                length = 4;
+            
+            case .IndirectX:
+                length = 6;
+            
+            case .IndirectY:
+                length = 5;
+            
+            default:
+                print("Invalid AddressingMode on EOR");
+                return -1;
         }
         
-        // Set negative flag
-        setPBit(7, value: (self.A >> 8) == 1);
-        
-        // Set zero flag
-        setPBit(1, value: (A == 0));
-        
-        let lowByte = fetchPC();
-        let highByte = fetchPC();
-        
-        self.A = self.mainMemory.readMemory(address(lowByte, upper: highByte));
+        self.A = self.A ^ readFromMemoryUsingAddressingMode(mode);
         
         return length;
     }
