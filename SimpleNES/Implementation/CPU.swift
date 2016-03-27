@@ -65,7 +65,8 @@ class CPU: NSObject {
         case AbsoluteIndirect
         
         case ZeroPage
-        case ZeroPageIndexed
+        case ZeroPageIndexedX
+        case ZeroPageIndexedY
         
         case IndirectX
         case IndirectY
@@ -290,27 +291,77 @@ class CPU: NSObject {
      Load A from Memory
     */
     func LDA(mode: AddressingMode) -> Int {
-        // TODO: Handle addressing modes
+        switch mode {
+            case .Immediate, .ZeroPage, .ZeroPageIndexedX,
+                 .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY,
+                 .IndirectX, .IndirectY:
+                return LOAD(mode, register: &self.A);
+            default:
+                print("Invalid AddressingMode on LDA");
+        }
         
+        return -1;
+    }
+    
+    /**
+     Load X from Memory
+    */
+    func LDX(mode: AddressingMode) -> Int {
+        switch mode {
+            case .Immediate, .ZeroPage, .ZeroPageIndexedY,
+                 .Absolute, .AbsoluteIndexedY:
+                return LOAD(mode, register: &self.X);
+            default:
+                print("Invalid AddressingMode on LDX");
+        }
+        
+        return -1;
+    }
+    
+    /**
+     Load Y from Memory
+    */
+    func LDY(mode: AddressingMode) -> Int {
+        switch mode {
+            case .Immediate, .ZeroPage, .ZeroPageIndexedX,
+                 .Absolute, .AbsoluteIndexedX:
+                return LOAD(mode, register: &self.Y);
+            default:
+                print("Invalid AddressingMode on LDY");
+        }
+        
+        return -1;
+    }
+    
+    /**
+     Internal handler for LDA, LDX, LDY
+    */
+    func LOAD(mode: AddressingMode, register: UnsafeMutablePointer<UInt8>) -> Int {
         var length = 4;
         
         switch mode {
             case AddressingMode.Immediate:
                 length = 2;
-                self.A = fetchPC();
+                register.memory = fetchPC();
             
             case AddressingMode.ZeroPage:
                 length = 3;
-                self.A = self.mainMemory.readMemory(Int(fetchPC()));
+                register.memory = self.mainMemory.readMemory(Int(fetchPC()));
             
-            case AddressingMode.ZeroPageIndexed:
-                self.A = self.mainMemory.readMemory(Int((fetchPC() + self.X) & 0xFF));
+            case AddressingMode.ZeroPageIndexedX, .ZeroPageIndexedY:
+                var index = self.X;
+                
+                if(mode == AddressingMode.ZeroPageIndexedY) {
+                    index = self.Y;
+                }
+                
+                register.memory = self.mainMemory.readMemory(Int((fetchPC() + index) & 0xFF));
             
             case AddressingMode.Absolute:
                 let lowByte = fetchPC();
                 let highByte = fetchPC();
             
-                self.A = self.mainMemory.readMemory(address(lowByte, upper: highByte));
+                register.memory = self.mainMemory.readMemory(address(lowByte, upper: highByte));
             
             case AddressingMode.AbsoluteIndexedX, .AbsoluteIndexedY:
                 let lowByte = fetchPC();
@@ -324,7 +375,7 @@ class CPU: NSObject {
                 
                 let originalAddress = address(lowByte, upper: highByte);
                 
-                self.A = self.mainMemory.readMemory(Int((UInt16(originalAddress) + UInt16(index)) & 0xFFFF));
+                register.memory = self.mainMemory.readMemory(Int((UInt16(originalAddress) + UInt16(index)) & 0xFFFF));
             
             case AddressingMode.IndirectX:
                 length = 6;
@@ -334,7 +385,7 @@ class CPU: NSObject {
                 let lowByte = self.mainMemory.readMemory(Int((immediate + self.X) & 0xFF));
                 let highByte = self.mainMemory.readMemory(Int((immediate + self.X + 1) & 0xFF));
             
-                self.A = self.mainMemory.readMemory(address(lowByte, upper: highByte));
+                register.memory = self.mainMemory.readMemory(address(lowByte, upper: highByte));
             
             case AddressingMode.IndirectY:
                 length = 5;
@@ -346,10 +397,10 @@ class CPU: NSObject {
                 
                 let originalAddress = address(lowByte, upper: highByte);
             
-                self.A = self.mainMemory.readMemory(Int((UInt16(originalAddress) + UInt16(self.Y)) & 0xFFFF));
+                register.memory = self.mainMemory.readMemory(Int((UInt16(originalAddress) + UInt16(self.Y)) & 0xFFFF));
 
             default:
-                print("Invalid AddressingMode on LDA");
+                print("Invalid AddressingMode on LOAD");
         }
         
         // Set negative flag
