@@ -115,4 +115,8 @@ class Memory: NSObject {
 		self.memory[address] = data;
 	}
 	
+    func writeTwoBytesMemory(address: Int, data: UInt16) {
+        writeMemory(address, data: UInt8(data & 0xFF));
+        writeMemory(address + 1, data: UInt8((data & 0xFF00) >> 8));
+    }
 }

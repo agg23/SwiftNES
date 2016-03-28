@@ -51,6 +51,8 @@ class CPU: NSObject {
     var ppuMemory: Memory;
     
     enum AddressingMode {
+        case Accumulator
+        
         case Implied
         
         case Immediate
@@ -121,6 +123,74 @@ class CPU: NSObject {
     
     func getPBit(index: Int) -> Bool {
         return ((self.P >> UInt8(index)) & 0x1) == 1;
+    }
+    
+    func readFromMemoryUsingAddressingMode(mode: AddressingMode) -> UInt8 {
+        switch mode {
+        case .Immediate:
+            return fetchPC();
+        default: break
+        }
+        
+        return self.mainMemory.readMemory(addressUsingAddressingMode(mode));
+    }
+    
+    func addressUsingAddressingMode(mode: AddressingMode) -> Int {
+        switch mode {
+        case AddressingMode.ZeroPage:
+            return Int(fetchPC());
+            
+        case AddressingMode.ZeroPageIndexedX, .ZeroPageIndexedY:
+            var index = self.X;
+            
+            if(mode == AddressingMode.ZeroPageIndexedY) {
+                index = self.Y;
+            }
+            
+            return Int((fetchPC() + index) & 0xFF);
+            
+        case AddressingMode.Absolute:
+            let lowByte = fetchPC();
+            let highByte = fetchPC();
+            
+            return address(lowByte, upper: highByte);
+            
+        case AddressingMode.AbsoluteIndexedX, .AbsoluteIndexedY:
+            let lowByte = fetchPC();
+            let highByte = fetchPC();
+            
+            var index = self.X;
+            
+            if(mode == AddressingMode.AbsoluteIndexedY) {
+                index = self.Y;
+            }
+            
+            let originalAddress = address(lowByte, upper: highByte);
+            
+            return Int((UInt16(originalAddress) + UInt16(index)) & 0xFFFF);
+            
+        case AddressingMode.IndirectX:
+            let immediate = fetchPC();
+            
+            let lowByte = self.mainMemory.readMemory(Int((immediate + self.X) & 0xFF));
+            let highByte = self.mainMemory.readMemory(Int((immediate + self.X + 1) & 0xFF));
+            
+            return address(lowByte, upper: highByte);
+            
+        case AddressingMode.IndirectY:
+            let immediate = fetchPC();
+            
+            let lowByte = self.mainMemory.readMemory(Int(immediate));
+            let highByte = self.mainMemory.readMemory(Int(UInt8((immediate + 1) & 0xFF)));
+            
+            let originalAddress = address(lowByte, upper: highByte);
+            
+            return Int((UInt16(originalAddress) + UInt16(self.Y)) & 0xFFFF);
+            
+        default:
+            print("Invalid AddressingMode on addressUsingAddressingMode");
+            return 0;
+        }
     }
     
     // MARK: PC Operations
@@ -367,70 +437,202 @@ class CPU: NSObject {
         setPBit(7, value: (self.A >> 8) == 1);
         
         // Set zero flag
-        setPBit(1, value: (A == 0));
+        setPBit(1, value: (self.A == 0));
         
         return length;
     }
     
-    func readFromMemoryUsingAddressingMode(mode: AddressingMode) -> UInt8 {
+    // MARK: Math
+    
+    /**
+     Add Memory to A with Carry
+    */
+    func ADC(mode: AddressingMode) -> Int {
+        // TODO: Complete ADC
+        return -1;
+    }
+    
+    /**
+     Subtract Memory to A with Borrow
+    */
+    func SBC(mode: AddressingMode) -> Int {
+        // TODO: Complete SBC
+        return -1;
+    }
+    
+    /**
+     Arithmetic Shift Left
+    */
+    func ASL(mode: AddressingMode) -> Int {
+        var length = 6;
+        
         switch mode {
-            case AddressingMode.Immediate:
-                return fetchPC();
+            case .Accumulator:
+                length = 2;
+            
+            case .ZeroPage:
+                length = 5;
                 
-            case AddressingMode.ZeroPage:
-                return self.mainMemory.readMemory(Int(fetchPC()));
+            case .ZeroPageIndexedX, .Absolute:
+                length = 6;
                 
-            case AddressingMode.ZeroPageIndexedX, .ZeroPageIndexedY:
-                var index = self.X;
-                
-                if(mode == AddressingMode.ZeroPageIndexedY) {
-                    index = self.Y;
-                }
-                
-                return self.mainMemory.readMemory(Int((fetchPC() + index) & 0xFF));
-                
-            case AddressingMode.Absolute:
-                let lowByte = fetchPC();
-                let highByte = fetchPC();
-                
-                return self.mainMemory.readMemory(address(lowByte, upper: highByte));
-                
-            case AddressingMode.AbsoluteIndexedX, .AbsoluteIndexedY:
-                let lowByte = fetchPC();
-                let highByte = fetchPC();
-                
-                var index = self.X;
-                
-                if(mode == AddressingMode.AbsoluteIndexedY) {
-                    index = self.Y;
-                }
-                
-                let originalAddress = address(lowByte, upper: highByte);
-                
-                return self.mainMemory.readMemory(Int((UInt16(originalAddress) + UInt16(index)) & 0xFFFF));
-                
-            case AddressingMode.IndirectX:
-                let immediate = fetchPC();
-                
-                let lowByte = self.mainMemory.readMemory(Int((immediate + self.X) & 0xFF));
-                let highByte = self.mainMemory.readMemory(Int((immediate + self.X + 1) & 0xFF));
-                
-                return self.mainMemory.readMemory(address(lowByte, upper: highByte));
-                
-            case AddressingMode.IndirectY:
-                let immediate = fetchPC();
-                
-                let lowByte = self.mainMemory.readMemory(Int(immediate));
-                let highByte = self.mainMemory.readMemory(Int(UInt8((immediate + 1) & 0xFF)));
-                
-                let originalAddress = address(lowByte, upper: highByte);
-                
-                return self.mainMemory.readMemory(Int((UInt16(originalAddress) + UInt16(self.Y)) & 0xFFFF));
+            case .AbsoluteIndexedX:
+                length = 7;
                 
             default:
-                print("Invalid AddressingMode on loadMemory");
-                return 0;
+                print("Invalid AddressingMode on ASL");
+                return -1;
         }
+        
+        if(mode == .Accumulator) {
+            // Set carry flag
+            setPBit(0, value: (self.A >> 8) == 1);
+            
+            self.A = (self.A << 1) & 0xFE;
+            
+            // Set negative flag
+            setPBit(7, value: (self.A >> 8) == 1);
+            
+            // Set zero flag
+            setPBit(1, value: (self.A == 0));
+        } else {
+            let address = addressUsingAddressingMode(mode);
+            let value = self.mainMemory.readMemory(address);
+            
+            // Set carry flag
+            setPBit(0, value: (value >> 8) == 1);
+            
+            let temp = (value << 1) & 0xFE;
+            
+            // Set negative flag
+            setPBit(7, value: (temp >> 8) == 1);
+            
+            // Set zero flag
+            setPBit(1, value: (temp == 0));
+            
+            self.mainMemory.writeMemory(address, data: temp);
+        }
+        
+        return length;
+    }
+    
+    /**
+     Logical Shift Right
+    */
+    func LSR(mode: AddressingMode) -> Int {
+        var length = 6;
+        
+        switch mode {
+            case .Accumulator:
+                length = 2;
+                
+            case .ZeroPage:
+                length = 5;
+                
+            case .ZeroPageIndexedX, .Absolute:
+                length = 6;
+                
+            case .AbsoluteIndexedX:
+                length = 7;
+                
+            default:
+                print("Invalid AddressingMode on LSR");
+                return -1;
+        }
+        
+        if(mode == .Accumulator) {
+            // Set negative flag
+            setPBit(7, value: false);
+            
+            // Set carry flag
+            setPBit(0, value: (self.A & 0x1) == 1);
+            
+            self.A = (self.A >> 1) & 0x7F;
+            
+            // Set zero flag
+            setPBit(1, value: (self.A == 0));
+        } else {
+            let address = addressUsingAddressingMode(mode);
+            let value = self.mainMemory.readMemory(address);
+            
+            // Set negative flag
+            setPBit(7, value: false);
+            
+            // Set carry flag
+            setPBit(0, value: (self.A & 0x1) == 1);
+            
+            let temp = (value >> 1) & 0x7F;
+            
+            // Set zero flag
+            setPBit(1, value: (temp == 0));
+            
+            self.mainMemory.writeMemory(address, data: temp);
+        }
+        
+        return length;
+    }
+    
+    /**
+     ROtate Left
+    */
+    func ROL(mode: AddressingMode) -> Int {
+        var length = 6;
+        
+        switch mode {
+            case .Accumulator:
+                length = 2;
+                
+            case .ZeroPage:
+                length = 5;
+                
+            case .ZeroPageIndexedX, .Absolute:
+                length = 6;
+                
+            case .AbsoluteIndexedX:
+                length = 7;
+                
+            default:
+                print("Invalid AddressingMode on ROL");
+                return -1;
+        }
+        
+        if(mode == .Accumulator) {
+            let carry = (self.A >> 8) & 0x1;
+            
+            self.A = (self.A << 1) & 0xFE;
+            self.A = self.A | (getPBit(0) ? 1:0);
+            
+            // TODO: Finish
+            
+            // Set negative flag
+            setPBit(7, value: false);
+            
+            // Set carry flag
+            setPBit(0, value: (self.A & 0x1) == 1);
+            
+            self.A = (self.A >> 1) & 0x7F;
+            
+            // Set zero flag
+            setPBit(1, value: (self.A == 0));
+        } else {
+            let address = addressUsingAddressingMode(mode);
+            let value = self.mainMemory.readMemory(address);
+            
+            // Set negative flag
+            setPBit(7, value: false);
+            
+            // Set carry flag
+            setPBit(0, value: (self.A & 0x1) == 1);
+            
+            let temp = (value >> 1) & 0x7F;
+            
+            // Set zero flag
+            setPBit(1, value: (temp == 0));
+            
+            self.mainMemory.writeMemory(address, data: temp);
+        }
+        
+        return length;
     }
     
     // MARK: Logical
@@ -465,6 +667,172 @@ class CPU: NSObject {
         
         self.A = self.A ^ readFromMemoryUsingAddressingMode(mode);
         
+        // Set negative flag
+        setPBit(7, value: (self.A >> 8) == 1);
+        
+        // Set zero flag
+        setPBit(1, value: (self.A == 0));
+        
         return length;
+    }
+    
+    /**
+     Bitwise AND A with Memory
+    */
+    func AND(mode: AddressingMode) -> Int {
+        var length = 4;
+        
+        switch mode {
+            case .Immediate, .ZeroPage:
+                length = 2;
+            
+            case .ZeroPageIndexedX:
+                length = 3;
+            
+            case .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY:
+                length = 4;
+            
+            case .IndirectX:
+                length = 6;
+            
+            case .IndirectY:
+                length = 5;
+            
+            default:
+                print("Invalid AddressingMode on AND");
+                return -1;
+        }
+        
+        self.A = self.A & readFromMemoryUsingAddressingMode(mode);
+        
+        // Set negative flag
+        setPBit(7, value: (self.A >> 8) == 1);
+        
+        // Set zero flag
+        setPBit(1, value: (self.A == 0));
+        
+        return length;
+    }
+    
+    /**
+     Bitwise OR A with Memory
+    */
+    func ORA(mode: AddressingMode) -> Int {
+        var length = 4;
+        
+        switch mode {
+            case .Immediate, .ZeroPage:
+                length = 2;
+                
+            case .ZeroPageIndexedX:
+                length = 3;
+                
+            case .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY:
+                length = 4;
+                
+            case .IndirectX:
+                length = 6;
+                
+            case .IndirectY:
+                length = 5;
+                
+            default:
+                print("Invalid AddressingMode on ORA");
+                return -1;
+        }
+        
+        self.A = self.A | readFromMemoryUsingAddressingMode(mode);
+        
+        // Set negative flag
+        setPBit(7, value: (self.A >> 8) == 1);
+        
+        // Set zero flag
+        setPBit(1, value: (self.A == 0));
+        
+        return length;
+    }
+    
+    // MARK: Flow Control
+    
+    /**
+     Compare A with Memory
+    */
+    func CMP(mode: AddressingMode) -> Int {
+        var length = 4;
+        
+        switch mode {
+            case .Immediate:
+                length = 2;
+            
+            case .ZeroPage:
+                length = 3;
+            
+            case .ZeroPageIndexedX, .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY:
+                length = 4;
+                
+            case .IndirectX:
+                length = 6;
+                
+            case .IndirectY:
+                length = 5;
+                
+            default:
+                print("Invalid AddressingMode on CMP");
+                return -1;
+        }
+        
+        let mem = readFromMemoryUsingAddressingMode(mode);
+        let temp = self.A - mem;
+        
+        // Set negative flag
+        setPBit(7, value: (temp >> 8) == 1);
+        
+        // Set zero flag
+        setPBit(1, value: (temp == 0));
+        
+        // Set carry flag
+        setPBit(0, value: (self.A >= mem));
+        
+        return length;
+    }
+    
+    /**
+     Test bits in A with Memory
+    */
+    func BIT(mode: AddressingMode) -> Int {
+        var length = 3;
+        
+        switch mode {
+        case .ZeroPage:
+            length = 3;
+            
+        case .Absolute:
+            length = 4;
+            
+        default:
+            print("Invalid AddressingMode on BIT");
+            return -1;
+        }
+        
+        let mem = readFromMemoryUsingAddressingMode(mode);
+        let temp = self.A & mem;
+        
+        // Set negative flag
+        setPBit(7, value: (temp >> 8) == 1);
+        
+        // Set overflow flag
+        setPBit(6, value: (temp >> 7) == 1);
+        
+        // Set zero flag
+        setPBit(1, value: (temp == 0));
+        
+        return length;
+    }
+    
+    /**
+     No OPeration
+    */
+    func NOP() -> Int {
+        return 2;
     }
 }
