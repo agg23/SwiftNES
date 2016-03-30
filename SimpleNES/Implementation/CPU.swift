@@ -601,55 +601,114 @@ class CPU: NSObject {
             
             self.A = (self.A << 1) & 0xFE;
             self.A = self.A | (getPBit(0) ? 1:0);
-            
-            // TODO: Finish
-            
+			
+			// Set carry flag
+			setPBit(0, value: carry == 1);
+			
+			// Set zero flag
+			setPBit(1, value: (self.A == 0));
+			
             // Set negative flag
-            setPBit(7, value: false);
-            
-            // Set carry flag
-            setPBit(0, value: (self.A & 0x1) == 1);
-            
-            self.A = (self.A >> 1) & 0x7F;
-            
-            // Set zero flag
-            setPBit(1, value: (self.A == 0));
+            setPBit(7, value: (self.A >> 8) & 0x1 == 1);
         } else {
             let address = addressUsingAddressingMode(mode);
-            let value = self.mainMemory.readMemory(address);
+            var value = self.mainMemory.readMemory(address);
+			
+			let carry = (value >> 8) & 0x1;
+			value = (value << 1) & 0xFE;
+			value = value | (getPBit(0) ? 1:0);
             
-            // Set negative flag
-            setPBit(7, value: false);
-            
-            // Set carry flag
-            setPBit(0, value: (self.A & 0x1) == 1);
-            
-            let temp = (value >> 1) & 0x7F;
-            
-            // Set zero flag
-            setPBit(1, value: (temp == 0));
-            
-            self.mainMemory.writeMemory(address, data: temp);
+			// Set carry flag
+			setPBit(0, value: carry == 1);
+			
+			// Set zero flag
+			setPBit(1, value: (value == 0));
+			
+			// Set negative flag
+			setPBit(7, value: (value >> 8) & 0x1 == 1);
+			
+            self.mainMemory.writeMemory(address, data: value);
         }
         
         return length;
     }
-    
+	
+	/**
+	ROtate Right
+	*/
+	func ROR(mode: AddressingMode) -> Int {
+		var length = 6;
+		
+		switch mode {
+		case .Accumulator:
+			length = 2;
+			
+		case .ZeroPage:
+			length = 5;
+			
+		case .ZeroPageIndexedX, .Absolute:
+			length = 6;
+			
+		case .AbsoluteIndexedX:
+			length = 7;
+			
+		default:
+			print("Invalid AddressingMode on ROR");
+			return -1;
+		}
+		
+		if(mode == .Accumulator) {
+			let carry = self.A & 0x1;
+			
+			self.A = (self.A >> 1) & 0x7F;
+			self.A = self.A | (getPBit(0) ? 0x80 : 0);
+			
+			// Set carry flag
+			setPBit(0, value: carry == 1);
+			
+			// Set zero flag
+			setPBit(1, value: (self.A == 0));
+			
+			// Set negative flag
+			setPBit(7, value: (self.A >> 8) & 0x1 == 1);
+		} else {
+			let address = addressUsingAddressingMode(mode);
+			var value = self.mainMemory.readMemory(address);
+			
+			let carry = value & 0x1;
+			value = (value >> 1) & 0x7F;
+			value = value | (getPBit(0) ? 0x80 : 0);
+			
+			// Set carry flag
+			setPBit(0, value: carry == 1);
+			
+			// Set zero flag
+			setPBit(1, value: (value == 0));
+			
+			// Set negative flag
+			setPBit(7, value: (value >> 8) & 0x1 == 1);
+			
+			self.mainMemory.writeMemory(address, data: value);
+		}
+		
+		return length;
+	}
+	
     // MARK: Logical
-    
+	
     /**
      Bitwise XOR A with Memory
     */
     func EOR(mode: AddressingMode) -> Int {
         var length = 4;
-        
+		
         switch mode {
             case .Immediate:
                 length = 2;
-            
+			
             case .ZeroPage:
                 length = 3;
-            
+			
             case .ZeroPageIndexedX, .Absolute, .AbsoluteIndexedX,
                  .AbsoluteIndexedY:
                 length = 4;
