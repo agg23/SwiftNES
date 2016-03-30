@@ -193,7 +193,7 @@ class CPU: NSObject {
         }
     }
     
-    // MARK: PC Operations
+    // MARK: - PC Operations
     func setPC(address: UInt16) {
         self.PCL = UInt8(address & 0xFF);
         self.PCH = UInt8((address & 0xFF00) >> 8);
@@ -219,7 +219,7 @@ class CPU: NSObject {
         return byte;
     }
     
-    // MARK: Stack Operations
+    // MARK: - Stack Operations
     func push(byte: UInt8) {
         self.mainMemory.writeMemory(0x100 + Int(self.SP), data: byte);
         
@@ -240,7 +240,7 @@ class CPU: NSObject {
         return self.mainMemory.readMemory(0x100 + Int(self.SP));
     }
     
-    // MARK: Instructions
+    // MARK: - Instructions
     // MARK: Stack
     
     /**
@@ -332,9 +332,253 @@ class CPU: NSObject {
         
         return 6;
     }
-    
-    // MARK: Absolute Addressing
-    
+	
+	// MARK: Memory
+	
+	/**
+	 Store A in Memory
+	*/
+	func STA(mode: AddressingMode) -> Int {
+		var length = 5;
+		
+		switch mode {
+			case .ZeroPage:
+				length = 3;
+				
+			case .ZeroPageIndexedX, .Absolute:
+				length = 4;
+				
+			case .AbsoluteIndexedX, .AbsoluteIndexedY:
+				length = 5;
+			
+			case .IndirectX, .IndirectY:
+				length = 6;
+			
+			default:
+				print("Invalid AddressingMode on STA");
+				return -1;
+		}
+		
+		let address = addressUsingAddressingMode(mode);
+		
+		self.mainMemory.writeMemory(address, data: self.A);
+		
+		return length;
+	}
+	
+	/**
+	 Store X in Memory
+	*/
+	func STX(mode: AddressingMode) -> Int {
+		var length = 4;
+		
+		switch mode {
+			case .ZeroPage:
+				length = 3;
+				
+			case .ZeroPageIndexedY, .Absolute:
+				length = 4;
+				
+			default:
+				print("Invalid AddressingMode on STX");
+				return -1;
+		}
+		
+		let address = addressUsingAddressingMode(mode);
+		
+		self.mainMemory.writeMemory(address, data: self.X);
+		
+		return length;
+	}
+	
+	/**
+	 Store Y in Memory
+	*/
+	func STY(mode: AddressingMode) -> Int {
+		var length = 4;
+		
+		switch mode {
+		case .ZeroPage:
+			length = 3;
+			
+		case .ZeroPageIndexedX, .Absolute:
+			length = 4;
+			
+		default:
+			print("Invalid AddressingMode on STY");
+			return -1;
+		}
+		
+		let address = addressUsingAddressingMode(mode);
+		
+		self.mainMemory.writeMemory(address, data: self.Y);
+		
+		return length;
+	}
+	
+	/**
+	 Load A from Memory
+	*/
+	func LDA(mode: AddressingMode) -> Int {
+		switch mode {
+			case .Immediate, .ZeroPage, .ZeroPageIndexedX,
+				 .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY,
+				 .IndirectX, .IndirectY:
+				return LOAD(mode, register: &self.A);
+		default:
+			print("Invalid AddressingMode on LDA");
+		}
+		
+		return -1;
+	}
+	
+	/**
+	 Load X from Memory
+	*/
+	func LDX(mode: AddressingMode) -> Int {
+		switch mode {
+			case .Immediate, .ZeroPage, .ZeroPageIndexedY,
+				 .Absolute, .AbsoluteIndexedY:
+				return LOAD(mode, register: &self.X);
+		default:
+			print("Invalid AddressingMode on LDX");
+		}
+		
+		return -1;
+	}
+	
+	/**
+	 Load Y from Memory
+	*/
+	func LDY(mode: AddressingMode) -> Int {
+		switch mode {
+			case .Immediate, .ZeroPage, .ZeroPageIndexedX,
+				 .Absolute, .AbsoluteIndexedX:
+				return LOAD(mode, register: &self.Y);
+		default:
+			print("Invalid AddressingMode on LDY");
+		}
+		
+		return -1;
+	}
+	
+	/**
+	Internal handler for LDA, LDX, LDY
+	*/
+	func LOAD(mode: AddressingMode, register: UnsafeMutablePointer<UInt8>) -> Int {
+		var length = 4;
+		
+		switch mode {
+			case AddressingMode.Immediate:
+				length = 2;
+				
+			case AddressingMode.ZeroPage:
+				length = 3;
+				
+			case AddressingMode.IndirectX:
+				length = 6;
+				
+			case AddressingMode.IndirectY:
+				length = 5;
+				
+			case AddressingMode.ZeroPageIndexedX, .ZeroPageIndexedY,
+				 .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY:
+				length = 4;
+				
+			default:
+				print("Invalid AddressingMode on LOAD");
+				return -1;
+		}
+		
+		register.memory = readFromMemoryUsingAddressingMode(mode);
+		
+		// Set negative flag
+		setPBit(7, value: (self.A >> 8) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.A == 0));
+		
+		return length;
+	}
+	
+	/**
+	 Transfer A to X
+	*/
+	func TAX() -> Int {
+		self.X = self.A;
+		
+		// Set negative flag
+		setPBit(7, value: (self.X >> 8) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.X == 0));
+	}
+	
+	/**
+	 Transfer A to Y
+	*/
+	func TAY() -> Int {
+		self.Y = self.A;
+		
+		// Set negative flag
+		setPBit(7, value: (self.Y >> 8) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.Y == 0));
+	}
+	
+	/**
+	 Transfer Stack Pointer to X
+	*/
+	func TSX() -> Int {
+		self.X = self.SP;
+		
+		// Set negative flag
+		setPBit(7, value: (self.X >> 8) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.X == 0));
+	}
+	
+	/**
+	 Transfer X to A
+	*/
+	func TXA() -> Int {
+		self.A = self.X;
+		
+		// Set negative flag
+		setPBit(7, value: (self.A >> 8) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.A == 0));
+	}
+	
+	/**
+	 Transfer X to SP
+	*/
+	func TXS() -> Int {
+		self.SP = self.X;
+		
+		// Set negative flag
+		setPBit(7, value: (self.SP >> 8) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.SP == 0));
+	}
+	
+	/**
+	 Transfer Y to A
+	*/
+	func TYA() -> Int {
+		self.A = self.Y;
+		
+		// Set negative flag
+		setPBit(7, value: (self.A >> 8) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.A == 0));
+	}
+	
     /**
      JuMP
     */
@@ -342,12 +586,12 @@ class CPU: NSObject {
         switch mode {
             case AddressingMode.Absolute:
                 let lowByte = fetchPC();
-                
+				
                 self.PCH = fetchPC();
                 self.PCL = lowByte;
             case AddressingMode.AbsoluteIndirect:
                 let zeroPageAddress = fetchPC();
-                
+				
                 self.PCL = self.mainMemory.readMemory(Int(zeroPageAddress));
                 self.PCH = self.mainMemory.readMemory(Int(zeroPageAddress) + 1);
             default:
@@ -356,92 +600,7 @@ class CPU: NSObject {
         
         return 3;
     }
-    
-    /**
-     Load A from Memory
-    */
-    func LDA(mode: AddressingMode) -> Int {
-        switch mode {
-            case .Immediate, .ZeroPage, .ZeroPageIndexedX,
-                 .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY,
-                 .IndirectX, .IndirectY:
-                return LOAD(mode, register: &self.A);
-            default:
-                print("Invalid AddressingMode on LDA");
-        }
-        
-        return -1;
-    }
-    
-    /**
-     Load X from Memory
-    */
-    func LDX(mode: AddressingMode) -> Int {
-        switch mode {
-            case .Immediate, .ZeroPage, .ZeroPageIndexedY,
-                 .Absolute, .AbsoluteIndexedY:
-                return LOAD(mode, register: &self.X);
-            default:
-                print("Invalid AddressingMode on LDX");
-        }
-        
-        return -1;
-    }
-    
-    /**
-     Load Y from Memory
-    */
-    func LDY(mode: AddressingMode) -> Int {
-        switch mode {
-            case .Immediate, .ZeroPage, .ZeroPageIndexedX,
-                 .Absolute, .AbsoluteIndexedX:
-                return LOAD(mode, register: &self.Y);
-            default:
-                print("Invalid AddressingMode on LDY");
-        }
-        
-        return -1;
-    }
-    
-    /**
-     Internal handler for LDA, LDX, LDY
-    */
-    func LOAD(mode: AddressingMode, register: UnsafeMutablePointer<UInt8>) -> Int {
-        var length = 4;
-        
-        switch mode {
-            case AddressingMode.Immediate:
-                length = 2;
-            
-            case AddressingMode.ZeroPage:
-                length = 3;
-            
-            case AddressingMode.IndirectX:
-                length = 6;
-
-            case AddressingMode.IndirectY:
-                length = 5;
-            
-            case AddressingMode.ZeroPageIndexedX, .ZeroPageIndexedY,
-                 .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY:
-                length = 4;
-            
-            default:
-                print("Invalid AddressingMode on LOAD");
-                return -1;
-        }
-        
-        register.memory = readFromMemoryUsingAddressingMode(mode);
-        
-        // Set negative flag
-        setPBit(7, value: (self.A >> 8) == 1);
-        
-        // Set zero flag
-        setPBit(1, value: (self.A == 0));
-        
-        return length;
-    }
-    
+	
     // MARK: Math
     
     /**
@@ -459,7 +618,141 @@ class CPU: NSObject {
         // TODO: Complete SBC
         return -1;
     }
-    
+	
+	/**
+	 Increment Memory
+	*/
+	func INC(mode: AddressingMode) -> Int {
+		var length = 6;
+		
+		switch mode {
+			case .ZeroPage:
+				length = 5;
+			
+			case .ZeroPageIndexedX, .Absolute:
+				length = 6;
+			
+			case .AbsoluteIndexedX:
+				length = 7;
+			
+			default:
+				print("Invalid AddressingMode on INC");
+				return -1;
+		}
+		
+		let address = addressUsingAddressingMode(mode);
+		var value = self.mainMemory.readMemory(address);
+		
+		value = value + 1;
+		
+		// Set negative flag
+		setPBit(7, value: (value >> 8) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (value == 0));
+		
+		self.mainMemory.writeMemory(address, data: value);
+		
+		return length;
+	}
+	
+	/**
+	 Increment X
+	*/
+	func INX() -> Int {
+		self.X = self.X + 1;
+		
+		// Set negative flag
+		setPBit(7, value: (self.X >> 8) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.X == 0));
+		
+		return 2;
+	}
+	
+	/**
+	Increment Y
+	*/
+	func INY() -> Int {
+		self.Y = self.Y + 1;
+		
+		// Set negative flag
+		setPBit(7, value: (self.Y >> 8) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.Y == 0));
+		
+		return 2;
+	}
+	
+	/**
+	 Decrement Memory
+	*/
+	func DEC(mode: AddressingMode) -> Int {
+		var length = 6;
+		
+		switch mode {
+		case .ZeroPage:
+			length = 5;
+			
+		case .ZeroPageIndexedX, .Absolute:
+			length = 6;
+			
+		case .AbsoluteIndexedX:
+			length = 7;
+			
+		default:
+			print("Invalid AddressingMode on DEC");
+			return -1;
+		}
+		
+		let address = addressUsingAddressingMode(mode);
+		var value = self.mainMemory.readMemory(address);
+		
+		value = value - 1;
+		
+		// Set negative flag
+		setPBit(7, value: (value >> 8) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (value == 0));
+		
+		self.mainMemory.writeMemory(address, data: value);
+		
+		return length;
+	}
+	
+	/**
+	 Decrement X
+	*/
+	func DEX() -> Int {
+		self.X = self.X - 1;
+		
+		// Set negative flag
+		setPBit(7, value: (self.X >> 8) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.X == 0));
+		
+		return 2;
+	}
+	
+	/**
+	 Decrement Y
+	*/
+	func DEY() -> Int {
+		self.Y = self.Y - 1;
+		
+		// Set negative flag
+		setPBit(7, value: (self.Y >> 8) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.Y == 0));
+		
+		return 2;
+	}
+	
     /**
      Arithmetic Shift Left
     */
