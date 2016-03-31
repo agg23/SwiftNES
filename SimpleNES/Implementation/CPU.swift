@@ -192,6 +192,18 @@ class CPU: NSObject {
             return 0;
         }
     }
+	
+	/**
+	 Converts the given value to binary coded decimal, where
+	 the first nibble is a tens place digit, and the second a
+	 ones place digit
+	*/
+	func bcdValue(value: UInt8) -> UInt8 {
+		let upper = (value >> 4) & 0xF;
+		let lower = value & 0xF;
+		
+		return upper * 10 + lower;
+	}
     
     // MARK: - PC Operations
     func setPC(address: UInt16) {
@@ -606,16 +618,114 @@ class CPU: NSObject {
      Add Memory to A with Carry
     */
     func ADC(mode: AddressingMode) -> Int {
-        // TODO: Complete ADC
-        return -1;
+		var length = 4;
+		
+		switch mode {
+			case .Immediate:
+				length = 2;
+			
+			case .ZeroPage:
+				length = 3;
+				
+			case .ZeroPageIndexedX, .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY:
+				length = 4;
+				
+			case .IndirectX:
+				length = 6;
+			
+			case .IndirectY:
+				length = 5;
+			
+			default:
+				print("Invalid AddressingMode on ADC");
+				return -1;
+		}
+		
+		let memoryValue = readFromMemoryUsingAddressingMode(mode);
+		
+		var temp = UInt16(self.A) + UInt16(memoryValue) + (getPBit(0) ? 1 : 0);
+		
+		// Set overflow flag
+		setPBit(6, value: ((self.A >> 7) & 0x1) != UInt8((temp >> 7) & 0x1))
+		
+		// Set negative flag
+		setPBit(7, value: ((self.A >> 7) & 0x1) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: temp == 0);
+		
+		// Decimal flag
+		if(getPBit(3)) {
+			temp = UInt16(bcdValue(self.A)) + UInt16(bcdValue(memoryValue)) + (getPBit(0) ? 1 : 0);
+			
+			// Set carry flag
+			setPBit(0, value: temp > 99);
+		} else {
+			// Set carry flag
+			setPBit(0, value: temp > 255);
+		}
+		
+		self.A = UInt8(temp & 0xFF);
+		
+		return length;
     }
     
     /**
      Subtract Memory to A with Borrow
     */
     func SBC(mode: AddressingMode) -> Int {
-        // TODO: Complete SBC
-        return -1;
+		var length = 4;
+		
+		switch mode {
+			case .Immediate:
+				length = 2;
+				
+			case .ZeroPage:
+				length = 3;
+				
+			case .ZeroPageIndexedX, .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY:
+				length = 4;
+				
+			case .IndirectX:
+				length = 6;
+				
+			case .IndirectY:
+				length = 5;
+				
+			default:
+				print("Invalid AddressingMode on SBC");
+				return -1;
+		}
+		
+		let memoryValue = readFromMemoryUsingAddressingMode(mode);
+		
+		var temp: Int;
+		
+		// Decimal flag
+		if(getPBit(3)) {
+			temp = Int(bcdValue(self.A)) - Int(bcdValue(memoryValue)) - (getPBit(0) ? 0 : 1);
+			
+			// Set overflow flag
+			setPBit(6, value: (temp > 99) || (temp < 0));
+		} else {
+			temp = Int(self.A) - Int(memoryValue) - (getPBit(0) ? 0 : 1);
+			
+			// Set overflow flag
+			setPBit(6, value: (temp > 127) || (temp < -128));
+		}
+		
+		// Set carry flag
+		setPBit(0, value: temp >= 0);
+		
+		// Set negative flag
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: temp == 0);
+		
+		self.A = UInt8(temp & 0xFF);
+		
+        return length;
     }
 	
 	/**
