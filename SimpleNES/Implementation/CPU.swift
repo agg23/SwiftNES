@@ -635,7 +635,7 @@ class CPU: NSObject {
     // MARK: - PC Operations
     func setPC(address: UInt16) {
         self.PCL = UInt8(address & 0xFF);
-        self.PCH = UInt8((address & 0xFF00) >> 8);
+        self.PCH = UInt8((address & 0xFF00) >> 7);
     }
     
     func getPC() -> UInt16 {
@@ -933,7 +933,7 @@ class CPU: NSObject {
 		register.memory = readFromMemoryUsingAddressingMode(mode);
 		
 		// Set negative flag
-		setPBit(7, value: (self.A >> 8) == 1);
+		setPBit(7, value: (self.A >> 7) == 1);
 		
 		// Set zero flag
 		setPBit(1, value: (self.A == 0));
@@ -948,10 +948,12 @@ class CPU: NSObject {
 		self.X = self.A;
 		
 		// Set negative flag
-		setPBit(7, value: (self.X >> 8) == 1);
+		setPBit(7, value: (self.X >> 7) == 1);
 		
 		// Set zero flag
 		setPBit(1, value: (self.X == 0));
+		
+		return 2;
 	}
 	
 	/**
@@ -961,10 +963,12 @@ class CPU: NSObject {
 		self.Y = self.A;
 		
 		// Set negative flag
-		setPBit(7, value: (self.Y >> 8) == 1);
+		setPBit(7, value: (self.Y >> 7) == 1);
 		
 		// Set zero flag
 		setPBit(1, value: (self.Y == 0));
+		
+		return 2;
 	}
 	
 	/**
@@ -974,10 +978,12 @@ class CPU: NSObject {
 		self.X = self.SP;
 		
 		// Set negative flag
-		setPBit(7, value: (self.X >> 8) == 1);
+		setPBit(7, value: (self.X >> 7) == 1);
 		
 		// Set zero flag
 		setPBit(1, value: (self.X == 0));
+		
+		return 2;
 	}
 	
 	/**
@@ -987,10 +993,12 @@ class CPU: NSObject {
 		self.A = self.X;
 		
 		// Set negative flag
-		setPBit(7, value: (self.A >> 8) == 1);
+		setPBit(7, value: (self.A >> 7) == 1);
 		
 		// Set zero flag
 		setPBit(1, value: (self.A == 0));
+		
+		return 2;
 	}
 	
 	/**
@@ -1000,10 +1008,12 @@ class CPU: NSObject {
 		self.SP = self.X;
 		
 		// Set negative flag
-		setPBit(7, value: (self.SP >> 8) == 1);
+		setPBit(7, value: (self.SP >> 7) == 1);
 		
 		// Set zero flag
 		setPBit(1, value: (self.SP == 0));
+		
+		return 2;
 	}
 	
 	/**
@@ -1013,10 +1023,12 @@ class CPU: NSObject {
 		self.A = self.Y;
 		
 		// Set negative flag
-		setPBit(7, value: (self.A >> 8) == 1);
+		setPBit(7, value: (self.A >> 7) == 1);
 		
 		// Set zero flag
 		setPBit(1, value: (self.A == 0));
+		
+		return 2;
 	}
 	
     /**
@@ -1075,7 +1087,7 @@ class CPU: NSObject {
 		var temp = UInt16(self.A) + UInt16(memoryValue) + (getPBit(0) ? 1 : 0);
 		
 		// Set overflow flag
-		setPBit(6, value: ((self.A >> 7) & 0x1) != UInt8((temp >> 7) & 0x1))
+		setPBit(6, value: ((self.A >> 6) & 0x1) != UInt8((temp >> 6) & 0x1))
 		
 		// Set negative flag
 		setPBit(7, value: ((self.A >> 7) & 0x1) == 1);
@@ -1184,7 +1196,7 @@ class CPU: NSObject {
 		value = value + 1;
 		
 		// Set negative flag
-		setPBit(7, value: (value >> 8) == 1);
+		setPBit(7, value: (value >> 7) == 1);
 		
 		// Set zero flag
 		setPBit(1, value: (value == 0));
@@ -1201,7 +1213,7 @@ class CPU: NSObject {
 		self.X = self.X + 1;
 		
 		// Set negative flag
-		setPBit(7, value: (self.X >> 8) == 1);
+		setPBit(7, value: (self.X >> 7) == 1);
 		
 		// Set zero flag
 		setPBit(1, value: (self.X == 0));
@@ -1216,7 +1228,7 @@ class CPU: NSObject {
 		self.Y = self.Y + 1;
 		
 		// Set negative flag
-		setPBit(7, value: (self.Y >> 8) == 1);
+		setPBit(7, value: (self.Y >> 7) == 1);
 		
 		// Set zero flag
 		setPBit(1, value: (self.Y == 0));
@@ -1251,7 +1263,7 @@ class CPU: NSObject {
 		value = value - 1;
 		
 		// Set negative flag
-		setPBit(7, value: (value >> 8) == 1);
+		setPBit(7, value: (value >> 7) == 1);
 		
 		// Set zero flag
 		setPBit(1, value: (value == 0));
@@ -1268,7 +1280,7 @@ class CPU: NSObject {
 		self.X = self.X - 1;
 		
 		// Set negative flag
-		setPBit(7, value: (self.X >> 8) == 1);
+		setPBit(7, value: (self.X >> 7) == 1);
 		
 		// Set zero flag
 		setPBit(1, value: (self.X == 0));
@@ -1283,7 +1295,7 @@ class CPU: NSObject {
 		self.Y = self.Y - 1;
 		
 		// Set negative flag
-		setPBit(7, value: (self.Y >> 8) == 1);
+		setPBit(7, value: (self.Y >> 7) == 1);
 		
 		// Set zero flag
 		setPBit(1, value: (self.Y == 0));
@@ -1317,12 +1329,12 @@ class CPU: NSObject {
         
         if(mode == .Accumulator) {
             // Set carry flag
-            setPBit(0, value: (self.A >> 8) == 1);
+            setPBit(0, value: (self.A >> 7) == 1);
             
             self.A = (self.A << 1) & 0xFE;
             
             // Set negative flag
-            setPBit(7, value: (self.A >> 8) == 1);
+            setPBit(7, value: (self.A >> 7) == 1);
             
             // Set zero flag
             setPBit(1, value: (self.A == 0));
@@ -1331,12 +1343,12 @@ class CPU: NSObject {
             let value = self.mainMemory.readMemory(address);
             
             // Set carry flag
-            setPBit(0, value: (value >> 8) == 1);
+            setPBit(0, value: (value >> 7) == 1);
             
             let temp = (value << 1) & 0xFE;
             
             // Set negative flag
-            setPBit(7, value: (temp >> 8) == 1);
+            setPBit(7, value: (temp >> 7) == 1);
             
             // Set zero flag
             setPBit(1, value: (temp == 0));
@@ -1428,7 +1440,7 @@ class CPU: NSObject {
         }
         
         if(mode == .Accumulator) {
-            let carry = (self.A >> 8) & 0x1;
+            let carry = (self.A >> 7) & 0x1;
             
             self.A = (self.A << 1) & 0xFE;
             self.A = self.A | (getPBit(0) ? 1:0);
@@ -1440,12 +1452,12 @@ class CPU: NSObject {
 			setPBit(1, value: (self.A == 0));
 			
             // Set negative flag
-            setPBit(7, value: (self.A >> 8) & 0x1 == 1);
+            setPBit(7, value: (self.A >> 7) & 0x1 == 1);
         } else {
             let address = addressUsingAddressingMode(mode);
             var value = self.mainMemory.readMemory(address);
 			
-			let carry = (value >> 8) & 0x1;
+			let carry = (value >> 7) & 0x1;
 			value = (value << 1) & 0xFE;
 			value = value | (getPBit(0) ? 1:0);
             
@@ -1456,7 +1468,7 @@ class CPU: NSObject {
 			setPBit(1, value: (value == 0));
 			
 			// Set negative flag
-			setPBit(7, value: (value >> 8) & 0x1 == 1);
+			setPBit(7, value: (value >> 7) & 0x1 == 1);
 			
             self.mainMemory.writeMemory(address, data: value);
         }
@@ -1501,7 +1513,7 @@ class CPU: NSObject {
 			setPBit(1, value: (self.A == 0));
 			
 			// Set negative flag
-			setPBit(7, value: (self.A >> 8) & 0x1 == 1);
+			setPBit(7, value: (self.A >> 7) & 0x1 == 1);
 		} else {
 			let address = addressUsingAddressingMode(mode);
 			var value = self.mainMemory.readMemory(address);
@@ -1517,7 +1529,7 @@ class CPU: NSObject {
 			setPBit(1, value: (value == 0));
 			
 			// Set negative flag
-			setPBit(7, value: (value >> 8) & 0x1 == 1);
+			setPBit(7, value: (value >> 7) & 0x1 == 1);
 			
 			self.mainMemory.writeMemory(address, data: value);
 		}
@@ -1558,7 +1570,7 @@ class CPU: NSObject {
         self.A = self.A ^ readFromMemoryUsingAddressingMode(mode);
         
         // Set negative flag
-        setPBit(7, value: (self.A >> 8) == 1);
+        setPBit(7, value: (self.A >> 7) == 1);
         
         // Set zero flag
         setPBit(1, value: (self.A == 0));
@@ -1596,7 +1608,7 @@ class CPU: NSObject {
         self.A = self.A & readFromMemoryUsingAddressingMode(mode);
         
         // Set negative flag
-        setPBit(7, value: (self.A >> 8) == 1);
+        setPBit(7, value: (self.A >> 7) == 1);
         
         // Set zero flag
         setPBit(1, value: (self.A == 0));
@@ -1634,7 +1646,7 @@ class CPU: NSObject {
         self.A = self.A | readFromMemoryUsingAddressingMode(mode);
         
         // Set negative flag
-        setPBit(7, value: (self.A >> 8) == 1);
+        setPBit(7, value: (self.A >> 7) == 1);
         
         // Set zero flag
         setPBit(1, value: (self.A == 0));
@@ -1675,7 +1687,7 @@ class CPU: NSObject {
         let temp = self.A - mem;
         
         // Set negative flag
-        setPBit(7, value: (temp >> 8) == 1);
+        setPBit(7, value: (temp >> 7) == 1);
         
         // Set zero flag
         setPBit(1, value: (temp == 0));
@@ -1708,10 +1720,10 @@ class CPU: NSObject {
         let temp = self.A & mem;
         
         // Set negative flag
-        setPBit(7, value: (temp >> 8) == 1);
+        setPBit(7, value: (temp >> 7) == 1);
         
         // Set overflow flag
-        setPBit(6, value: (temp >> 7) == 1);
+        setPBit(6, value: (temp >> 6) == 1);
         
         // Set zero flag
         setPBit(1, value: (temp == 0));
