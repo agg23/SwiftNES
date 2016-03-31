@@ -1317,7 +1317,7 @@ class CPU: NSObject {
 	/**
 	 Branch if Zero flag is Set
 	*/
-	func BZS() -> Int {
+	func BEQ() -> Int {
 		if(getPBit(1)) {
 			setPC(getPC() + UInt16(fetchPC()));
 			return 3;
@@ -1387,6 +1387,87 @@ class CPU: NSObject {
 	}
 	
 	/**
+	 ComPare X with Memory
+	*/
+	func CPX(mode: AddressingMode) -> Int {
+		var length = 3;
+		
+		switch mode {
+			case .Immediate:
+				length = 2;
+			
+			case .ZeroPage:
+				length = 3;
+				
+			case .Absolute:
+				length = 4;
+				
+			default:
+				print("Invalid AddressingMode on CPX");
+				return -1;
+		}
+		
+		let mem = readFromMemoryUsingAddressingMode(mode);
+		let temp = Int(self.X) - Int(mem);
+		
+		// Set negative flag
+		setPBit(7, value: temp < 0);
+		
+		// Set carry flag
+		setPBit(0, value: self.X >= mem);
+		
+		// Set zero flag
+		setPBit(1, value: (temp == 0));
+		
+		return length;
+	}
+	
+	/**
+	 ComPare Y with Memory
+	*/
+	func CPY(mode: AddressingMode) -> Int {
+		var length = 3;
+		
+		switch mode {
+			case .Immediate:
+				length = 2;
+				
+			case .ZeroPage:
+				length = 3;
+				
+			case .Absolute:
+				length = 4;
+				
+			default:
+				print("Invalid AddressingMode on CPY");
+				return -1;
+		}
+		
+		let mem = readFromMemoryUsingAddressingMode(mode);
+		let temp = Int(self.Y) - Int(mem);
+		
+		// Set negative flag
+		setPBit(7, value: temp < 0);
+		
+		// Set carry flag
+		setPBit(0, value: self.Y >= mem);
+		
+		// Set zero flag
+		setPBit(1, value: (temp == 0));
+		
+		return length;
+	}
+	
+    /**
+     No OPeration
+    */
+    func NOP() -> Int {
+        return 2;
+    }
+	
+	// MARK: P Register
+	
+	/**
 	 Clear Carry flag
 	*/
 	func CLC() -> Int {
@@ -1398,7 +1479,7 @@ class CPU: NSObject {
 	/**
 	 Clear Decimal flag
 	*/
-	func CDC() -> Int {
+	func CLD() -> Int {
 		setPBit(3, value: false);
 		
 		return 2;
@@ -1421,11 +1502,31 @@ class CPU: NSObject {
 		
 		return 2;
 	}
-    
-    /**
-     No OPeration
-    */
-    func NOP() -> Int {
-        return 2;
-    }
+	
+	/**
+	 Set Carry flag
+	*/
+	func SEC() -> Int {
+		setPBit(0, value: true);
+		
+		return 2;
+	}
+	
+	/**
+	 Set Decimal flag
+	*/
+	func SED() -> Int {
+		setPBit(3, value: true);
+		
+		return 2;
+	}
+	
+	/**
+	 Set Interrupt flag
+	*/
+	func SEI() -> Int {
+		setPBit(2, value: true);
+		
+		return 2;
+	}
 }
