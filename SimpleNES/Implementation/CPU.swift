@@ -247,10 +247,9 @@ class CPU: NSObject {
      Simulate Interrupt ReQuest (IRQ)
     */
     func BRK() -> Int {
-        // TODO: Set B flag
         push(self.PCH);
         push(self.PCL);
-        push(self.P);
+        push(self.P | 0x10);
         
         self.PCL = self.mainMemory.readMemory(0xFFFE);
         self.PCH = self.mainMemory.readMemory(0xFFFF);
@@ -1155,15 +1154,15 @@ class CPU: NSObject {
         var length = 3;
         
         switch mode {
-        case .ZeroPage:
-            length = 3;
-            
-        case .Absolute:
-            length = 4;
-            
-        default:
-            print("Invalid AddressingMode on BIT");
-            return -1;
+			case .ZeroPage:
+				length = 3;
+				
+			case .Absolute:
+				length = 4;
+				
+			default:
+				print("Invalid AddressingMode on BIT");
+				return -1;
         }
         
         let mem = readFromMemoryUsingAddressingMode(mode);
@@ -1180,6 +1179,138 @@ class CPU: NSObject {
         
         return length;
     }
+	
+	/**
+	 Branch if Carry flag is Clear
+	*/
+	func BCC() -> Int {
+		if(!getPBit(0)) {
+			setPC(getPC() + UInt16(fetchPC()));
+			return 3;
+		}
+		
+		return 2;
+	}
+	
+	/**
+	 Branch if Carry flag is Set
+	*/
+	func BCS() -> Int {
+		if(getPBit(0)) {
+			setPC(getPC() + UInt16(fetchPC()));
+			return 3;
+		}
+		
+		return 2;
+	}
+	
+	/**
+	 Branch if Zero flag is Set
+	*/
+	func BZS() -> Int {
+		if(getPBit(1)) {
+			setPC(getPC() + UInt16(fetchPC()));
+			return 3;
+		}
+		
+		return 2;
+	}
+	
+	/**
+	 Branch if negative flag is set
+	*/
+	func BMI() -> Int {
+		if(getPBit(7)) {
+			setPC(getPC() + UInt16(fetchPC()));
+			return 3;
+		}
+		
+		return 2;
+	}
+	
+	/**
+	 Branch if zero flag is clear
+	*/
+	func BNE() -> Int {
+		if(!getPBit(1)) {
+			setPC(getPC() + UInt16(fetchPC()));
+			return 3;
+		}
+		
+		return 2;
+	}
+	
+	/**
+	 Branch if negative flag is clear
+	*/
+	func BPL() -> Int {
+		if(!getPBit(7)) {
+			setPC(getPC() + UInt16(fetchPC()));
+			return 3;
+		}
+		
+		return 2;
+	}
+	
+	/**
+	 Branch if oVerflow flag is Clear
+	*/
+	func BVC() -> Int {
+		if(!getPBit(6)) {
+			setPC(getPC() + UInt16(fetchPC()));
+			return 3;
+		}
+		
+		return 2;
+	}
+	
+	/**
+	 Branch if oVerflow flag is Set
+	*/
+	func BVS() -> Int {
+		if(getPBit(6)) {
+			setPC(getPC() + UInt16(fetchPC()));
+			return 3;
+		}
+		
+		return 2;
+	}
+	
+	/**
+	 Clear Carry flag
+	*/
+	func CLC() -> Int {
+		setPBit(0, value: false);
+		
+		return 2;
+	}
+	
+	/**
+	 Clear Decimal flag
+	*/
+	func CDC() -> Int {
+		setPBit(3, value: false);
+		
+		return 2;
+	}
+	
+	/**
+	 Clear Interrupt flag
+	*/
+	func CLI() -> Int {
+		setPBit(2, value: false);
+		
+		return 2;
+	}
+	
+	/**
+	 Clear oVerflow flag
+	*/
+	func CLV() -> Int {
+		setPBit(6, value: false);
+		
+		return 2;
+	}
     
     /**
      No OPeration
