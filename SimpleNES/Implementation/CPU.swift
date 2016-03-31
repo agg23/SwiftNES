@@ -49,6 +49,8 @@ class CPU: NSObject {
 
 	var mainMemory: Memory;
     var ppuMemory: Memory;
+	
+	let logger: Logger;
     
     enum AddressingMode {
         case Accumulator
@@ -79,7 +81,7 @@ class CPU: NSObject {
 	/**
 	 Initializes the CPU
 	*/
-    init(mainMemory: Memory, ppuMemory: Memory) {
+	init(mainMemory: Memory, ppuMemory: Memory, logger: Logger) {
 		self.PCL = 0;
 		self.PCH = 0;
 
@@ -93,14 +95,21 @@ class CPU: NSObject {
 		
 		self.mainMemory = mainMemory;
         self.ppuMemory = ppuMemory;
+		
+		self.logger = logger;
     }
     
     func reset() {
         // Load program start address from RESET vector (0xFFFC)
         let programStartAddress = self.mainMemory.readTwoBytesMemory(0xFFFC);
 		
+		self.SP = 0xFD;
+		
 		// Set interrupt flag
 		setPBit(2, value: true);
+		
+		// Set unused flag
+		setPBit(5, value: true);
         
         // Set PC to program start address
         setPC(programStartAddress);
@@ -117,6 +126,7 @@ class CPU: NSObject {
 		let opcode = fetchPC();
 		
 		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC() - 1, opcode));
+		logger.logFormattedInstuction(getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP);
 		
 		switch opcode {
 			// ADC
@@ -1726,8 +1736,8 @@ class CPU: NSObject {
         setPBit(7, value: (temp >> 7) == 1);
         
         // Set overflow flag
-        setPBit(6, value: (temp >> 6) == 1);
-        
+        setPBit(6, value: ((temp >> 6) & 0x1) == 1);
+		
         // Set zero flag
         setPBit(1, value: (temp == 0));
         
@@ -1741,7 +1751,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(!getPBit(0)) {
-			setPC(getPC() + relative + 1);
+			setPC(getPC() + relative);
 			return 3;
 		}
 		
@@ -1755,7 +1765,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(getPBit(0)) {
-			setPC(getPC() + relative + 1);
+			setPC(getPC() + relative);
 			return 3;
 		}
 		
@@ -1769,7 +1779,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(getPBit(1)) {
-			setPC(getPC() + relative + 1);
+			setPC(getPC() + relative);
 			return 3;
 		}
 		
@@ -1783,7 +1793,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(getPBit(7)) {
-			setPC(getPC() + relative + 1);
+			setPC(getPC() + relative);
 			return 3;
 		}
 		
@@ -1797,7 +1807,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(!getPBit(1)) {
-			setPC(getPC() + relative + 1);
+			setPC(getPC() + relative);
 			return 3;
 		}
 		
@@ -1811,7 +1821,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(!getPBit(7)) {
-			setPC(getPC() + relative + 1);
+			setPC(getPC() + relative);
 			return 3;
 		}
 		
@@ -1825,7 +1835,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(!getPBit(6)) {
-			setPC(getPC() + relative + 1);
+			setPC(getPC() + relative);
 			return 3;
 		}
 		
@@ -1839,7 +1849,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(getPBit(6)) {
-			setPC(getPC() + relative + 1);
+			setPC(getPC() + relative);
 			return 3;
 		}
 		

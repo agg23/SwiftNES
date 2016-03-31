@@ -16,12 +16,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         // Insert code here to initialize your application
+		let logger = Logger(path: "/Users/adam/nes.log");
 		var mainMemory = Memory();
 		var ppuMemory = Memory(memoryType: true);
 		var fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
 		fileIO.loadFile("/Users/adam/Downloads/nestest.nes");
         
-        var cpu = CPU(mainMemory: mainMemory, ppuMemory: ppuMemory);
+        var cpu = CPU(mainMemory: mainMemory, ppuMemory: ppuMemory, logger: logger);
         cpu.reset();
 		cpu.setPC(0xC000);
 		
@@ -31,6 +32,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
 		print("Reset Vector: \(mainMemory.readTwoBytesMemory(0xFFFC))");
         print("First Opcode: \(mainMemory.readMemory(0xf415))");
+		
+		logger.endLogging();
     }
 
     func applicationWillTerminate(aNotification: NSNotification) {

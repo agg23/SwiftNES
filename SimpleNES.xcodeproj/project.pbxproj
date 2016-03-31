@@ -14,6 +14,7 @@
 		66A9C43C1CA2EF3800936DBC /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 66A9C43A1CA2EF3800936DBC /* MainMenu.xib */; };
 		66A9C4471CA2EF3800936DBC /* SimpleNESTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4461CA2EF3800936DBC /* SimpleNESTests.swift */; };
 		66A9C4531CA2EF6F00936DBC /* CPU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4521CA2EF6F00936DBC /* CPU.swift */; };
+		66E186901CADB97300EFF583 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E1868F1CADB97300EFF583 /* Logger.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,6 +39,7 @@
 		66A9C4461CA2EF3800936DBC /* SimpleNESTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleNESTests.swift; sourceTree = "<group>"; };
 		66A9C4481CA2EF3800936DBC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		66A9C4521CA2EF6F00936DBC /* CPU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CPU.swift; path = Implementation/CPU.swift; sourceTree = "<group>"; };
+		66E1868F1CADB97300EFF583 /* Logger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Logger.swift; path = Implementation/Logger.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,6 +105,7 @@
 				66A9C4521CA2EF6F00936DBC /* CPU.swift */,
 				666146AD1CA347300022C10D /* Memory.swift */,
 				666146AF1CA34BC40022C10D /* FileIO.swift */,
+				66E1868F1CADB97300EFF583 /* Logger.swift */,
 			);
 			name = Implementation;
 			sourceTree = "<group>";
@@ -207,6 +210,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				66E186901CADB97300EFF583 /* Logger.swift in Sources */,
 				666146AE1CA347300022C10D /* Memory.swift in Sources */,
 				66A9C4531CA2EF6F00936DBC /* CPU.swift in Sources */,
 				66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */,
