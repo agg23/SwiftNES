@@ -116,7 +116,7 @@ class CPU: NSObject {
 	func step() -> Int {
 		let opcode = fetchPC();
 		
-		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC(), opcode));
+		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC() - 1, opcode));
 		
 		switch opcode {
 			// ADC
@@ -761,14 +761,17 @@ class CPU: NSObject {
      Jump to SubRoutine
     */
     func JSR() -> Int {
+        let temp = getPC() - 1;
+        
+        push(UInt8((temp >> 8) & 0xFF));
+        push(UInt8(temp & 0xFF));
+        
         let lowByte = fetchPC();
         
-        // TODO: Possibly incorrect?
-        push(self.PCH);
-        push(self.PCL);
-        
-        self.PCL = lowByte;
         self.PCH = fetchPC();
+        self.PCL = lowByte;
+        
+        print(String(format: "Low: 0x%2x High 0x%2x", self.PCL, self.PCH));
         
         return 6;
     }
@@ -1735,8 +1738,10 @@ class CPU: NSObject {
 	 Branch if Carry flag is Clear
 	*/
 	func BCC() -> Int {
+        let relative = UInt16(fetchPC());
+        
 		if(!getPBit(0)) {
-			setPC(getPC() + UInt16(fetchPC()));
+			setPC(getPC() + relative + 1);
 			return 3;
 		}
 		
@@ -1747,8 +1752,10 @@ class CPU: NSObject {
 	 Branch if Carry flag is Set
 	*/
 	func BCS() -> Int {
+        let relative = UInt16(fetchPC());
+        
 		if(getPBit(0)) {
-			setPC(getPC() + UInt16(fetchPC()));
+			setPC(getPC() + relative + 1);
 			return 3;
 		}
 		
@@ -1759,8 +1766,10 @@ class CPU: NSObject {
 	 Branch if Zero flag is Set
 	*/
 	func BEQ() -> Int {
+        let relative = UInt16(fetchPC());
+        
 		if(getPBit(1)) {
-			setPC(getPC() + UInt16(fetchPC()));
+			setPC(getPC() + relative + 1);
 			return 3;
 		}
 		
@@ -1771,8 +1780,10 @@ class CPU: NSObject {
 	 Branch if negative flag is set
 	*/
 	func BMI() -> Int {
+        let relative = UInt16(fetchPC());
+        
 		if(getPBit(7)) {
-			setPC(getPC() + UInt16(fetchPC()));
+			setPC(getPC() + relative + 1);
 			return 3;
 		}
 		
@@ -1783,8 +1794,10 @@ class CPU: NSObject {
 	 Branch if zero flag is clear
 	*/
 	func BNE() -> Int {
+        let relative = UInt16(fetchPC());
+        
 		if(!getPBit(1)) {
-			setPC(getPC() + UInt16(fetchPC()));
+			setPC(getPC() + relative + 1);
 			return 3;
 		}
 		
@@ -1795,8 +1808,10 @@ class CPU: NSObject {
 	 Branch if negative flag is clear
 	*/
 	func BPL() -> Int {
+        let relative = UInt16(fetchPC());
+        
 		if(!getPBit(7)) {
-			setPC(getPC() + UInt16(fetchPC()));
+			setPC(getPC() + relative + 1);
 			return 3;
 		}
 		
@@ -1807,8 +1822,10 @@ class CPU: NSObject {
 	 Branch if oVerflow flag is Clear
 	*/
 	func BVC() -> Int {
+        let relative = UInt16(fetchPC());
+        
 		if(!getPBit(6)) {
-			setPC(getPC() + UInt16(fetchPC()));
+			setPC(getPC() + relative + 1);
 			return 3;
 		}
 		
@@ -1819,8 +1836,10 @@ class CPU: NSObject {
 	 Branch if oVerflow flag is Set
 	*/
 	func BVS() -> Int {
+        let relative = UInt16(fetchPC());
+        
 		if(getPBit(6)) {
-			setPC(getPC() + UInt16(fetchPC()));
+			setPC(getPC() + relative + 1);
 			return 3;
 		}
 		
