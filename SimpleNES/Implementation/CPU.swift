@@ -761,7 +761,7 @@ class CPU: NSObject {
      Jump to SubRoutine
     */
     func JSR() -> Int {
-        let temp = getPC() - 1;
+        let temp = getPC() + 1;
         
         push(UInt8((temp >> 8) & 0xFF));
         push(UInt8(temp & 0xFF));
@@ -1687,7 +1687,7 @@ class CPU: NSObject {
         }
         
         let mem = readFromMemoryUsingAddressingMode(mode);
-        let temp = self.A - mem;
+        let temp = Int(self.A) - Int(mem);
         
         // Set negative flag
         setPBit(7, value: (temp >> 7) == 1);
