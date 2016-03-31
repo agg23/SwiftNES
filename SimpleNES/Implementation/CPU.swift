@@ -98,6 +98,9 @@ class CPU: NSObject {
     func reset() {
         // Load program start address from RESET vector (0xFFFC)
         let programStartAddress = self.mainMemory.readTwoBytesMemory(0xFFFC);
+		
+		// Set interrupt flag
+		setPBit(2, value: true);
         
         // Set PC to program start address
         setPC(programStartAddress);
@@ -106,12 +109,436 @@ class CPU: NSObject {
     }
 
 	/**
-	 Executes one CPU cycle
+	 Executes one CPU instruction
+	
+	 - Returns: Number of cycles required by the run instruction
 	*/
-	func step() {
+	func step() -> Int {
+		let opcode = fetchPC();
 		
+		print("Executing \(opcode)");
+		
+		switch opcode {
+			// ADC
+			case 0x69:
+				return ADC(.Immediate);
+			case 0x65:
+				return ADC(.ZeroPage);
+			case 0x75:
+				return ADC(.ZeroPageIndexedX);
+			case 0x6D:
+				return ADC(.Absolute);
+			case 0x7D:
+				return ADC(.AbsoluteIndexedX);
+			case 0x79:
+				return ADC(.AbsoluteIndexedY);
+			case 0x61:
+				return ADC(.IndirectX);
+			case 0x71:
+				return ADC(.IndirectY);
+			
+			// AND
+			case 0x29:
+				return AND(.Immediate);
+			case 0x25:
+				return AND(.ZeroPage);
+			case 0x35:
+				return AND(.ZeroPageIndexedX);
+			case 0x2D:
+				return AND(.Absolute);
+			case 0x3D:
+				return AND(.AbsoluteIndexedX);
+			case 0x39:
+				return AND(.AbsoluteIndexedY);
+			case 0x21:
+				return AND(.IndirectX);
+			case 0x31:
+				return AND(.IndirectY);
+				
+			// ASL
+			case 0x0A:
+				return ASL(.Accumulator);
+			case 0x06:
+				return ASL(.ZeroPage);
+			case 0x1A:
+				return ASL(.ZeroPageIndexedX);
+			case 0x0E:
+				return ASL(.Absolute);
+			case 0x1E:
+				return ASL(.AbsoluteIndexedX);
+				
+			// BCC
+			case 0x90:
+				return BCC();
+				
+			// BCS
+			case 0xB0:
+				return BCS();
+				
+			// BEQ
+			case 0xF0:
+				return BEQ();
+				
+			// BIT
+			case 0x24:
+				return BIT(.ZeroPage);
+			case 0x2C:
+				return BIT(.Absolute);
+				
+			// BMI
+			case 0x30:
+				return BMI();
+				
+			// BNE
+			case 0xD0:
+				return BNE();
+				
+			// BPL
+			case 0x10:
+				return BPL();
+				
+			// BRK
+			case 0x00:
+				return BRK();
+				
+			// BVC
+			case 0x50:
+				return BVC();
+				
+			// BVS
+			case 0x70:
+				return BVS();
+				
+			// CLC
+			case 0x18:
+				return CLC();
+				
+			// CLD
+			case 0xD8:
+				return CLD();
+				
+			// CLI
+			case 0x58:
+				return CLI();
+				
+			// CLV
+			case 0xB8:
+				return CLV();
+				
+			// CMP
+			case 0xC9:
+				return CMP(.Immediate);
+			case 0xC5:
+				return CMP(.ZeroPage);
+			case 0xD5:
+				return CMP(.ZeroPageIndexedX);
+			case 0xCD:
+				return CMP(.Absolute);
+			case 0xDD:
+				return CMP(.AbsoluteIndexedX);
+			case 0xD9:
+				return CMP(.AbsoluteIndexedY);
+			case 0xC1:
+				return CMP(.IndirectX);
+			case 0xD1:
+				return CMP(.IndirectY);
+				
+			// CPX
+			case 0xE0:
+				return CPX(.Immediate);
+			case 0xE4:
+				return CPX(.ZeroPage);
+			case 0xEC:
+				return CPX(.Absolute);
+				
+			// CPY
+			case 0xC0:
+				return CPY(.Immediate);
+			case 0xC4:
+				return CPY(.ZeroPage);
+			case 0xCC:
+				return CPY(.Absolute);
+				
+			// DEC
+			case 0xC6:
+				return DEC(.ZeroPage);
+			case 0xD6:
+				return DEC(.ZeroPageIndexedX);
+			case 0xCE:
+				return DEC(.Absolute);
+			case 0xDE:
+				return DEC(.AbsoluteIndexedX);
+				
+			// DEX
+			case 0xCA:
+				return DEX();
+				
+			// DEY
+			case 0x88:
+				return DEY();
+				
+			// EOR
+			case 0x49:
+				return EOR(.Immediate);
+			case 0x45:
+				return EOR(.ZeroPage);
+			case 0x55:
+				return EOR(.ZeroPageIndexedX);
+			case 0x4D:
+				return EOR(.Absolute);
+			case 0x5D:
+				return EOR(.AbsoluteIndexedX);
+			case 0x59:
+				return EOR(.AbsoluteIndexedY);
+			case 0x41:
+				return EOR(.IndirectX);
+			case 0x51:
+				return EOR(.IndirectY);
+				
+			// INC
+			case 0xE6:
+				return INC(.ZeroPage);
+			case 0xF6:
+				return INC(.ZeroPageIndexedX);
+			case 0xEE:
+				return INC(.Absolute);
+			case 0xFE:
+				return INC(.AbsoluteIndexedX);
+				
+			// INX
+			case 0xE8:
+				return INX();
+				
+			// INY
+			case 0xC8:
+				return INY();
+				
+			// JMP
+			case 0x4C:
+				return JMP(.Absolute);
+			case 0x6C:
+				return JMP(.AbsoluteIndirect);
+				
+			// JSR
+			case 0x20:
+				return JSR();
+				
+			// LDA
+			case 0xA9:
+				return LDA(.Immediate);
+			case 0xA5:
+				return LDA(.ZeroPage);
+			case 0xB5:
+				return LDA(.ZeroPageIndexedX);
+			case 0xAD:
+				return LDA(.Absolute);
+			case 0xBD:
+				return LDA(.AbsoluteIndexedX);
+			case 0xB9:
+				return LDA(.AbsoluteIndexedY);
+			case 0xA1:
+				return LDA(.IndirectX);
+			case 0xB1:
+				return LDA(.IndirectY);
+				
+			// LDX
+			case 0xA2:
+				return LDX(.Immediate);
+			case 0xA6:
+				return LDX(.ZeroPage);
+			case 0xB6:
+				return LDX(.ZeroPageIndexedY);
+			case 0xAE:
+				return LDX(.Absolute);
+			case 0xBE:
+				return LDX(.AbsoluteIndexedY);
+				
+			// LDY
+			case 0xA0:
+				return LDY(.Immediate);
+			case 0xA4:
+				return LDY(.ZeroPage);
+			case 0xB4:
+				return LDY(.ZeroPageIndexedX);
+			case 0xAC:
+				return LDY(.Absolute);
+			case 0xBC:
+				return LDY(.AbsoluteIndexedX);
+				
+			// LSR
+			case 0x4A:
+				return LSR(.Accumulator);
+			case 0x46:
+				return LSR(.ZeroPage);
+			case 0x56:
+				return LSR(.ZeroPageIndexedX);
+			case 0x4E:
+				return LSR(.Absolute);
+			case 0x5E:
+				return LSR(.AbsoluteIndexedX);
+				
+			// NOP
+			case 0xEA:
+				return NOP();
+				
+			// ORA
+			case 0x09:
+				return ORA(.Immediate);
+			case 0x05:
+				return ORA(.ZeroPage);
+			case 0x15:
+				return ORA(.ZeroPageIndexedX);
+			case 0x0D:
+				return ORA(.Absolute);
+			case 0x1D:
+				return ORA(.AbsoluteIndexedX);
+			case 0x19:
+				return ORA(.AbsoluteIndexedY);
+			case 0x01:
+				return ORA(.IndirectX);
+			case 0x11:
+				return ORA(.IndirectY);
+				
+			// PHA
+			case 0x48:
+				return PHA();
+				
+			// PHP
+			case 0x08:
+				return PHP();
+				
+			// PLA
+			case 0x68:
+				return PLA();
+				
+			// PLP
+			case 0x28:
+				return PLP();
+				
+			// ROL
+			case 0x2A:
+				return ROL(.Accumulator);
+			case 0x26:
+				return ROL(.ZeroPage);
+			case 0x36:
+				return ROL(.ZeroPageIndexedX);
+			case 0x2E:
+				return ROL(.Absolute);
+			case 0x3E:
+				return ROL(.AbsoluteIndexedX);
+				
+			// ROR
+			case 0x6A:
+				return ROR(.Accumulator);
+			case 0x66:
+				return ROR(.ZeroPage);
+			case 0x76:
+				return ROR(.ZeroPageIndexedX);
+			case 0x6E:
+				return ROR(.Absolute);
+			case 0x7E:
+				return ROR(.AbsoluteIndexedX);
+				
+			// RTI
+			case 0x40:
+				return RTI();
+				
+			// RTS
+			case 0x60:
+				return RTS();
+				
+			// SBC
+			case 0xE9:
+				return SBC(.Immediate);
+			case 0xE5:
+				return SBC(.ZeroPage);
+			case 0xF5:
+				return SBC(.ZeroPageIndexedX);
+			case 0xED:
+				return SBC(.Absolute);
+			case 0xFD:
+				return SBC(.AbsoluteIndexedX);
+			case 0xF9:
+				return SBC(.AbsoluteIndexedY);
+			case 0xE1:
+				return SBC(.IndirectX);
+			case 0xF1:
+				return SBC(.IndirectY);
+				
+			// SEC
+			case 0x38:
+				return SEC();
+				
+			// SED
+			case 0xF8:
+				return SED();
+				
+			// SEI
+			case 0x78:
+				return SEI();
+				
+			// STA
+			case 0x85:
+				return STA(.ZeroPage);
+			case 0x95:
+				return STA(.ZeroPageIndexedX);
+			case 0x8D:
+				return STA(.Absolute);
+			case 0x9D:
+				return STA(.AbsoluteIndexedX);
+			case 0x99:
+				return STA(.AbsoluteIndexedY);
+			case 0x81:
+				return STA(.IndirectX);
+			case 0x91:
+				return STA(.IndirectY);
+				
+			// STX
+			case 0x86:
+				return STX(.ZeroPage);
+			case 0x96:
+				return STX(.ZeroPageIndexedX);
+			case 0x8E:
+				return STX(.Absolute);
+				
+			// STY
+			case 0x84:
+				return STY(.ZeroPage);
+			case 0x94:
+				return STY(.ZeroPageIndexedX);
+			case 0x8C:
+				return STY(.Absolute);
+				
+			// TAX
+			case 0xAA:
+				return TAX();
+				
+			// TAY
+			case 0xA8:
+				return TAY();
+				
+			// TSX
+			case 0xBA:
+				return TSX();
+				
+			// TXA
+			case 0x8A:
+				return TXA();
+				
+			// TXS
+			case 0x9A:
+				return TXS();
+				
+			// TYA
+			case 0x98:
+				return TYA();
+			
+			default:
+				print("ERROR: Instruction with opcode \(opcode) not found");
+				return -1;
+		}
 	}
-    
+	
     func address(lower:UInt8, upper:UInt8) -> Int {
         return Int(lower) | (Int(upper) << 8);
     }
@@ -237,6 +664,7 @@ class CPU: NSObject {
         
         if(self.SP == 0xFF) {
             print("ERROR: Stack overflow");
+			return;
         }
         
         self.SP = self.SP + 1;
@@ -245,6 +673,7 @@ class CPU: NSObject {
     func pop() -> UInt8 {
         if(self.SP == 0) {
             print("ERROR: Stack underflow");
+			return 0;
         }
         
         self.SP = self.SP - 1;

@@ -19,10 +19,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		var mainMemory = Memory();
 		var ppuMemory = Memory(memoryType: true);
 		var fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		fileIO.loadFile("/Users/adam/Downloads/dk.nes");
+		fileIO.loadFile("/Users/adam/Downloads/nestest.nes");
         
         var cpu = CPU(mainMemory: mainMemory, ppuMemory: ppuMemory);
         cpu.reset();
+		cpu.setPC(0xC000);
+		
+		while(cpu.step() != -1) {
+			
+		}
 		
 		print("Reset Vector: \(mainMemory.readTwoBytesMemory(0xFFFC))");
         print("First Opcode: \(mainMemory.readMemory(0xf415))");
