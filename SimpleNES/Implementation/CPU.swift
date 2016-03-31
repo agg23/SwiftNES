@@ -635,7 +635,7 @@ class CPU: NSObject {
     // MARK: - PC Operations
     func setPC(address: UInt16) {
         self.PCL = UInt8(address & 0xFF);
-        self.PCH = UInt8((address & 0xFF00) >> 7);
+        self.PCH = UInt8((address & 0xFF00) >> 8);
     }
     
     func getPC() -> UInt16 {
