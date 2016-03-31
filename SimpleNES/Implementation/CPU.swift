@@ -116,7 +116,7 @@ class CPU: NSObject {
 	func step() -> Int {
 		let opcode = fetchPC();
 		
-		print("Executing \(opcode)");
+		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC(), opcode));
 		
 		switch opcode {
 			// ADC

@@ -84,7 +84,7 @@ class FileIO: NSObject {
 		
 		let romEndingOffset = Int(romBanks) * 0x4000;
 		
-		while(i + 4 < count) {
+		while(i + 5 < count) {
 			let offset = i * 4;
 			
 			if(offset+3 > romEndingOffset) {
@@ -94,6 +94,9 @@ class FileIO: NSObject {
 				self.ppuMemory.writeMemory(0x1 + offset - romEndingOffset, data: UInt8((b & 0xFF00) >> 8));
 				self.ppuMemory.writeMemory(0x2 + offset - romEndingOffset, data: UInt8((b & 0xFF0000) >> 16));
 				self.ppuMemory.writeMemory(0x3 + offset - romEndingOffset, data: UInt8((b & 0xFF000000) >> 24));
+                
+//                print(String(format: "Byte: 0x%8x", b));
+//                print(String(format: "A: 0x%2x, B: 0x%2x, C: 0x%2x, D: 0x%2x", UInt8(b & 0xFF), UInt8((b & 0xFF00) >> 8), UInt8((b & 0xFF0000) >> 16), UInt8((b & 0xFF000000) >> 24)));
 
 			} else {
 				self.mainMemory.writeMemory(0x8000 + offset, data: UInt8(b & 0xFF));
@@ -107,11 +110,14 @@ class FileIO: NSObject {
 					self.mainMemory.writeMemory(0xC001 + offset, data: UInt8((b & 0xFF00) >> 8));
 					self.mainMemory.writeMemory(0xC002 + offset, data: UInt8((b & 0xFF0000) >> 16));
 					self.mainMemory.writeMemory(0xC003 + offset, data: UInt8((b & 0xFF000000) >> 24));
+                    
+//                    print(String(format: "Byte: 0x%8x", b));
+//                    print(String(format: "A: 0x%2x, B: 0x%2x, C: 0x%2x, D: 0x%2x", UInt8(b & 0xFF), UInt8((b & 0xFF00) >> 8), UInt8((b & 0xFF0000) >> 16), UInt8((b & 0xFF000000) >> 24)));
 				}
 			}
-			
-			i++;
-			b = bytes[3 + i];
+            
+			i += 1;
+			b = bytes[4 + i];
 		}
 		
 		print("Memory initialized, wrote \(i * 4) bytes");
