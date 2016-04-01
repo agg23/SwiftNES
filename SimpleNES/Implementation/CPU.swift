@@ -520,6 +520,22 @@ class CPU: NSObject {
 				return ROR(.Absolute);
 			case 0x7E:
 				return ROR(.AbsoluteIndexedX);
+            
+            // RRA
+            case 0x6F:
+                return RRA(.Absolute);
+            case 0x7F:
+                return RRA(.AbsoluteIndexedX);
+            case 0x7B:
+                return RRA(.AbsoluteIndexedY);
+            case 0x67:
+                return RRA(.ZeroPage);
+            case 0x77:
+                return RRA(.ZeroPageIndexedX);
+            case 0x63:
+                return RRA(.IndirectX);
+            case 0x73:
+                return RRA(.IndirectY);
 				
 			// RTI
 			case 0x40:
@@ -1767,8 +1783,9 @@ class CPU: NSObject {
 		let value = self.mainMemory.readMemory(address);
 		
 		// Set carry flag
-		setPBit(0, value: (self.A & 0x1) == 1);
+		setPBit(0, value: (value & 0x1) == 1);
 		
+        // TODO: Possibly incorrect (seems to pass tests though)
 		let temp = (value >> 1) & 0x7F;
 		
 		self.A = self.A ^ temp;
@@ -1951,8 +1968,59 @@ class CPU: NSObject {
 		self.mainMemory.writeMemory(address, data: value);
 		
 		return length;
-
 	}
+    
+    /**
+     ROtate Right and Add (unofficial)
+    */
+    func RRA(mode: AddressingMode) -> Int {
+        var length = 6;
+        
+        switch mode {
+            case .ZeroPage:
+                length = 5;
+                
+            case .ZeroPageIndexedX, .Absolute:
+                length = 6;
+                
+            case .AbsoluteIndexedX, .AbsoluteIndexedY:
+                length = 7;
+                
+            case .IndirectX, .IndirectY:
+                length = 8;
+                
+            default:
+                print("Invalid AddressingMode on RRA");
+                return -1;
+        }
+        
+        let address = addressUsingAddressingMode(mode);
+        var value = self.mainMemory.readMemory(address);
+        
+        let carry = value & 0x1;
+        value = (value >> 1) & 0x7F;
+        value = value | (getPBit(0) ? 0x80 : 0);
+        
+        let temp = UInt16(self.A) + UInt16(value) + UInt16(carry);
+        
+        // Set overflow flag
+        setPBit(6, value: (~(self.A ^ value) & (self.A ^ UInt8(temp & 0xFF)) & 0x80) == 0x80);
+        
+        // Set negative flag
+        setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+        
+        // Set zero flag
+        setPBit(1, value: (temp & 0xFF) == 0);
+        
+        // Set carry flag
+        setPBit(0, value: temp > 255);
+        
+        self.A = UInt8(temp & 0xFF);
+        
+        self.mainMemory.writeMemory(address, data: value);
+        
+        return length;
+    }
 	
     // MARK: Logical
 	
