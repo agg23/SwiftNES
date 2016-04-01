@@ -170,7 +170,7 @@ class CPU: NSObject {
 				return ASL(.Accumulator);
 			case 0x06:
 				return ASL(.ZeroPage);
-			case 0x1A:
+			case 0x16:
 				return ASL(.ZeroPageIndexedX);
 			case 0x0E:
 				return ASL(.Absolute);
@@ -268,7 +268,23 @@ class CPU: NSObject {
 				return CPY(.ZeroPage);
 			case 0xCC:
 				return CPY(.Absolute);
-				
+			
+			// DCP
+			case 0xCF:
+				return DCP(.Absolute);
+			case 0xDB:
+				return DCP(.AbsoluteIndexedY);
+			case 0xDF:
+				return DCP(.AbsoluteIndexedX);
+			case 0xC7:
+				return DCP(.ZeroPage);
+			case 0xD7:
+				return DCP(.ZeroPageIndexedX);
+			case 0xD3:
+				return DCP(.ZeroPageIndexedY);
+			case 0xC3:
+				return DCP(.IndirectX);
+			
 			// DEC
 			case 0xC6:
 				return DEC(.ZeroPage);
@@ -304,7 +320,17 @@ class CPU: NSObject {
 				return EOR(.IndirectX);
 			case 0x51:
 				return EOR(.IndirectY);
-				
+			
+			// IGN
+			case 0x0C:
+				return IGN(.Absolute);
+			case 0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC:
+				return IGN(.AbsoluteIndexedX);
+			case 0x04, 0x44, 0x64:
+				return IGN(.ZeroPage);
+			case 0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4:
+				return IGN(.ZeroPageIndexedX);
+			
 			// INC
 			case 0xE6:
 				return INC(.ZeroPage);
@@ -332,7 +358,21 @@ class CPU: NSObject {
 			// JSR
 			case 0x20:
 				return JSR();
-				
+			
+			// LAX
+			case 0xA7:
+				return LAX(.ZeroPage);
+			case 0xB7:
+				return LAX(.ZeroPageIndexedY);
+			case 0xAF:
+				return LAX(.Absolute);
+			case 0xBF:
+				return LAX(.AbsoluteIndexedY);
+			case 0xA3:
+				return LAX(.IndirectX);
+			case 0xB3:
+				return LAX(.IndirectY);
+			
 			// LDA
 			case 0xA9:
 				return LDA(.Immediate);
@@ -388,7 +428,7 @@ class CPU: NSObject {
 				return LSR(.AbsoluteIndexedX);
 				
 			// NOP
-			case 0xEA:
+			case 0xEA, 0x1A, 0x3A, 0x5A, 0x7A, 0xDA, 0xEA, 0xFA:
 				return NOP();
 				
 			// ORA
@@ -456,9 +496,19 @@ class CPU: NSObject {
 			// RTS
 			case 0x60:
 				return RTS();
-				
+			
+			// SAX
+			case 0x8F:
+				return SAX(.Absolute);
+			case 0x87:
+				return SAX(.ZeroPage);
+			case 0x83:
+				return SAX(.IndirectX);
+			case 0x97:
+				return SAX(.ZeroPageIndexedY);
+			
 			// SBC
-			case 0xE9:
+			case 0xE9, 0xEB:
 				return SBC(.Immediate);
 			case 0xE5:
 				return SBC(.ZeroPage);
@@ -486,7 +536,11 @@ class CPU: NSObject {
 			// SEI
 			case 0x78:
 				return SEI();
-				
+			
+			// SKB
+			case 0x80, 0x82, 0x89, 0xC2, 0xE2:
+				return SKB();
+			
 			// STA
 			case 0x85:
 				return STA(.ZeroPage);
@@ -507,7 +561,7 @@ class CPU: NSObject {
 			case 0x86:
 				return STX(.ZeroPage);
 			case 0x96:
-				return STX(.ZeroPageIndexedX);
+				return STX(.ZeroPageIndexedY);
 			case 0x8E:
 				return STX(.Absolute);
 				
@@ -544,7 +598,7 @@ class CPU: NSObject {
 				return TYA();
 			
 			default:
-				print("ERROR: Instruction with opcode \(opcode) not found");
+				print("ERROR: Instruction with opcode 0x\(logger.hexString(opcode, padding: 2)) not found");
 				return -1;
 		}
 	}
@@ -564,9 +618,9 @@ class CPU: NSObject {
     
     func readFromMemoryUsingAddressingMode(mode: AddressingMode) -> UInt8 {
         switch mode {
-        case .Immediate:
-            return fetchPC();
-        default: break
+			case .Immediate:
+				return fetchPC();
+			default: break
         }
         
         return self.mainMemory.readMemory(addressUsingAddressingMode(mode));
@@ -574,59 +628,60 @@ class CPU: NSObject {
     
     func addressUsingAddressingMode(mode: AddressingMode) -> Int {
         switch mode {
-        case AddressingMode.ZeroPage:
-            return Int(fetchPC());
-            
-        case AddressingMode.ZeroPageIndexedX, .ZeroPageIndexedY:
-            var index = self.X;
-            
-            if(mode == AddressingMode.ZeroPageIndexedY) {
-                index = self.Y;
-            }
-            
-            return Int((fetchPC() + index) & 0xFF);
-            
-        case AddressingMode.Absolute:
-            let lowByte = fetchPC();
-            let highByte = fetchPC();
-            
-            return address(lowByte, upper: highByte);
-            
-        case AddressingMode.AbsoluteIndexedX, .AbsoluteIndexedY:
-            let lowByte = fetchPC();
-            let highByte = fetchPC();
-            
-            var index = self.X;
-            
-            if(mode == AddressingMode.AbsoluteIndexedY) {
-                index = self.Y;
-            }
-            
-            let originalAddress = address(lowByte, upper: highByte);
-            
-            return Int((UInt16(originalAddress) + UInt16(index)) & 0xFFFF);
-            
-        case AddressingMode.IndirectX:
-            let immediate = fetchPC();
-            
-            let lowByte = self.mainMemory.readMemory(Int((immediate + self.X) & 0xFF));
-            let highByte = self.mainMemory.readMemory(Int((immediate + self.X + 1) & 0xFF));
-            
-            return address(lowByte, upper: highByte);
-            
-        case AddressingMode.IndirectY:
-            let immediate = fetchPC();
-            
-            let lowByte = self.mainMemory.readMemory(Int(immediate));
-            let highByte = self.mainMemory.readMemory(Int(UInt8((immediate + 1) & 0xFF)));
-            
-            let originalAddress = address(lowByte, upper: highByte);
-            
-            return Int((UInt16(originalAddress) + UInt16(self.Y)) & 0xFFFF);
-            
-        default:
-            print("Invalid AddressingMode on addressUsingAddressingMode");
-            return 0;
+			case AddressingMode.ZeroPage:
+				return Int(fetchPC());
+				
+			case AddressingMode.ZeroPageIndexedX, .ZeroPageIndexedY:
+				var index = self.X;
+				
+				if(mode == AddressingMode.ZeroPageIndexedY) {
+					index = self.Y;
+				}
+				
+				return (Int(fetchPC()) + Int(index)) & 0xFF;
+				
+			case AddressingMode.Absolute:
+				let lowByte = fetchPC();
+				let highByte = fetchPC();
+				
+				return address(lowByte, upper: highByte);
+				
+			case AddressingMode.AbsoluteIndexedX, .AbsoluteIndexedY:
+				let lowByte = fetchPC();
+				let highByte = fetchPC();
+				
+				var index = self.X;
+				
+				if(mode == AddressingMode.AbsoluteIndexedY) {
+					index = self.Y;
+				}
+				
+				let originalAddress = address(lowByte, upper: highByte);
+				
+				return (Int(originalAddress) + Int(index)) & 0xFFFF;
+				
+			case AddressingMode.IndirectX:
+				let immediate = fetchPC();
+				
+				let lowByte = self.mainMemory.readMemory(Int(UInt16(immediate) + UInt16(self.X)) & 0xFF);
+				
+				let highByte = self.mainMemory.readMemory(Int(UInt16(immediate) + UInt16(self.X) + 1) & 0xFF);
+				
+				return address(lowByte, upper: highByte);
+				
+			case AddressingMode.IndirectY:
+				let immediate = fetchPC();
+				
+				let lowByte = self.mainMemory.readMemory(Int(immediate));
+				let highByte = self.mainMemory.readMemory((Int(immediate) + 1) & 0xFF);
+				
+				let originalAddress = address(lowByte, upper: highByte);
+				
+				return (Int(originalAddress) + Int(self.Y)) & 0xFFFF;
+				
+			default:
+				print("Invalid AddressingMode on addressUsingAddressingMode");
+				return 0;
         }
     }
 	
@@ -715,6 +770,9 @@ class CPU: NSObject {
         self.P = pop();
         self.PCL = pop();
         self.PCH = pop();
+		
+		// Force unused flag to be set
+		setPBit(5, value: true);
         
         return 6;
     }
@@ -744,7 +802,12 @@ class CPU: NSObject {
      PusH P
     */
     func PHP() -> Int {
+		// Force break flag to be set
+		setPBit(4, value: true);
+		
         push(self.P);
+		
+		setPBit(4, value: false);
         
         return 3;
     }
@@ -792,9 +855,7 @@ class CPU: NSObject {
         
         self.PCH = fetchPC();
         self.PCL = lowByte;
-        
-        print(String(format: "Low: 0x%2x High 0x%2x", self.PCL, self.PCH));
-        
+		
         return 6;
     }
 	
@@ -863,20 +924,46 @@ class CPU: NSObject {
 		var length = 4;
 		
 		switch mode {
-		case .ZeroPage:
-			length = 3;
-			
-		case .ZeroPageIndexedX, .Absolute:
-			length = 4;
-			
-		default:
-			print("Invalid AddressingMode on STY");
-			return -1;
+			case .ZeroPage:
+				length = 3;
+				
+			case .ZeroPageIndexedX, .Absolute:
+				length = 4;
+				
+			default:
+				print("Invalid AddressingMode on STY");
+				return -1;
 		}
 		
 		let address = addressUsingAddressingMode(mode);
 		
 		self.mainMemory.writeMemory(address, data: self.Y);
+		
+		return length;
+	}
+	
+	/**
+	 Store A AND X in Memory (unofficial)
+	*/
+	func SAX(mode: AddressingMode) -> Int {
+		var length = 4;
+		
+		switch mode {
+			case .Absolute:
+				length = 4;
+			case .ZeroPage:
+				length = 3;
+			case .IndirectX:
+				length = 6;
+			case .ZeroPageIndexedY:
+				length = 4;
+			default:
+				print("Invalid AddressingMode on SAX");
+		}
+		
+		let address = addressUsingAddressingMode(mode);
+		
+		self.mainMemory.writeMemory(address, data: self.A & self.X);
 		
 		return length;
 	}
@@ -890,8 +977,8 @@ class CPU: NSObject {
 				 .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY,
 				 .IndirectX, .IndirectY:
 				return LOAD(mode, register: &self.A);
-		default:
-			print("Invalid AddressingMode on LDA");
+			default:
+				print("Invalid AddressingMode on LDA");
 		}
 		
 		return -1;
@@ -922,6 +1009,24 @@ class CPU: NSObject {
 				return LOAD(mode, register: &self.Y);
 		default:
 			print("Invalid AddressingMode on LDY");
+		}
+		
+		return -1;
+	}
+	
+	/**
+	 Load A and X from Memory (unofficial)
+	*/
+	func LAX(mode: AddressingMode) -> Int {
+		switch mode {
+			case .ZeroPage, .ZeroPageIndexedY,
+				 .Absolute, .AbsoluteIndexedY,
+				 .IndirectX, .IndirectY:
+				let temp = LOAD(mode, register: &self.A);
+				self.X = self.A;
+				return temp;
+		default:
+			print("Invalid AddressingMode on LAX");
 		}
 		
 		return -1;
@@ -1032,12 +1137,6 @@ class CPU: NSObject {
 	func TXS() -> Int {
 		self.SP = self.X;
 		
-		// Set negative flag
-		setPBit(7, value: (self.SP >> 7) == 1);
-		
-		// Set zero flag
-		setPBit(1, value: (self.SP == 0));
-		
 		return 2;
 	}
 	
@@ -1067,10 +1166,12 @@ class CPU: NSObject {
                 self.PCH = fetchPC();
                 self.PCL = lowByte;
             case AddressingMode.AbsoluteIndirect:
-                let zeroPageAddress = fetchPC();
+				let lowerByte = UInt16(fetchPC());
+				let higherByte = UInt16(fetchPC()) << 8;
 				
-                self.PCL = self.mainMemory.readMemory(Int(zeroPageAddress));
-                self.PCH = self.mainMemory.readMemory(Int(zeroPageAddress) + 1);
+                self.PCL = self.mainMemory.readMemory(Int(lowerByte | higherByte));
+				// Add 1 only to lower byte due to CPU bug
+                self.PCH = self.mainMemory.readMemory(Int(((UInt16(lowerByte) + 1) & 0xFF) | higherByte));
             default:
                 print("Invalid AddressingMode on JMP");
         }
@@ -1218,17 +1319,17 @@ class CPU: NSObject {
 		}
 		
 		let address = addressUsingAddressingMode(mode);
-		var value = self.mainMemory.readMemory(address);
+		var value = Int(self.mainMemory.readMemory(address));
 		
 		value = value + 1;
 		
 		// Set negative flag
-		setPBit(7, value: (value >> 7) == 1);
+		setPBit(7, value: (value >> 7) & 0x1 == 1);
 		
 		// Set zero flag
-		setPBit(1, value: (value == 0));
+		setPBit(1, value: ((value & 0xFF) == 0));
 		
-		self.mainMemory.writeMemory(address, data: value);
+		self.mainMemory.writeMemory(address, data: UInt8(value & 0xFF));
 		
 		return length;
 	}
@@ -1249,7 +1350,7 @@ class CPU: NSObject {
 	}
 	
 	/**
-	Increment Y
+	 Increment Y
 	*/
 	func INY() -> Int {
 		self.Y = UInt8((Int(self.Y) + 1) & 0xFF);
@@ -1264,38 +1365,79 @@ class CPU: NSObject {
 	}
 	
 	/**
+	 Decrement Memory then CMP (unofficial)
+	*/
+	func DCP(mode: AddressingMode) -> Int {
+		var length = 6;
+		
+		switch mode {
+			case .Absolute, .ZeroPageIndexedX:
+				length = 6;
+			case .ZeroPage:
+				length = 5;
+			case .AbsoluteIndexedX, .AbsoluteIndexedY:
+				length = 7;
+			case .ZeroPageIndexedY, .IndirectX:
+				length = 8;
+			default:
+				print("Invalid AddressingMode on DCP");
+				return -1;
+		}
+		
+		let address = addressUsingAddressingMode(mode);
+		var value = Int(self.mainMemory.readMemory(address));
+		
+		value = value - 1;
+		
+		let temp = Int(self.A) - Int(value);
+		
+		// Set negative flag
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: ((temp & 0xFF) == 0));
+		
+		// Set carry flag
+		setPBit(0, value: (Int(self.A) & 0xFF >= value));
+		
+		self.mainMemory.writeMemory(address, data: UInt8(value & 0xFF));
+		
+		return length;
+	}
+	
+	/**
 	 Decrement Memory
 	*/
 	func DEC(mode: AddressingMode) -> Int {
 		var length = 6;
 		
 		switch mode {
-		case .ZeroPage:
-			length = 5;
-			
-		case .ZeroPageIndexedX, .Absolute:
-			length = 6;
-			
-		case .AbsoluteIndexedX:
-			length = 7;
-			
-		default:
-			print("Invalid AddressingMode on DEC");
-			return -1;
+			case .ZeroPage:
+				length = 5;
+				
+			case .ZeroPageIndexedX, .Absolute:
+				length = 6;
+				
+			case .AbsoluteIndexedX:
+				length = 7;
+				
+			default:
+				print("Invalid AddressingMode on DEC");
+				return -1;
 		}
 		
 		let address = addressUsingAddressingMode(mode);
-		var value = self.mainMemory.readMemory(address);
+		var value = Int(self.mainMemory.readMemory(address));
 		
 		value = value - 1;
 		
 		// Set negative flag
-		setPBit(7, value: (value >> 7) == 1);
+		setPBit(7, value: (value >> 7) & 0x1 == 1);
 		
 		// Set zero flag
-		setPBit(1, value: (value == 0));
+		setPBit(1, value: ((value & 0xFF) == 0));
 		
-		self.mainMemory.writeMemory(address, data: value);
+		self.mainMemory.writeMemory(address, data: UInt8(value & 0xFF));
 		
 		return length;
 	}
@@ -1510,21 +1652,21 @@ class CPU: NSObject {
 		var length = 6;
 		
 		switch mode {
-		case .Accumulator:
-			length = 2;
-			
-		case .ZeroPage:
-			length = 5;
-			
-		case .ZeroPageIndexedX, .Absolute:
-			length = 6;
-			
-		case .AbsoluteIndexedX:
-			length = 7;
-			
-		default:
-			print("Invalid AddressingMode on ROR");
-			return -1;
+			case .Accumulator:
+				length = 2;
+				
+			case .ZeroPage:
+				length = 5;
+				
+			case .ZeroPageIndexedX, .Absolute:
+				length = 6;
+				
+			case .AbsoluteIndexedX:
+				length = 7;
+				
+			default:
+				print("Invalid AddressingMode on ROR");
+				return -1;
 		}
 		
 		if(mode == .Accumulator) {
@@ -1765,7 +1907,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(!getPBit(0)) {
-			setPC(getPC() + relative);
+			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
 			return 3;
 		}
 		
@@ -1779,7 +1921,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(getPBit(0)) {
-			setPC(getPC() + relative);
+			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
 			return 3;
 		}
 		
@@ -1793,7 +1935,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(getPBit(1)) {
-			setPC(getPC() + relative);
+			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
 			return 3;
 		}
 		
@@ -1807,7 +1949,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(getPBit(7)) {
-			setPC(getPC() + relative);
+			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
 			return 3;
 		}
 		
@@ -1821,7 +1963,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(!getPBit(1)) {
-			setPC(getPC() + relative);
+			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
 			return 3;
 		}
 		
@@ -1835,7 +1977,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(!getPBit(7)) {
-			setPC(getPC() + relative);
+			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
 			return 3;
 		}
 		
@@ -1849,7 +1991,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(!getPBit(6)) {
-			setPC(getPC() + relative);
+			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
 			return 3;
 		}
 		
@@ -1863,7 +2005,7 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(getPBit(6)) {
-			setPC(getPC() + relative);
+			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
 			return 3;
 		}
 		
@@ -1948,6 +2090,37 @@ class CPU: NSObject {
     func NOP() -> Int {
         return 2;
     }
+	
+	/**
+	 Does nothing.  Is supposed to read from memory
+	 at the specified address, but is used as a longer
+	 NOP here
+	*/
+	func IGN(mode: AddressingMode) -> Int {
+		fetchPC();
+		
+		switch mode {
+			case .Absolute, .AbsoluteIndexedX:
+				fetchPC();
+				return 4;
+			case .ZeroPage:
+				return 3;
+			case .ZeroPageIndexedX:
+				return 4;
+			default:
+				print("Invalid AddressingMode on IGN");
+				return -1;
+		}
+	}
+	
+	/**
+	 Does nothing.  A NOP that reads the immediate byte
+	*/
+	func SKB() -> Int {
+		fetchPC();
+		
+		return 2;
+	}
 	
 	// MARK: P Register
 	
