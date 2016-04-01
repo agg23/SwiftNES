@@ -280,10 +280,10 @@ class CPU: NSObject {
 				return DCP(.ZeroPage);
 			case 0xD7:
 				return DCP(.ZeroPageIndexedX);
-			case 0xD3:
-				return DCP(.ZeroPageIndexedY);
 			case 0xC3:
 				return DCP(.IndirectX);
+			case 0xD3:
+				return DCP(.IndirectY);
 			
 			// DEC
 			case 0xC6:
@@ -348,7 +348,23 @@ class CPU: NSObject {
 			// INY
 			case 0xC8:
 				return INY();
-				
+			
+			// ISC
+			case 0xEF:
+				return ISC(.Absolute);
+			case 0xFF:
+				return ISC(.AbsoluteIndexedX);
+			case 0xFB:
+				return ISC(.AbsoluteIndexedY);
+			case 0xE7:
+				return ISC(.ZeroPage);
+			case 0xF7:
+				return ISC(.ZeroPageIndexedX);
+			case 0xE3:
+				return ISC(.IndirectX);
+			case 0xF3:
+				return ISC(.IndirectY);
+			
 			// JMP
 			case 0x4C:
 				return JMP(.Absolute);
@@ -464,7 +480,23 @@ class CPU: NSObject {
 			// PLP
 			case 0x28:
 				return PLP();
-				
+			
+			// RLA
+			case 0x2F:
+				return RLA(.Absolute);
+			case 0x3F:
+				return RLA(.AbsoluteIndexedX);
+			case 0x3B:
+				return RLA(.AbsoluteIndexedY);
+			case 0x27:
+				return RLA(.ZeroPage);
+			case 0x37:
+				return RLA(.ZeroPageIndexedX);
+			case 0x23:
+				return RLA(.IndirectX);
+			case 0x33:
+				return RLA(.IndirectY);
+			
 			// ROL
 			case 0x2A:
 				return ROL(.Accumulator);
@@ -540,6 +572,38 @@ class CPU: NSObject {
 			// SKB
 			case 0x80, 0x82, 0x89, 0xC2, 0xE2:
 				return SKB();
+			
+			// SLO
+			case 0x0F:
+				return SLO(.Absolute);
+			case 0x1F:
+				return SLO(.AbsoluteIndexedX);
+			case 0x1B:
+				return SLO(.AbsoluteIndexedY);
+			case 0x07:
+				return SLO(.ZeroPage);
+			case 0x17:
+				return SLO(.ZeroPageIndexedX);
+			case 0x03:
+				return SLO(.IndirectX);
+			case 0x13:
+				return SLO(.IndirectY);
+			
+			// SRE
+			case 0x4F:
+				return SRE(.Absolute);
+			case 0x5F:
+				return SRE(.AbsoluteIndexedX);
+			case 0x5B:
+				return SRE(.AbsoluteIndexedY);
+			case 0x47:
+				return SRE(.ZeroPage);
+			case 0x57:
+				return SRE(.ZeroPageIndexedX);
+			case 0x43:
+				return SRE(.IndirectX);
+			case 0x53:
+				return SRE(.IndirectY);
 			
 			// STA
 			case 0x85:
@@ -1365,6 +1429,52 @@ class CPU: NSObject {
 	}
 	
 	/**
+	 Increment Memory then SBC (unofficial)
+	*/
+	func ISC(mode: AddressingMode) -> Int {
+		var length = 6;
+		
+		switch mode {
+			case .Absolute, .ZeroPageIndexedX:
+				length = 6;
+			case .ZeroPage:
+				length = 5;
+			case .AbsoluteIndexedX, .AbsoluteIndexedY:
+				length = 7;
+			case .IndirectX, .IndirectY:
+				length = 8;
+			default:
+				print("Invalid AddressingMode on ISC");
+				return -1;
+		}
+		
+		let address = addressUsingAddressingMode(mode);
+		var value = Int(self.mainMemory.readMemory(address));
+		
+		value = value + 1;
+		
+		let temp = Int(self.A) - Int(value & 0xFF) - (getPBit(0) ? 0 : 1);
+		
+		// Set overflow flag
+		setPBit(6, value: ((self.A ^ UInt8(value & 0x80)) & (self.A ^ UInt8(temp & 0xFF)) & 0x80) == 0x80);
+		
+		// Set carry flag
+		setPBit(0, value: temp >= 0);
+		
+		// Set negative flag
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (temp & 0xFF) == 0);
+		
+		self.A = UInt8(temp & 0xFF);
+		
+		self.mainMemory.writeMemory(address, data: UInt8(value & 0xFF));
+		
+		return length;
+	}
+	
+	/**
 	 Decrement Memory then CMP (unofficial)
 	*/
 	func DCP(mode: AddressingMode) -> Int {
@@ -1377,7 +1487,7 @@ class CPU: NSObject {
 				length = 5;
 			case .AbsoluteIndexedX, .AbsoluteIndexedY:
 				length = 7;
-			case .ZeroPageIndexedY, .IndirectX:
+			case .IndirectX, .IndirectY:
 				length = 8;
 			default:
 				print("Invalid AddressingMode on DCP");
@@ -1389,7 +1499,7 @@ class CPU: NSObject {
 		
 		value = value - 1;
 		
-		let temp = Int(self.A) - Int(value);
+		let temp = Int(self.A) - value;
 		
 		// Set negative flag
 		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
@@ -1398,7 +1508,7 @@ class CPU: NSObject {
 		setPBit(1, value: ((temp & 0xFF) == 0));
 		
 		// Set carry flag
-		setPBit(0, value: (Int(self.A) & 0xFF >= value));
+		setPBit(0, value: (UInt8(self.A & 0xFF) >= UInt8(value & 0xFF)));
 		
 		self.mainMemory.writeMemory(address, data: UInt8(value & 0xFF));
 		
@@ -1527,13 +1637,58 @@ class CPU: NSObject {
         
         return length;
     }
-    
+	
+	/**
+	 Shift Left and ORA (unofficial)
+	*/
+	func SLO(mode: AddressingMode) -> Int {
+		var length = 6;
+		
+		switch mode {
+			case .Absolute, .ZeroPageIndexedX:
+				length = 6;
+				
+			case .ZeroPage:
+				length = 5;
+				
+			case .AbsoluteIndexedX, .AbsoluteIndexedY:
+				length = 7;
+				
+			case .IndirectX, .IndirectY:
+				length = 8;
+				
+			default:
+				print("Invalid AddressingMode on SLO");
+				return -1;
+		}
+		
+		let address = addressUsingAddressingMode(mode);
+		let value = self.mainMemory.readMemory(address);
+		
+		// Set carry flag
+		setPBit(0, value: (value >> 7) == 1);
+		
+		let temp = (value << 1) & 0xFE;
+		
+		self.A = self.A | temp;
+		
+		// Set negative flag
+		setPBit(7, value: (self.A >> 7) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.A == 0));
+		
+		self.mainMemory.writeMemory(address, data: temp);
+		
+		return length;
+	}
+	
     /**
      Logical Shift Right
     */
     func LSR(mode: AddressingMode) -> Int {
         var length = 6;
-        
+		
         switch mode {
             case .Accumulator:
                 length = 2;
@@ -1583,13 +1738,58 @@ class CPU: NSObject {
         
         return length;
     }
-    
+	
+	/**
+	 Logical Shift Right and EOR (unofficial)
+	*/
+	func SRE(mode: AddressingMode) -> Int {
+		var length = 6;
+		
+		switch mode {
+			case .Absolute, .ZeroPageIndexedX:
+				length = 6;
+				
+			case .ZeroPage:
+				length = 5;
+				
+			case .AbsoluteIndexedX, .AbsoluteIndexedY:
+				length = 7;
+				
+			case .IndirectX, .IndirectY:
+				length = 8;
+				
+			default:
+				print("Invalid AddressingMode on SRE");
+				return -1;
+		}
+		
+		let address = addressUsingAddressingMode(mode);
+		let value = self.mainMemory.readMemory(address);
+		
+		// Set carry flag
+		setPBit(0, value: (self.A & 0x1) == 1);
+		
+		let temp = (value >> 1) & 0x7F;
+		
+		self.A = self.A ^ temp;
+		
+		// Set negative flag
+		setPBit(7, value: (self.A >> 7) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.A == 0));
+		
+		self.mainMemory.writeMemory(address, data: temp);
+		
+		return length;
+	}
+	
     /**
      ROtate Left
     */
     func ROL(mode: AddressingMode) -> Int {
         var length = 6;
-        
+		
         switch mode {
             case .Accumulator:
                 length = 2;
@@ -1646,7 +1846,7 @@ class CPU: NSObject {
     }
 	
 	/**
-	ROtate Right
+	 ROtate Right
 	*/
 	func ROR(mode: AddressingMode) -> Int {
 		var length = 6;
@@ -1704,6 +1904,54 @@ class CPU: NSObject {
 		}
 		
 		return length;
+	}
+	
+	/**
+	 ROtate Left and AND (unofficial)
+	*/
+	func RLA(mode: AddressingMode) -> Int {
+		var length = 6;
+		
+		switch mode {
+			case .ZeroPage:
+				length = 5;
+				
+			case .ZeroPageIndexedX, .Absolute:
+				length = 6;
+				
+			case .AbsoluteIndexedX, .AbsoluteIndexedY:
+				length = 7;
+			
+			case .IndirectX, .IndirectY:
+				length = 8;
+			
+			default:
+				print("Invalid AddressingMode on RLA");
+				return -1;
+		}
+		
+		let address = addressUsingAddressingMode(mode);
+		var value = self.mainMemory.readMemory(address);
+		
+		let carry = (value >> 7) & 0x1;
+		value = (value << 1) & 0xFE;
+		value = value | (getPBit(0) ? 1:0);
+		
+		// Set carry flag
+		setPBit(0, value: carry == 1);
+		
+		self.A = self.A & value;
+		
+		// Set negative flag
+		setPBit(7, value: (self.A >> 7) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.A == 0));
+		
+		self.mainMemory.writeMemory(address, data: value);
+		
+		return length;
+
 	}
 	
     // MARK: Logical
