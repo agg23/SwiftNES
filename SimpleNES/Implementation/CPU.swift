@@ -125,7 +125,7 @@ class CPU: NSObject {
 	func step() -> Int {
 		let opcode = fetchPC();
 		
-		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC() - 1, opcode));
+//		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC() - 1, opcode));
 		logger.logFormattedInstuction(getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP);
 		
 		switch opcode {
@@ -672,21 +672,21 @@ class CPU: NSObject {
     func push(byte: UInt8) {
         self.mainMemory.writeMemory(0x100 + Int(self.SP), data: byte);
         
-        if(self.SP == 0xFF) {
-            print("ERROR: Stack overflow");
+        if(self.SP == 0) {
+            print("ERROR: Stack underflow");
 			return;
         }
         
-        self.SP = self.SP + 1;
+        self.SP = self.SP - 1;
     }
     
     func pop() -> UInt8 {
-        if(self.SP == 0) {
-            print("ERROR: Stack underflow");
+        if(self.SP == 0xFF) {
+            print("ERROR: Stack overflow");
 			return 0;
         }
         
-        self.SP = self.SP - 1;
+        self.SP = self.SP + 1;
         
         return self.mainMemory.readMemory(0x100 + Int(self.SP));
     }
@@ -754,6 +754,12 @@ class CPU: NSObject {
     */
     func PLA() -> Int {
         self.A = pop();
+		
+		// Set negative flag
+		setPBit(7, value: (self.A >> 7) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (self.A == 0));
         
         return 4;
     }
@@ -763,6 +769,12 @@ class CPU: NSObject {
     */
     func PLP() -> Int {
         self.P = pop();
+		
+		// Ensure break flag is not set
+		setPBit(4, value: false);
+		
+		// Ensure unused bit is set
+		setPBit(5, value: true);
         
         return 4;
     }
@@ -946,10 +958,10 @@ class CPU: NSObject {
 		register.memory = readFromMemoryUsingAddressingMode(mode);
 		
 		// Set negative flag
-		setPBit(7, value: (self.A >> 7) == 1);
+		setPBit(7, value: (register.memory >> 7) == 1);
 		
 		// Set zero flag
-		setPBit(1, value: (self.A == 0));
+		setPBit(1, value: (register.memory == 0));
 		
 		return length;
 	}
@@ -1097,27 +1109,28 @@ class CPU: NSObject {
 		
 		let memoryValue = readFromMemoryUsingAddressingMode(mode);
 		
-		var temp = UInt16(self.A) + UInt16(memoryValue) + (getPBit(0) ? 1 : 0);
+		let temp = UInt16(self.A) + UInt16(memoryValue) + (getPBit(0) ? 1 : 0);
 		
 		// Set overflow flag
-		setPBit(6, value: ((self.A >> 6) & 0x1) != UInt8((temp >> 6) & 0x1))
+		setPBit(6, value: (~(self.A ^ memoryValue) & (self.A ^ UInt8(temp & 0xFF)) & 0x80) == 0x80);
 		
 		// Set negative flag
-		setPBit(7, value: ((self.A >> 7) & 0x1) == 1);
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
 		
 		// Set zero flag
-		setPBit(1, value: temp == 0);
+		setPBit(1, value: (temp & 0xFF) == 0);
 		
+		// Decimal mode not supported by NES CPU
 		// Decimal flag
-		if(getPBit(3)) {
+		/*if(getPBit(3)) {
 			temp = UInt16(bcdValue(self.A)) + UInt16(bcdValue(memoryValue)) + (getPBit(0) ? 1 : 0);
 			
 			// Set carry flag
 			setPBit(0, value: temp > 99);
-		} else {
-			// Set carry flag
-			setPBit(0, value: temp > 255);
-		}
+		} else {*/
+		
+		// Set carry flag
+		setPBit(0, value: temp > 255);
 		
 		self.A = UInt8(temp & 0xFF);
 		
@@ -1155,18 +1168,19 @@ class CPU: NSObject {
 		
 		var temp: Int;
 		
+		// Decimal mode not supported by NES CPU
 		// Decimal flag
-		if(getPBit(3)) {
+		/*if(getPBit(3)) {
 			temp = Int(bcdValue(self.A)) - Int(bcdValue(memoryValue)) - (getPBit(0) ? 0 : 1);
 			
 			// Set overflow flag
 			setPBit(6, value: (temp > 99) || (temp < 0));
-		} else {
-			temp = Int(self.A) - Int(memoryValue) - (getPBit(0) ? 0 : 1);
-			
-			// Set overflow flag
-			setPBit(6, value: (temp > 127) || (temp < -128));
-		}
+		} else {*/
+		
+		temp = Int(self.A) - Int(memoryValue) - (getPBit(0) ? 0 : 1);
+		
+		// Set overflow flag
+		setPBit(6, value: ((self.A ^ memoryValue) & (self.A ^ UInt8(temp & 0xFF)) & 0x80) == 0x80);
 		
 		// Set carry flag
 		setPBit(0, value: temp >= 0);
@@ -1175,7 +1189,7 @@ class CPU: NSObject {
 		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
 		
 		// Set zero flag
-		setPBit(1, value: temp == 0);
+		setPBit(1, value: (temp & 0xFF) == 0);
 		
 		self.A = UInt8(temp & 0xFF);
 		
@@ -1223,7 +1237,7 @@ class CPU: NSObject {
 	 Increment X
 	*/
 	func INX() -> Int {
-		self.X = self.X + 1;
+		self.X = UInt8((Int(self.X) + 1) & 0xFF);
 		
 		// Set negative flag
 		setPBit(7, value: (self.X >> 7) == 1);
@@ -1238,7 +1252,7 @@ class CPU: NSObject {
 	Increment Y
 	*/
 	func INY() -> Int {
-		self.Y = self.Y + 1;
+		self.Y = UInt8((Int(self.Y) + 1) & 0xFF);
 		
 		// Set negative flag
 		setPBit(7, value: (self.Y >> 7) == 1);
@@ -1290,7 +1304,7 @@ class CPU: NSObject {
 	 Decrement X
 	*/
 	func DEX() -> Int {
-		self.X = self.X - 1;
+		self.X = UInt8((Int(self.X) - 1) & 0xFF);
 		
 		// Set negative flag
 		setPBit(7, value: (self.X >> 7) == 1);
@@ -1305,7 +1319,7 @@ class CPU: NSObject {
 	 Decrement Y
 	*/
 	func DEY() -> Int {
-		self.Y = self.Y - 1;
+		self.Y = UInt8((Int(self.Y) - 1) & 0xFF);
 		
 		// Set negative flag
 		setPBit(7, value: (self.Y >> 7) == 1);
@@ -1617,9 +1631,9 @@ class CPU: NSObject {
                 print("Invalid AddressingMode on AND");
                 return -1;
         }
-        
+		
         self.A = self.A & readFromMemoryUsingAddressingMode(mode);
-        
+		
         // Set negative flag
         setPBit(7, value: (self.A >> 7) == 1);
         
@@ -1700,7 +1714,7 @@ class CPU: NSObject {
         let temp = Int(self.A) - Int(mem);
         
         // Set negative flag
-        setPBit(7, value: (temp >> 7) == 1);
+        setPBit(7, value: ((temp >> 7) & 0x1) == 1);
         
         // Set zero flag
         setPBit(1, value: (temp == 0));
@@ -1731,12 +1745,12 @@ class CPU: NSObject {
         
         let mem = readFromMemoryUsingAddressingMode(mode);
         let temp = self.A & mem;
-        
+		
         // Set negative flag
-        setPBit(7, value: (temp >> 7) == 1);
+        setPBit(7, value: (mem >> 7) == 1);
         
         // Set overflow flag
-        setPBit(6, value: ((temp >> 6) & 0x1) == 1);
+        setPBit(6, value: ((mem >> 6) & 0x1) == 1);
 		
         // Set zero flag
         setPBit(1, value: (temp == 0));
@@ -1881,7 +1895,7 @@ class CPU: NSObject {
 		let temp = Int(self.X) - Int(mem);
 		
 		// Set negative flag
-		setPBit(7, value: temp < 0);
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
 		
 		// Set carry flag
 		setPBit(0, value: self.X >= mem);
@@ -1917,7 +1931,7 @@ class CPU: NSObject {
 		let temp = Int(self.Y) - Int(mem);
 		
 		// Set negative flag
-		setPBit(7, value: temp < 0);
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
 		
 		// Set carry flag
 		setPBit(0, value: self.Y >= mem);
