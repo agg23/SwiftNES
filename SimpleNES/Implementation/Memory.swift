@@ -73,12 +73,13 @@ class Memory: NSObject {
 	*/
 	let type: Bool;
 	
+	var ppu: PPU?;
+	
 	/**
 		Initializes CPU memory
 	*/
-	override init() {
-		self.memory = [UInt8](count: 0x10000, repeatedValue: 0);
-		self.type = false;
+	override convenience init() {
+		self.init(memoryType: false);
 	}
 	
 	/**
@@ -95,9 +96,33 @@ class Memory: NSObject {
 			self.memory = [UInt8](count: 0x10000, repeatedValue: 0);
 			self.type = false;
 		}
+		
+		self.ppu = nil;
 	}
 	
 	func readMemory(address: Int) -> UInt8 {
+		if(!self.type && (address >= 0x2000) && (address < 0x4000)) {
+			switch (address % 8) {
+				case 0:
+					return (self.ppu?.PPUCTRL)!;
+				case 1:
+					return (self.ppu?.PPUMASK)!;
+				case 2:
+					return (self.ppu?.PPUSTATUS)!;
+				case 3:
+					return (self.ppu?.OAMADDR)!;
+				case 4:
+					return (self.ppu?.OAMDATA)!;
+				case 5:
+					return (self.ppu?.PPUSCROLL)!;
+				case 6:
+					return (self.ppu?.PPUADDR)!;
+				case 7:
+					return (self.ppu?.PPUDATA)!;
+				default: break
+			}
+		}
+		
 		return self.memory[address];
 	}
 	
@@ -110,6 +135,30 @@ class Memory: NSObject {
 			print("ERROR: Memory address \(address) in out of bounds for PPU Memory: \(self.type)");
 			
 			return;
+		}
+		
+		if(!self.type && (address >= 0x2000) && (address < 0x4000)) {
+			switch (address % 8) {
+				case 0:
+					self.ppu?.PPUCTRL = data;
+				case 1:
+					self.ppu?.PPUMASK = data;
+				case 2:
+					self.ppu?.PPUSTATUS = data;
+				case 3:
+					self.ppu?.OAMADDR = data;
+				case 4:
+					self.ppu?.OAMDATA = data;
+				case 5:
+					self.ppu?.PPUSCROLL = data;
+				case 6:
+					self.ppu?.PPUADDR = data;
+				case 7:
+					self.ppu?.PPUDATA = data;
+				default: break
+			}
+		} else if(!self.type && (address == 0x4014)) {
+			self.ppu?.OAMDMA = data;
 		}
 		
 		self.memory[address] = data;

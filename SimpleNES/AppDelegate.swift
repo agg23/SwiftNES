@@ -21,8 +21,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		var ppuMemory = Memory(memoryType: true);
 		var fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
 		fileIO.loadFile("/Users/adam/Downloads/nestest.nes");
-        
-        var cpu = CPU(mainMemory: mainMemory, ppuMemory: ppuMemory, logger: logger);
+		
+		let ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
+		mainMemory.ppu = ppu;
+        var cpu = CPU(mainMemory: mainMemory, ppu: ppu, logger: logger);
         cpu.reset();
 		cpu.setPC(0xC000);
 		

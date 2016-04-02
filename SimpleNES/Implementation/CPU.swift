@@ -47,8 +47,8 @@ class CPU: NSObject {
 	*/
 	var Y: UInt8;
 
-	var mainMemory: Memory;
-    var ppuMemory: Memory;
+	let mainMemory: Memory;
+    let ppu: PPU;
 	
 	let logger: Logger;
     
@@ -81,7 +81,7 @@ class CPU: NSObject {
 	/**
 	 Initializes the CPU
 	*/
-	init(mainMemory: Memory, ppuMemory: Memory, logger: Logger) {
+	init(mainMemory: Memory, ppu: PPU, logger: Logger) {
 		self.PCL = 0;
 		self.PCH = 0;
 
@@ -94,7 +94,7 @@ class CPU: NSObject {
 		self.Y = 0;
 		
 		self.mainMemory = mainMemory;
-        self.ppuMemory = ppuMemory;
+        self.ppu = ppu;
 		
 		self.logger = logger;
     }
