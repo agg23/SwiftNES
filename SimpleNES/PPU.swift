@@ -90,6 +90,21 @@ class PPU: NSObject {
 		}
 	}
 	
+	/**
+	 Stores the current scanline of the PPU
+	*/
+	var scanline: Int;
+	
+	/**
+	 Stores the current pixel of the PPU
+	*/
+	var pixelIndex: Int;
+	
+	/**
+	 Stores the current frame data to be drawn to the screen
+	*/
+	var frame: [[Int]];
+	
 	let cpuMemory: Memory;
 	let ppuMemory: Memory;
 	
@@ -106,5 +121,58 @@ class PPU: NSObject {
 		self.PPUADDR = 0;
 		self.PPUDATA = 0;
 		self.OAMDMA = 0;
+		
+		self.scanline = 0;
+		self.pixelIndex = 0;
+		
+		self.frame = [[Int]](count:256, repeatedValue:[Int](count:240, repeatedValue:0));
+	}
+	
+	func reset() {
+		
+	}
+	
+	func renderScanline() {
+		if(scanline < 20) {
+			// VBlank period
+			
+			scanline += 1;
+			return;
+		} else if(scanline == 20) {
+			// TODO: Update horizontal and vertical scroll counters
+			
+			scanline += 1;
+			return;
+		} else if(scanline == 261) {
+			scanline = 0;
+			return;
+		}
+		
+		// Load playfield
+		for i in 0 ..< 32 {
+			var nameTable = self.ppuMemory.readMemory(0x2000 + scanline / 8 + i);
+			var attributeTable = self.ppuMemory.readMemory(0x23C0 + i);
+			
+			var patternTableBitmapLow = self.ppuMemory.readMemory(0x0000 + Int(nameTable));
+			var patternTableBitmapHigh = self.ppuMemory.readMemory(0x0000 + Int(nameTable) + 1);
+			
+			
+		}
+		
+		// Load objects for next scanline
+		for i in 0 ..< 8 {
+			// TODO: Load objects
+		}
+		
+		// Load first two tiles of playfield for next scanline
+		for i in 0 ..< 2 {
+			var nameTable = self.ppuMemory.readMemory(0x2000 + scanline / 8 + i);
+			var attributeTable = self.ppuMemory.readMemory(0x23C0 + i);
+			
+			var patternTableOne = self.ppuMemory.readMemory(0x0000 + Int(nameTable));
+			var patternTableTwo = self.ppuMemory.readMemory(0x1000 + Int(nameTable));
+		}
+		
+		scanline += 1;
 	}
 }
