@@ -46,6 +46,12 @@ class CPU: NSObject {
 	 Index Register Y
 	*/
 	var Y: UInt8;
+	
+	
+	/**
+	 The queued interrupt
+	*/
+	var interrupt: Interrupt?;
 
 	let mainMemory: Memory;
     let ppu: PPU;
@@ -77,6 +83,14 @@ class CPU: NSObject {
         
         case Relative
     }
+	
+	enum Interrupt {
+		case VBlank
+		
+		case RESET
+		
+		case Software
+	}
 
 	/**
 	 Initializes the CPU
@@ -103,6 +117,8 @@ class CPU: NSObject {
         // Load program start address from RESET vector (0xFFFC)
         let programStartAddress = self.mainMemory.readTwoBytesMemory(0xFFFC);
 		
+		self.interrupt = nil;
+		
 		self.SP = 0xFD;
 		
 		// Set interrupt flag
@@ -123,6 +139,12 @@ class CPU: NSObject {
 	 - Returns: Number of cycles required by the run instruction
 	*/
 	func step() -> Int {
+		if(self.interrupt != nil) {
+			handleInterrupt();
+			
+			return 7;
+		}
+		
 		let opcode = fetchPC();
 		
 //		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC() - 1, opcode));
@@ -776,7 +798,41 @@ class CPU: NSObject {
 		
 		return upper * 10 + lower;
 	}
-    
+	
+	/**
+	 Sets a interrupt to trigger upon the next clock cycle
+	*/
+	func queueInterrupt(interrupt: Interrupt) {
+		self.interrupt = interrupt;
+	}
+	
+	/**
+	 Handles the current interrupt
+	*/
+	func handleInterrupt() {
+		let oldPCL = self.PCL;
+		let oldPCH = self.PCH;
+		
+		switch self.interrupt! {
+			case Interrupt.VBlank:
+				setPC(self.mainMemory.readTwoBytesMemory(0xFFFA));
+			
+			case Interrupt.RESET:
+				reset();
+				return;
+			
+			case Interrupt.Software:
+				setPC(self.mainMemory.readTwoBytesMemory(0xFFFE));
+		}
+		
+		push(oldPCH);
+		push(oldPCL);
+		
+		push(self.P | 0x10);
+		
+		self.interrupt = nil;
+	}
+	
     // MARK: - PC Operations
     func setPC(address: UInt16) {
         self.PCL = UInt8(address & 0xFF);
@@ -833,13 +889,8 @@ class CPU: NSObject {
      Simulate Interrupt ReQuest (IRQ)
     */
     func BRK() -> Int {
-        push(self.PCH);
-        push(self.PCL);
-        push(self.P | 0x10);
-        
-        self.PCL = self.mainMemory.readMemory(0xFFFE);
-        self.PCH = self.mainMemory.readMemory(0xFFFF);
-        
+		queueInterrupt(Interrupt.Software);
+		
         return 7;
     }
     
