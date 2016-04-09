@@ -8,6 +8,12 @@
 
 import Foundation
 
+struct RGB {
+	var r: UInt8
+	var g: UInt8
+	var b: UInt8
+}
+
 class PPU: NSObject {
 	/**
 	 PPU Control Register
@@ -129,7 +135,7 @@ class PPU: NSObject {
 	/**
 	 Stores the current frame data to be drawn to the screen
 	*/
-	var frame: [[Int]];
+	var frame: [RGB];
 	
 	var cpu: CPU?;
 	let cpuMemory: Memory;
@@ -160,15 +166,19 @@ class PPU: NSObject {
 		self.scanline = 0;
 		self.pixelIndex = 0;
 		
-		self.frame = [[Int]](count:256, repeatedValue:[Int](count:240, repeatedValue:0));
+		self.frame = [RGB](count:256 * 240, repeatedValue:RGB(r: 0, g: 0, b: 0));
 	}
 	
 	func reset() {
 		
 	}
 	
-	func renderScanline() {
+	func renderScanline() -> Bool {
 		if(scanline < 20) {
+			for i in 0 ..< 240 * 256 {
+				self.frame[i] = RGB(r: 255, g: 255, b: 255);
+			}
+			
 			// VBlank period
 			if(scanline == 0 && (self.PPUCTRL & 0x80) == 0x80) {
 				// NMI enabled
@@ -194,26 +204,35 @@ class PPU: NSObject {
 			
 			
 			scanline += 1;
-			return;
+			return false;
 		} else if(scanline == 20) {
 			// TODO: Update horizontal and vertical scroll counters
 			
 			scanline += 1;
-			return;
+			return false;
 		} else if(scanline == 261) {
 			scanline = 0;
-			return;
+			return true;
 		}
 		
 		// Load playfield
 		for i in 0 ..< 32 {
-			var nameTable = self.ppuMemory.readMemory(0x2000 + scanline / 8 + i);
-			var attributeTable = self.ppuMemory.readMemory(0x23C0 + i);
+			let nameTable = self.ppuMemory.readMemory(0x2000 + scanline / 8 + i);
+			let attributeTable = self.ppuMemory.readMemory(0x23C0 + i);
+			
+			if(nameTable != 0) {
+				print("Nametable is \(nameTable)");
+			}
 			
 			var patternTableBitmapLow = self.ppuMemory.readMemory(0x0000 + Int(nameTable));
-			var patternTableBitmapHigh = self.ppuMemory.readMemory(0x0000 + Int(nameTable) + 1);
+			var patternTableBitmapHigh = self.ppuMemory.readMemory(0x0000 + Int(nameTable) + 8);
 			
-			
+			for k in 0 ..< 8 {
+				let lowBit = getBit(k, pointer: &patternTableBitmapLow) ? 1 : 0;
+				let highBit = getBit(k, pointer: &patternTableBitmapHigh) ? 1 : 0;
+				
+				self.frame[(self.scanline - 21) * 256 + i * 8 + k] = RGB(r: UInt8((highBit * 2 + lowBit) * 10), g: 0, b: 0);
+			}
 		}
 		
 		// Load objects for next scanline
@@ -223,14 +242,16 @@ class PPU: NSObject {
 		
 		// Load first two tiles of playfield for next scanline
 		for i in 0 ..< 2 {
-			var nameTable = self.ppuMemory.readMemory(0x2000 + scanline / 8 + i);
-			var attributeTable = self.ppuMemory.readMemory(0x23C0 + i);
+			let nameTable = self.ppuMemory.readMemory(0x2000 + scanline / 8 + i);
+			let attributeTable = self.ppuMemory.readMemory(0x23C0 + i);
 			
-			var patternTableOne = self.ppuMemory.readMemory(0x0000 + Int(nameTable));
-			var patternTableTwo = self.ppuMemory.readMemory(0x1000 + Int(nameTable));
+			let patternTableOne = self.ppuMemory.readMemory(0x0000 + Int(nameTable));
+			let patternTableTwo = self.ppuMemory.readMemory(0x1000 + Int(nameTable));
 		}
 		
 		scanline += 1;
+		
+		return false;
 	}
 	
 	// MARK - Registers
@@ -240,7 +261,7 @@ class PPU: NSObject {
 		pointer.memory ^= (bit ^ pointer.memory) & (1 << UInt8(index));
 	}
 	
-	func getBit(index: Int, pointer: UnsafeMutablePointer<UInt8>) -> Bool {
+	func getBit(index: Int, pointer: UnsafePointer<UInt8>) -> Bool {
 		return ((pointer.memory >> UInt8(index)) & 0x1) == 1;
 	}
 	
