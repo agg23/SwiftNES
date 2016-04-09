@@ -109,7 +109,6 @@ class CPU: NSObject {
 		
 		self.mainMemory = mainMemory;
         self.ppu = ppu;
-		
 		self.logger = logger;
     }
     

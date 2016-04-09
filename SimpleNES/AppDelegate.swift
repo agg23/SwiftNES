@@ -17,14 +17,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         // Insert code here to initialize your application
 		let logger = Logger(path: "/Users/adam/nes.log");
-		var mainMemory = Memory();
-		var ppuMemory = Memory(memoryType: true);
-		var fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
+		let mainMemory = Memory();
+		let ppuMemory = Memory(memoryType: Memory.MemoryType.PPU);
+		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
 		fileIO.loadFile("/Users/adam/Downloads/nestest.nes");
 		
 		let ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
 		mainMemory.ppu = ppu;
-        var cpu = CPU(mainMemory: mainMemory, ppu: ppu, logger: logger);
+        let cpu = CPU(mainMemory: mainMemory, ppu: ppu, logger: logger);
+		ppu.cpu = cpu;
+		
         cpu.reset();
 		cpu.setPC(0xC000);
 		

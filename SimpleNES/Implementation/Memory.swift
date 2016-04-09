@@ -66,42 +66,52 @@ class Memory: NSObject {
 	-- $0000 --
 	*/
 	
+	enum MemoryType {
+		case CPU
+		
+		case PPU
+		
+		case OAM
+	}
+	
 	var memory: [UInt8];
 	
 	/**
-		True if PPU memory, false if CPU memory
+	 Stores the type of this Memory object
 	*/
-	let type: Bool;
+	let type: MemoryType;
 	
 	var ppu: PPU?;
 	
 	/**
-		Initializes CPU memory
+	 Initializes CPU memory
 	*/
 	override convenience init() {
-		self.init(memoryType: false);
+		self.init(memoryType: MemoryType.CPU);
 	}
 	
 	/**
-		Initializes memory with the given type
-	
-		- Parameter memoryType: The type of memory to create, represented as a Bool.
-			True represents PPU memory (VRAM) and false CPU memory
+	 Initializes memory with the given type
+
+	 - Parameter memoryType: The type of memory to create, represented as a Bool.
+		True represents PPU memory (VRAM) and false CPU memory
 	*/
-	init(memoryType: Bool) {
-		if(memoryType) {
+	init(memoryType: MemoryType) {
+		if(memoryType == MemoryType.PPU) {
 			self.memory = [UInt8](count: 0x4000, repeatedValue: 0);
-			self.type = true;
-		} else {
+		} else if(memoryType == MemoryType.CPU) {
 			self.memory = [UInt8](count: 0x10000, repeatedValue: 0);
-			self.type = false;
+		} else {
+			self.memory = [UInt8](count: 0xFF, repeatedValue: 0);
 		}
+		
+		self.type = memoryType;
 		
 		self.ppu = nil;
 	}
 	
 	func readMemory(address: Int) -> UInt8 {
-		if(!self.type && (address >= 0x2000) && (address < 0x4000)) {
+		if(self.type == MemoryType.CPU && (address >= 0x2000) && (address < 0x4000)) {
 			switch (address % 8) {
 				case 0:
 					return (self.ppu?.PPUCTRL)!;
@@ -131,13 +141,13 @@ class Memory: NSObject {
 	}
 	
 	func writeMemory(address: Int, data: UInt8) {
-		if((!self.type && (address > 0xFFFF)) || (self.type && address > 0x3FFF)) {
-			print("ERROR: Memory address \(address) in out of bounds for PPU Memory: \(self.type)");
+		if((self.type == MemoryType.CPU && (address > 0xFFFF)) || (self.type == MemoryType.PPU && address > 0x3FFF)) {
+			print("ERROR: Memory address \(address) out of bounds for Memory: \(self.type)");
 			
 			return;
 		}
 		
-		if(!self.type && (address >= 0x2000) && (address < 0x4000)) {
+		if(self.type == MemoryType.CPU && (address >= 0x2000) && (address < 0x4000)) {
 			switch (address % 8) {
 				case 0:
 					self.ppu?.PPUCTRL = data;
@@ -157,7 +167,7 @@ class Memory: NSObject {
 					self.ppu?.PPUDATA = data;
 				default: break
 			}
-		} else if(!self.type && (address == 0x4014)) {
+		} else if(self.type == MemoryType.CPU && (address == 0x4014)) {
 			self.ppu?.OAMDMA = data;
 		}
 		
