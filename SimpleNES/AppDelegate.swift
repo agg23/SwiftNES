@@ -34,16 +34,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		ppu.cpu = cpu;
 		
 		cpu.reset();
-		cpu.setPC(0xC000);
+//		cpu.setPC(0xC000);
 		
 		var cpuCycles = cpu.step();
 		
 		while(cpuCycles != -1) {
 			for _ in 0 ..< cpuCycles * 3 {
 				if(ppu.renderScanline()) {
-					/*dispatch_async(dispatch_get_main_queue(), {
+					dispatch_async(dispatch_get_main_queue(), {
 						self.render(ppu.frame);
-					})*/
+					})
 				}
 			}
 			
@@ -66,19 +66,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 			}
 		}*/
 		
-		print("Drawing frame");
+//		print("Drawing frame");
 		
 		let context: CGContext! = self.window.graphicsContext?.CGContext;
-		let data = NSData(bytes: screen, length: screen.count * sizeof(RGB))
-		let provider = CGDataProviderCreateWithCFData(data)
-		let colorspace = CGColorSpaceCreateDeviceRGB()
-		let info = CGBitmapInfo.ByteOrderDefault
 		
-		let image = CGImageCreate(256, 240, 8, 24, 3 * 256, colorspace, info, provider, nil, false, CGColorRenderingIntent.RenderingIntentDefault);
+		let width = 256;
+		let height = 240;
 		
-		CGContextSetInterpolationQuality(context, CGInterpolationQuality.None);
-		CGContextSetShouldAntialias(context, false);
-		CGContextScaleCTM(context, 2, 2);
+		let bitsPerComponent = 8;
+		
+		
+		let bytesPerPixel = 4;
+		let bytesPerRow = width * bytesPerPixel;
+		let colorSpace = CGColorSpaceCreateDeviceRGB();
+		
+		let pixels = UnsafeMutableBufferPointer<RGB>(start: UnsafeMutablePointer<RGB>(screen), count: screen.count);
+		
+		var bitmapInfo: UInt32 = CGBitmapInfo.ByteOrder32Big.rawValue;
+		bitmapInfo |= CGImageAlphaInfo.PremultipliedLast.rawValue & CGBitmapInfo.AlphaInfoMask.rawValue;
+		
+		let imageContext = CGBitmapContextCreateWithData(pixels.baseAddress, width, height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo, nil, nil);
+		let image = CGBitmapContextCreateImage(imageContext);
+
 		
 		CGContextDrawImage(context, CGRect(x: 0, y: 0, width: 256, height: 240), image);
 	}

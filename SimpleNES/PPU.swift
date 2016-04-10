@@ -9,10 +9,25 @@
 import Foundation
 
 struct RGB {
-	var r: UInt8
-	var g: UInt8
-	var b: UInt8
+	var value: UInt32
+	var r: UInt8 {
+		get { return UInt8(value & 0xFF) }
+		set { value = UInt32(newValue) | (value & 0xFFFFFF00) }
+	}
+	var g: UInt8 {
+		get { return UInt8((value >> 8) & 0xFF) }
+		set { value = (UInt32(newValue) << 8) | (value & 0xFFFF00FF) }
+	}
+	var b: UInt8 {
+		get { return UInt8((value >> 16) & 0xFF) }
+		set { value = (UInt32(newValue) << 16) | (value & 0xFF00FFFF) }
+	}
+	var alpha: UInt8 {
+		get { return UInt8((value >> 24) & 0xFF) }
+		set { value = (UInt32(newValue) << 24) | (value & 0x00FFFFFF) }
+	}
 }
+
 
 class PPU: NSObject {
 	/**
@@ -166,7 +181,7 @@ class PPU: NSObject {
 		self.scanline = 0;
 		self.pixelIndex = 0;
 		
-		self.frame = [RGB](count:256 * 240, repeatedValue:RGB(r: 0, g: 0, b: 0));
+		self.frame = [RGB](count:256 * 240, repeatedValue:RGB(value: 0xFF000000));
 	}
 	
 	func reset() {
@@ -174,11 +189,7 @@ class PPU: NSObject {
 	}
 	
 	func renderScanline() -> Bool {
-		if(scanline < 20) {
-			for i in 0 ..< 240 * 256 {
-				self.frame[i] = RGB(r: 255, g: 255, b: 255);
-			}
-			
+		if(scanline < 20) {			
 			// VBlank period
 			if(scanline == 0 && (self.PPUCTRL & 0x80) == 0x80) {
 				// NMI enabled
@@ -231,7 +242,11 @@ class PPU: NSObject {
 				let lowBit = getBit(k, pointer: &patternTableBitmapLow) ? 1 : 0;
 				let highBit = getBit(k, pointer: &patternTableBitmapHigh) ? 1 : 0;
 				
-				self.frame[(self.scanline - 21) * 256 + i * 8 + k] = RGB(r: UInt8((highBit * 2 + lowBit) * 10), g: 0, b: 0);
+				var rgb = RGB(value: 0)
+				rgb.r = UInt8((highBit * 2 + lowBit) * 10);
+				rgb.alpha = 255;
+				
+				self.frame[(self.scanline - 21) * 256 + i * 8 + k] = rgb;
 			}
 		}
 		
