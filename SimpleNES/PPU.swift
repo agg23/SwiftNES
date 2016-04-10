@@ -170,7 +170,8 @@ class PPU: NSObject {
 		
 		self.PPUCTRL = 0;
 		self.PPUMASK = 0;
-		self.PPUSTATUS = 0xA0;
+		//self.PPUSTATUS = 0xA0;
+		self.PPUSTATUS = 0;
 		self.OAMADDR = 0;
 		self.OAMDATA = 0;
 		self.PPUSCROLL = 0;
@@ -191,12 +192,15 @@ class PPU: NSObject {
 	func renderScanline() -> Bool {
 		if(scanline < 20) {			
 			// VBlank period
-			if(scanline == 0 && (self.PPUCTRL & 0x80) == 0x80) {
-				// NMI enabled
-				self.cpu!.queueInterrupt(CPU.Interrupt.VBlank);
+			if(scanline == 1) {
 				
 				// Set VBlank flag
 				setBit(7, value: true, pointer: &self.PPUSTATUS);
+				
+				if((self.PPUCTRL & 0x80) == 0x80) {
+					// NMI enabled
+					self.cpu!.queueInterrupt(CPU.Interrupt.VBlank);
+				}
 			}
 			
 			if(self.writeOAMDATA) {

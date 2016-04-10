@@ -138,11 +138,13 @@ class CPU: NSObject {
 	 - Returns: Number of cycles required by the run instruction
 	*/
 	func step() -> Int {
-		if(self.interrupt != nil) {
+		if(self.interrupt != nil && !getPBit(2)) {
 			handleInterrupt();
 			
 			return 7;
 		}
+		
+		self.interrupt = nil;
 		
 		let opcode = fetchPC();
 		
