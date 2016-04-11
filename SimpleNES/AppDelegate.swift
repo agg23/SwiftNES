@@ -38,8 +38,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
 		var cpuCycles = cpu.step();
 		
+		var ppuCycles = 0;
+		
 		while(cpuCycles != -1) {
-			for _ in 0 ..< cpuCycles * 3 {
+			ppuCycles += cpuCycles * 3;
+			
+			if(ppuCycles > 341) {
+				ppuCycles = ppuCycles - 341;
+				
 				if(ppu.renderScanline()) {
 					dispatch_async(dispatch_get_main_queue(), {
 						self.render(ppu.frame);
@@ -66,7 +72,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 			}
 		}*/
 		
-//		print("Drawing frame");
+		print("Drawing frame");
 		
 		let context: CGContext! = self.window.graphicsContext?.CGContext;
 		
@@ -83,11 +89,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		let pixels = UnsafeMutableBufferPointer<RGB>(start: UnsafeMutablePointer<RGB>(screen), count: screen.count);
 		
 		var bitmapInfo: UInt32 = CGBitmapInfo.ByteOrder32Big.rawValue;
-		bitmapInfo |= CGImageAlphaInfo.PremultipliedLast.rawValue & CGBitmapInfo.AlphaInfoMask.rawValue;
+		bitmapInfo |= CGImageAlphaInfo.NoneSkipFirst.rawValue;
 		
 		let imageContext = CGBitmapContextCreateWithData(pixels.baseAddress, width, height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo, nil, nil);
 		let image = CGBitmapContextCreateImage(imageContext);
-
 		
 		CGContextDrawImage(context, CGRect(x: 0, y: 0, width: 256, height: 240), image);
 	}

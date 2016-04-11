@@ -28,6 +28,28 @@ struct RGB {
 	}
 }
 
+func makeRGBArray(array: [UInt32]) -> [RGB] {
+	var rgbArray = [RGB](count: array.count, repeatedValue: RGB(value: 0));
+	
+	for i in 0 ..< array.count {
+		rgbArray[i] = RGB(value: 0xFF000000 | array[i]);
+	}
+	
+	return rgbArray;
+}
+
+let rawColors: [UInt32] = [0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940084, 0xA80020, 0xA81000,
+				0x881400, 0x503000, 0x007800, 0x006800, 0x005800, 0x004058, 0x000000,
+				0x000000, 0x000000, 0xBCBCBC, 0x0078F8, 0x0058F8, 0x6844FC, 0xD800CC,
+				0xE40058, 0xF83800, 0xE45C10, 0xAC7C00, 0x00B800, 0x00A800, 0x00A844,
+				0x008888, 0x000000, 0x000000, 0x000000, 0xF8F8F8, 0x3CBCFC, 0x6888FC,
+				0x9878F8, 0xF878F8, 0xF85898, 0xF87858, 0xFCA044, 0xF8B800, 0xB8F818,
+				0x58D854, 0x58F898, 0x00E8D8, 0x787878, 0x000000, 0x000000, 0xFCFCFC,
+				0xA4E4FC, 0xB8B8F8, 0xD8B8F8, 0xF8B8F8, 0xF8A4C0, 0xF0D0B0, 0xFCE0A8,
+				0xF8D878, 0xD8F878, 0xB8F8B8, 0xB8F8D8, 0x00FCFC, 0xF8D8F8, 0x000000,
+				0x000000];
+
+let colors = makeRGBArray(rawColors);
 
 class PPU: NSObject {
 	/**
@@ -223,6 +245,9 @@ class PPU: NSObject {
 		} else if(scanline == 20) {
 			// TODO: Update horizontal and vertical scroll counters
 			
+			// Clear VBlank flag
+			setBit(7, value: false, pointer: &self.PPUSTATUS);
+			
 			scanline += 1;
 			return false;
 		} else if(scanline == 261) {
@@ -232,25 +257,21 @@ class PPU: NSObject {
 		
 		// Load playfield
 		for i in 0 ..< 32 {
-			let nameTable = self.ppuMemory.readMemory(0x2000 + scanline / 8 + i);
+			let nameTable = self.ppuMemory.readMemory(0x2000 + Int(floor(Double(scanline - 21) / 8)) * 32 + i);
 			let attributeTable = self.ppuMemory.readMemory(0x23C0 + i);
-			
-			if(nameTable != 0) {
-				print("Nametable is \(nameTable)");
-			}
 			
 			var patternTableBitmapLow = self.ppuMemory.readMemory(0x0000 + Int(nameTable));
 			var patternTableBitmapHigh = self.ppuMemory.readMemory(0x0000 + Int(nameTable) + 8);
+			
+			if(nameTable != 0) {
+				print("Nametable is \(nameTable) with pattern tables \(patternTableBitmapLow) \(patternTableBitmapHigh)");
+			}
 			
 			for k in 0 ..< 8 {
 				let lowBit = getBit(k, pointer: &patternTableBitmapLow) ? 1 : 0;
 				let highBit = getBit(k, pointer: &patternTableBitmapHigh) ? 1 : 0;
 				
-				var rgb = RGB(value: 0)
-				rgb.r = UInt8((highBit * 2 + lowBit) * 10);
-				rgb.alpha = 255;
-				
-				self.frame[(self.scanline - 21) * 256 + i * 8 + k] = rgb;
+				self.frame[(self.scanline - 21) * 256 + i * 8 + k] = colors[(highBit << 1) | lowBit];
 			}
 		}
 		
