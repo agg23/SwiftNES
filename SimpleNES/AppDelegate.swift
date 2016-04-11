@@ -13,6 +13,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @IBOutlet weak var window: NSWindow!
 
+	@IBOutlet weak var imageView: NSImageView!
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         // Insert code here to initialize your application
@@ -26,7 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		let mainMemory = Memory();
 		let ppuMemory = Memory(memoryType: Memory.MemoryType.PPU);
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		fileIO.loadFile("/Users/adam/Downloads/nestest.nes");
+		fileIO.loadFile("/Users/adam/Downloads/dk.nes");
 		
 		let ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
 		mainMemory.ppu = ppu;
@@ -72,7 +73,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 			}
 		}*/
 		
-		print("Drawing frame");
+//		print("Drawing frame");
 		
 		let context: CGContext! = self.window.graphicsContext?.CGContext;
 		
@@ -89,12 +90,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		let pixels = UnsafeMutableBufferPointer<RGB>(start: UnsafeMutablePointer<RGB>(screen), count: screen.count);
 		
 		var bitmapInfo: UInt32 = CGBitmapInfo.ByteOrder32Big.rawValue;
-		bitmapInfo |= CGImageAlphaInfo.NoneSkipFirst.rawValue;
+		bitmapInfo |= CGImageAlphaInfo.NoneSkipLast.rawValue;
 		
 		let imageContext = CGBitmapContextCreateWithData(pixels.baseAddress, width, height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo, nil, nil);
+		
+//		CGContextScaleCTM(imageContext, 2.0, 2.0);
+		
+		CGContextConcatCTM(context, CGAffineTransformMakeScale(2, 2));
+		
 		let image = CGBitmapContextCreateImage(imageContext);
 		
-		CGContextDrawImage(context, CGRect(x: 0, y: 0, width: 256, height: 240), image);
+//		CGContextDrawImage(context, CGRect(x: 0, y: 0, width: 256, height: 240), image);
+		
+		let nsImage = NSImage(CGImage: image!, size: NSZeroSize);
+		
+		self.imageView.image = nsImage;
 	}
 
     func applicationWillTerminate(aNotification: NSNotification) {

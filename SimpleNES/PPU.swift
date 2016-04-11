@@ -58,6 +58,9 @@ class PPU: NSObject {
 	var PPUCTRL: UInt8 {
 		didSet {
 			self.cpuMemory.memory[0x2000] = PPUCTRL;
+			
+			// Update residual lower bits in PPUSTATUS
+			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUCTRL & 0x1F);
 		}
 	}
 	
@@ -67,6 +70,9 @@ class PPU: NSObject {
 	var PPUMASK: UInt8 {
 		didSet {
 			self.cpuMemory.memory[0x2001] = PPUMASK;
+			
+			// Update residual lower bits in PPUSTATUS
+			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUMASK & 0x1F);
 		}
 	}
 
@@ -85,6 +91,9 @@ class PPU: NSObject {
 	var OAMADDR: UInt8 {
 		didSet {
 			self.cpuMemory.memory[0x2003] = OAMADDR;
+			
+			// Update residual lower bits in PPUSTATUS
+			PPUSTATUS = (PPUSTATUS & 0xE0) | (OAMADDR & 0x1F);
 		}
 	}
 	
@@ -94,7 +103,10 @@ class PPU: NSObject {
 	var OAMDATA: UInt8 {
 		didSet {
 			self.cpuMemory.memory[0x2004] = OAMDATA;
-			writeOAMDATA = true;
+			self.writeOAMDATA = true;
+			
+			// Update residual lower bits in PPUSTATUS
+			PPUSTATUS = (PPUSTATUS & 0xE0) | (OAMDATA & 0x1F);
 		}
 	}
 	
@@ -104,6 +116,9 @@ class PPU: NSObject {
 	var PPUSCROLL: UInt8 {
 		didSet {
 			self.cpuMemory.memory[0x2005] = PPUSCROLL;
+			
+			// Update residual lower bits in PPUSTATUS
+			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUSCROLL & 0x1F);
 		}
 	}
 	
@@ -121,6 +136,10 @@ class PPU: NSObject {
 			}
 			
 			self.writeVRAMHigh = !self.writeVRAMHigh;
+			
+			
+			// Update residual lower bits in PPUSTATUS
+			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUADDR & 0x1F);
 		}
 	}
 	
@@ -131,6 +150,10 @@ class PPU: NSObject {
 		didSet {
 			self.cpuMemory.memory[0x2007] = PPUDATA;
 			self.ppuMemory.writeMemory(Int(self.vramAddress), data: PPUDATA);
+			
+			
+			// Update residual lower bits in PPUSTATUS
+			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUDATA & 0x1F);
 		}
 	}
 	
@@ -141,6 +164,9 @@ class PPU: NSObject {
 		didSet {
 			self.cpuMemory.writeMemory(0x4014, data: OAMDMA);
 			dmaCopy();
+			
+			// Update residual lower bits in PPUSTATUS
+			PPUSTATUS = (PPUSTATUS & 0xE0) | (OAMDMA & 0x1F);
 		}
 	}
 	
@@ -204,7 +230,9 @@ class PPU: NSObject {
 		self.scanline = 0;
 		self.pixelIndex = 0;
 		
-		self.frame = [RGB](count:256 * 240, repeatedValue:RGB(value: 0xFF000000));
+		let pixel = RGB(value: 0xFF000000);
+		
+		self.frame = [RGB](count:256 * 240, repeatedValue:pixel);
 	}
 	
 	func reset() {
@@ -212,7 +240,8 @@ class PPU: NSObject {
 	}
 	
 	func renderScanline() -> Bool {
-		if(scanline < 20) {			
+		if(scanline < 20) {
+			self.frame[534] = RGB(value: 0xFF0000FF);
 			// VBlank period
 			if(scanline == 1) {
 				
@@ -255,22 +284,25 @@ class PPU: NSObject {
 			return true;
 		}
 		
+		let scanlineIndex = self.scanline - 21;
+		
 		// Load playfield
 		for i in 0 ..< 32 {
-			let nameTable = self.ppuMemory.readMemory(0x2000 + Int(floor(Double(scanline - 21) / 8)) * 32 + i);
-			let attributeTable = self.ppuMemory.readMemory(0x23C0 + i);
+			let nameTable = self.ppuMemory.readMemory(0x2000 + scanlineIndex / 8 * 32 + i);
+			let attributeTable = self.ppuMemory.readMemory(0x23C0 + i / 2 + (scanlineIndex / 4) * 8);
 			
 			var patternTableBitmapLow = self.ppuMemory.readMemory(0x0000 + Int(nameTable));
 			var patternTableBitmapHigh = self.ppuMemory.readMemory(0x0000 + Int(nameTable) + 8);
 			
-			if(nameTable != 0) {
-				print("Nametable is \(nameTable) with pattern tables \(patternTableBitmapLow) \(patternTableBitmapHigh)");
-			}
+//			if(nameTable != 0) {
+//				print("Nametable is \(nameTable) with pattern tables \(patternTableBitmapLow) \(patternTableBitmapHigh)");
+//			}
 			
 			for k in 0 ..< 8 {
 				let lowBit = getBit(k, pointer: &patternTableBitmapLow) ? 1 : 0;
 				let highBit = getBit(k, pointer: &patternTableBitmapHigh) ? 1 : 0;
 				
+				// TODO: Incorrect
 				self.frame[(self.scanline - 21) * 256 + i * 8 + k] = colors[(highBit << 1) | lowBit];
 			}
 		}
