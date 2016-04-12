@@ -167,7 +167,7 @@ class PPU: NSObject {
 	*/
 	var OAMDMA: UInt8 {
 		didSet {
-			self.cpuMemory.writeMemory(0x4014, data: OAMDMA);
+			self.cpuMemory.memory[0x4014] = OAMDMA;
 			dmaCopy();
 			
 			// Update residual lower bits in PPUSTATUS
@@ -329,10 +329,6 @@ class PPU: NSObject {
 				if(phaseIndex == 2) {
 					// Fetch Name Table
 					self.nameTable = self.ppuMemory.readMemory(0x2000 + self.scanline / 8 * 32 + tileIndex);
-					
-					if(self.nameTable == 0x2a) {
-						print("2a encountered");
-					}
 				} else if(phaseIndex == 4) {
 					// Fetch Attribute Table
 					self.attributeTable = self.ppuMemory.readMemory(0x23C0 + tileIndex / 2 + (self.scanline / 4) * 8);
@@ -502,7 +498,7 @@ class PPU: NSObject {
 	func dmaCopy() -> Int {
 		let address = Int((UInt16(self.OAMDMA) << 8) & 0xFF00);
 		
-		for i in 0 ..< 256 {
+		for i in 0 ..< 255 {
 			self.oamMemory.writeMemory(Int((UInt16(self.OAMADDR) + UInt16(i)) & 0xFF), data: self.cpuMemory.readMemory(address + i));
 		}
 		

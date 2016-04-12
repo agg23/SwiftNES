@@ -160,10 +160,18 @@ class CPU: NSObject {
 	func stepNoPageCheck() -> Int {
 		self.pageCrossed = false;
 		
-		if(self.interrupt != nil && !getPBit(2)) {
-			handleInterrupt();
-			
-			return 7;
+		if(self.interrupt != nil) {
+			if(self.interrupt == Interrupt.Software) {
+				if(!getPBit(2)) {
+					handleInterrupt();
+					
+					return 7;
+				}
+			} else {
+				handleInterrupt();
+				
+				return 7;
+			}
 		}
 		
 		self.interrupt = nil;
