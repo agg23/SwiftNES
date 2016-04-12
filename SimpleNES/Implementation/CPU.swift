@@ -149,7 +149,9 @@ class CPU: NSObject {
 		let opcode = fetchPC();
 		
 //		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC() - 1, opcode));
-		logger.logFormattedInstuction(getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: self.ppu.cycle, SL: self.ppu.scanline);
+		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), {
+			self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: self.ppu.cycle, SL: self.ppu.scanline);
+		})
 		
 		switch opcode {
 			// ADC
