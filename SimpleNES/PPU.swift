@@ -323,6 +323,7 @@ class PPU: NSObject {
 				// If rendering cycle and rendering background bit is set
 				let tileIndex = self.cycle / 8;
 				let phaseIndex = self.cycle % 8;
+				let tileRow = self.scanline % 8;
 				
 				if(phaseIndex == 2) {
 					// Fetch Name Table
@@ -332,22 +333,21 @@ class PPU: NSObject {
 					self.attributeTable = self.ppuMemory.readMemory(0x23C0 + tileIndex / 2 + (self.scanline / 4) * 8);
 				} else if(phaseIndex == 6) {
 					// Fetch lower Pattern Table byte
-					self.patternTableLow = self.ppuMemory.readMemory(0x0000 + Int(nameTable));
+					self.patternTableLow = self.ppuMemory.readMemory(0x0000 + (Int(nameTable) << 4) + tileRow);
 				} else if(phaseIndex == 0) {
 					// Fetch upper Pattern Table byte
-					self.patternTableHigh = self.ppuMemory.readMemory(0x0000 + Int(nameTable) + 8);
-					
-//					if(nameTable != 0) {
-//						print("Nametable is \(nameTable) with pattern tables \(self.patternTableLow) \(self.patternTableHigh) on \(self.scanline * 256 + self.cycle - 8)");
-//					}
+					self.patternTableHigh = self.ppuMemory.readMemory(0x0008 + (Int(nameTable) << 4) + tileRow);
 					
 					// Draw pixels from tile
 					for k in 0 ..< 8 {
-						let lowBit = getBit(k, pointer: &self.patternTableLow) ? 1 : 0;
-						let highBit = getBit(k, pointer: &self.patternTableHigh) ? 1 : 0;
+						let lowBit = getBit(7 - k, pointer: &self.patternTableLow) ? 1 : 0;
+						let highBit = getBit(7 - k, pointer: &self.patternTableHigh) ? 1 : 0;
 						
-						// TODO: Incorrect color
-						self.frame[self.scanline * 256 + self.cycle - 8 + k] = colors[(highBit << 1) | lowBit];
+						let patternValue = (highBit << 1) | lowBit;
+						let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
+						
+						// TODO: Access palette using attribute data
+						self.frame[self.scanline * 256 + self.cycle - 8 + k] = colors[paletteIndex];
 					}
 				}
 			} else if(self.cycle <= 320) {
