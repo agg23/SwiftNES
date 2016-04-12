@@ -58,6 +58,8 @@ class CPU: NSObject {
 	
 	let logger: Logger;
 	
+	var pageCrossed = false;
+	
 //	let loggingQueue = dispatch_queue_create("com.appcannon.simplenes.loggingqueue", DISPATCH_QUEUE_SERIAL);
 	
     enum AddressingMode {
@@ -133,13 +135,31 @@ class CPU: NSObject {
         
         print("PC initialized to \((UInt16(self.PCH) << 8) | UInt16(self.PCL))");
     }
+	
+	/**
+	Executes one CPU instruction
+	
+	- Returns: Number of cycles required by the run instruction
+	*/
+	func step() -> Int {
+		var cycleCount = stepNoPageCheck();
+		
+		if(self.pageCrossed) {
+			cycleCount += 1;
+		}
+		
+		return cycleCount;
+	}
 
 	/**
 	 Executes one CPU instruction
 	
-	 - Returns: Number of cycles required by the run instruction
+	 - Returns: Number of cycles required by the run instruction, excepting perhaps cycles due
+			to page crosses
 	*/
-	func step() -> Int {
+	func stepNoPageCheck() -> Int {
+		self.pageCrossed = false;
+		
 		if(self.interrupt != nil && !getPBit(2)) {
 			handleInterrupt();
 			
@@ -765,7 +785,11 @@ class CPU: NSObject {
 				
 				let originalAddress = address(lowByte, upper: highByte);
 				
-				return (Int(originalAddress) + Int(index)) & 0xFFFF;
+				let newAddress = (Int(originalAddress) + Int(index)) & 0xFFFF;
+				
+				self.pageCrossed = !checkPage(UInt16(newAddress), originalAddress: UInt16(originalAddress));
+				
+				return newAddress;
 				
 			case AddressingMode.IndirectX:
 				let immediate = fetchPC();
@@ -784,7 +808,11 @@ class CPU: NSObject {
 				
 				let originalAddress = address(lowByte, upper: highByte);
 				
-				return (Int(originalAddress) + Int(self.Y)) & 0xFFFF;
+				let newAddress = (Int(originalAddress) + Int(self.Y)) & 0xFFFF;
+				
+				self.pageCrossed = !checkPage(UInt16(newAddress), originalAddress: UInt16(originalAddress));
+				
+				return newAddress;
 				
 			default:
 				print("Invalid AddressingMode on addressUsingAddressingMode");
@@ -796,7 +824,14 @@ class CPU: NSObject {
 	 Returns true if the address lies on the same page as PC
 	*/
 	func checkPage(address: UInt16) -> Bool {
-		return address / 0x1000 == getPC() / 0x1000;
+		return checkPage(address, originalAddress: getPC());
+	}
+	
+	/**
+	 Returns true if the address lies on the same page as originalAddress
+	*/
+	func checkPage(address: UInt16, originalAddress: UInt16) -> Bool {
+		return address / 0x100 == originalAddress / 0x100;
 	}
 	
 	/**
@@ -1030,6 +1065,8 @@ class CPU: NSObject {
 		
 		let address = addressUsingAddressingMode(mode);
 		
+		self.pageCrossed = false;
+		
 		self.mainMemory.writeMemory(address, data: self.A);
 		
 		return length;
@@ -1055,6 +1092,8 @@ class CPU: NSObject {
 		
 		let address = addressUsingAddressingMode(mode);
 		
+		self.pageCrossed = false;
+		
 		self.mainMemory.writeMemory(address, data: self.X);
 		
 		return length;
@@ -1079,6 +1118,8 @@ class CPU: NSObject {
 		}
 		
 		let address = addressUsingAddressingMode(mode);
+		
+		self.pageCrossed = false;
 		
 		self.mainMemory.writeMemory(address, data: self.Y);
 		
@@ -1330,10 +1371,12 @@ class CPU: NSObject {
     func ADC(mode: AddressingMode) -> Int {
 		var length = 4;
 		
+		let memoryValue = readFromMemoryUsingAddressingMode(mode);
+		
 		switch mode {
 			case .Immediate:
 				length = 2;
-			
+				
 			case .ZeroPage:
 				length = 3;
 				
@@ -1342,16 +1385,14 @@ class CPU: NSObject {
 				
 			case .IndirectX:
 				length = 6;
-			
+				
 			case .IndirectY:
 				length = 5;
-			
+				
 			default:
 				print("Invalid AddressingMode on ADC");
 				return -1;
 		}
-		
-		let memoryValue = readFromMemoryUsingAddressingMode(mode);
 		
 		let temp = UInt16(self.A) + UInt16(memoryValue) + (getPBit(0) ? 1 : 0);
 		
@@ -1462,6 +1503,9 @@ class CPU: NSObject {
 		}
 		
 		let address = addressUsingAddressingMode(mode);
+		
+		self.pageCrossed = false;
+		
 		var value = Int(self.mainMemory.readMemory(address));
 		
 		value = value + 1;
@@ -1616,6 +1660,9 @@ class CPU: NSObject {
 		}
 		
 		let address = addressUsingAddressingMode(mode);
+		
+		self.pageCrossed = false;
+		
 		var value = Int(self.mainMemory.readMemory(address));
 		
 		value = value - 1;
@@ -1698,6 +1745,9 @@ class CPU: NSObject {
             setPBit(1, value: (self.A == 0));
         } else {
             let address = addressUsingAddressingMode(mode);
+			
+			self.pageCrossed = false;
+			
             let value = self.mainMemory.readMemory(address);
             
             // Set carry flag
@@ -1799,6 +1849,9 @@ class CPU: NSObject {
             setPBit(1, value: (self.A == 0));
         } else {
             let address = addressUsingAddressingMode(mode);
+			
+			self.pageCrossed = false;
+			
             let value = self.mainMemory.readMemory(address);
             
             // Set negative flag
@@ -1904,6 +1957,9 @@ class CPU: NSObject {
             setPBit(7, value: (self.A >> 7) & 0x1 == 1);
         } else {
             let address = addressUsingAddressingMode(mode);
+			
+			self.pageCrossed = false;
+			
             var value = self.mainMemory.readMemory(address);
 			
 			let carry = (value >> 7) & 0x1;
@@ -1965,6 +2021,9 @@ class CPU: NSObject {
 			setPBit(7, value: (self.A >> 7) & 0x1 == 1);
 		} else {
 			let address = addressUsingAddressingMode(mode);
+			
+			self.pageCrossed = false;
+			
 			var value = self.mainMemory.readMemory(address);
 			
 			let carry = value & 0x1;
@@ -2286,8 +2345,13 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(!getPBit(0)) {
-			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
-			return 3;
+			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			
+			let cycles = checkPage(newPC) ? 3 : 4;
+			
+			setPC(newPC);
+			return cycles;
+
 		}
 		
 		return 2;
@@ -2300,8 +2364,13 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(getPBit(0)) {
-			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
-			return 3;
+			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			
+			let cycles = checkPage(newPC) ? 3 : 4;
+			
+			setPC(newPC);
+			return cycles;
+
 		}
 		
 		return 2;
@@ -2332,8 +2401,12 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(getPBit(7)) {
-			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
-			return 3;
+			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			
+			let cycles = checkPage(newPC) ? 3 : 4;
+			
+			setPC(newPC);
+			return cycles;
 		}
 		
 		return 2;
@@ -2346,8 +2419,12 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(!getPBit(1)) {
-			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
-			return 3;
+			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			
+			let cycles = checkPage(newPC) ? 3 : 4;
+			
+			setPC(newPC);
+			return cycles;
 		}
 		
 		return 2;
@@ -2360,8 +2437,12 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(!getPBit(7)) {
-			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
-			return 3;
+			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			
+			let cycles = checkPage(newPC) ? 3 : 4;
+			
+			setPC(newPC);
+			return cycles;
 		}
 		
 		return 2;
@@ -2374,8 +2455,12 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(!getPBit(6)) {
-			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
-			return 3;
+			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			
+			let cycles = checkPage(newPC) ? 3 : 4;
+			
+			setPC(newPC);
+			return cycles;
 		}
 		
 		return 2;
@@ -2388,8 +2473,12 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(getPBit(6)) {
-			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
-			return 3;
+			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			
+			let cycles = checkPage(newPC) ? 3 : 4;
+			
+			setPC(newPC);
+			return cycles;
 		}
 		
 		return 2;

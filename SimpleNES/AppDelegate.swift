@@ -48,7 +48,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 			for _ in 0 ..< cpuCycles * 3 {
 				if(ppu.step()) {
 					dispatch_async(dispatch_get_main_queue(), {
+//						let start = NSDate();
 						self.render(ppu.frame);
+//						let end = NSDate();
+						
+//						print("Drew frame in \(end.timeIntervalSinceDate(start))");
 					})
 				}
 			}

@@ -270,6 +270,7 @@ class PPU: NSObject {
 			// VBlank period
 			
 			if(self.scanline == 241 && self.cycle == 1) {
+				self.cpu?.logger.log("VBlank");
 				if(!self.initFrame) {
 					// Set VBlank flag
 					setBit(7, value: true, pointer: &self.PPUSTATUS);
@@ -328,6 +329,10 @@ class PPU: NSObject {
 				if(phaseIndex == 2) {
 					// Fetch Name Table
 					self.nameTable = self.ppuMemory.readMemory(0x2000 + self.scanline / 8 * 32 + tileIndex);
+					
+					if(self.nameTable == 0x2a) {
+						print("2a encountered");
+					}
 				} else if(phaseIndex == 4) {
 					// Fetch Attribute Table
 					self.attributeTable = self.ppuMemory.readMemory(0x23C0 + tileIndex / 2 + (self.scanline / 4) * 8);
