@@ -118,7 +118,7 @@ class Memory: NSObject {
 				case 1:
 					return (self.ppu?.PPUMASK)!;
 				case 2:
-					return (self.ppu?.PPUSTATUS)!;
+					return (self.ppu?.readPPUSTATUS())!;
 				case 3:
 					return (self.ppu?.OAMADDR)!;
 				case 4:
@@ -128,7 +128,7 @@ class Memory: NSObject {
 				case 6:
 					return (self.ppu?.PPUADDR)!;
 				case 7:
-					return (self.ppu?.PPUDATA)!;
+					return (self.ppu?.readPPUDATA())!;
 				default: break
 			}
 		}

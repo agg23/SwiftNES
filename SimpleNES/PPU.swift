@@ -152,6 +152,13 @@ class PPU: NSObject {
 			
 			// Update residual lower bits in PPUSTATUS
 			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUDATA & 0x1F);
+			
+			// Increment VRAM address
+			if(getBit(2, pointer: &self.PPUCTRL)) {
+				self.vramAddress += 32;
+			} else {
+				self.vramAddress += 1;
+			}
 		}
 	}
 	
@@ -312,7 +319,8 @@ class PPU: NSObject {
 			
 			if(self.cycle == 0) {
 				// Do nothing
-			} else if(self.cycle <= 256) {
+			} else if(self.cycle <= 256 && getBit(3, pointer: &self.PPUMASK)) {
+				// If rendering cycle and rendering background bit is set
 				let tileIndex = self.cycle / 8;
 				let phaseIndex = self.cycle % 8;
 				
