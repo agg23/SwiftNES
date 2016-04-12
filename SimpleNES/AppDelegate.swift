@@ -14,6 +14,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @IBOutlet weak var window: NSWindow!
 
 	@IBOutlet weak var imageView: NSImageView!
+	
+	var ppu: PPU?;
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         // Insert code here to initialize your application
@@ -30,6 +32,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		fileIO.loadFile("/Users/adam/Downloads/nestest.nes");
 		
 		let ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
+		
+		self.ppu = ppu;
+		
 		mainMemory.ppu = ppu;
 		let cpu = CPU(mainMemory: mainMemory, ppu: ppu, logger: logger);
 		ppu.cpu = cpu;
@@ -56,6 +61,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
 		logger.endLogging();
 
+	}
+	
+	@IBAction func dumpPPUMemory(sender: AnyObject) {
+		let logger = Logger(path: "/Users/adam/ppu.dump");
+		logger.dumpMemory(self.ppu!.ppuMemory.memory);
+		logger.endLogging();
 	}
 	
 	func render(screen: [RGB]) {

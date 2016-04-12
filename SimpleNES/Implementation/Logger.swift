@@ -49,4 +49,24 @@ class Logger: NSObject {
 	func endLogging() {
 		self.fileHandle?.closeFile();
 	}
+	
+	func dumpMemory(memory: [UInt8]) {
+		for i in 0 ..< memory.count {
+			var string = "";
+			
+			if(i % 8 == 0) {
+				string += hexString(UInt16(i), padding: 4) + ": ";
+			}
+			
+			string += hexString(memory[i], padding: 2) + " ";
+			
+			if(i % 8 == 7) {
+				string += "\n";
+			} else if(i % 2 == 1) {
+				string += " "
+			}
+			
+			self.fileHandle?.writeData(string.uppercaseString.dataUsingEncoding(NSUTF8StringEncoding)!);
+		}
+	}
 }
