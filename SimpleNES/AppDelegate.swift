@@ -98,8 +98,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
 		let pixels = UnsafeMutableBufferPointer<RGB>(start: UnsafeMutablePointer<RGB>(screen), count: screen.count);
 		
-		var bitmapInfo: UInt32 = CGBitmapInfo.ByteOrder32Big.rawValue;
-		bitmapInfo |= CGImageAlphaInfo.NoneSkipLast.rawValue;
+		var bitmapInfo: UInt32 = CGBitmapInfo.ByteOrder32Little.rawValue;
+		bitmapInfo |= CGImageAlphaInfo.NoneSkipFirst.rawValue;
 		
 		let imageContext = CGBitmapContextCreateWithData(pixels.baseAddress, width, height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo, nil, nil);
 		

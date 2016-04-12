@@ -10,21 +10,21 @@ import Foundation
 
 struct RGB {
 	var value: UInt32
+	var alpha: UInt8 {
+		get { return UInt8((value >> 24) & 0xFF) }
+		set { value = (UInt32(newValue) << 24) | (value & 0x00FFFFFF) }
+	}
 	var r: UInt8 {
-		get { return UInt8(value & 0xFF) }
-		set { value = UInt32(newValue) | (value & 0xFFFFFF00) }
+		get { return UInt8((value >> 16) & 0xFF) }
+		set { value = (UInt32(newValue) << 16) | (value & 0xFF00FFFF) }
 	}
 	var g: UInt8 {
 		get { return UInt8((value >> 8) & 0xFF) }
 		set { value = (UInt32(newValue) << 8) | (value & 0xFFFF00FF) }
 	}
 	var b: UInt8 {
-		get { return UInt8((value >> 16) & 0xFF) }
-		set { value = (UInt32(newValue) << 16) | (value & 0xFF00FFFF) }
-	}
-	var alpha: UInt8 {
-		get { return UInt8((value >> 24) & 0xFF) }
-		set { value = (UInt32(newValue) << 24) | (value & 0x00FFFFFF) }
+		get { return UInt8(value & 0xFF) }
+		set { value = UInt32(newValue) | (value & 0xFFFFFF00) }
 	}
 }
 
@@ -32,7 +32,7 @@ func makeRGBArray(array: [UInt32]) -> [RGB] {
 	var rgbArray = [RGB](count: array.count, repeatedValue: RGB(value: 0));
 	
 	for i in 0 ..< array.count {
-		rgbArray[i] = RGB(value: 0xFF000000 | array[i]);
+		rgbArray[i] = RGB(value: array[i]);
 	}
 	
 	return rgbArray;
@@ -256,7 +256,7 @@ class PPU: NSObject {
 		self.patternTableLow = 0;
 		self.patternTableHigh = 0;
 		
-		let pixel = RGB(value: 0xFF000000);
+		let pixel = RGB(value: 0);
 		
 		self.frame = [RGB](count:256 * 240, repeatedValue:pixel);
 	}
@@ -324,30 +324,61 @@ class PPU: NSObject {
 				// If rendering cycle and rendering background bit is set
 				let tileIndex = self.cycle / 8;
 				let phaseIndex = self.cycle % 8;
-				let tileRow = self.scanline % 8;
+				let patternRow = self.scanline % 8;
+				let tileRow = self.scanline / 8;
+				
+				var baseNameTableAddress = 0x2000;
+				
+				if(getBit(0, pointer: &self.PPUCTRL)) {
+					if(getBit(1, pointer: &self.PPUCTRL)) {
+						baseNameTableAddress = 0x2C00;
+					} else {
+						baseNameTableAddress = 0x2400;
+					}
+				} else {
+					if(getBit(1, pointer: &self.PPUCTRL)) {
+						baseNameTableAddress = 0x2800;
+					}
+				}
 				
 				if(phaseIndex == 2) {
 					// Fetch Name Table
-					self.nameTable = self.ppuMemory.readMemory(0x2000 + self.scanline / 8 * 32 + tileIndex);
+					self.nameTable = self.ppuMemory.readMemory(baseNameTableAddress + self.scanline / 8 * 32 + tileIndex);
 				} else if(phaseIndex == 4) {
 					// Fetch Attribute Table
-					self.attributeTable = self.ppuMemory.readMemory(0x23C0 + tileIndex / 2 + (self.scanline / 4) * 8);
+					self.attributeTable = self.ppuMemory.readMemory(baseNameTableAddress + 0x3C0 + tileIndex / 4 + (self.scanline / 8 / 4) * 8);
 				} else if(phaseIndex == 6) {
 					// Fetch lower Pattern Table byte
-					self.patternTableLow = self.ppuMemory.readMemory(0x0000 + (Int(nameTable) << 4) + tileRow);
+					var basePatternTableAddress = 0x0000;
+					
+					if(getBit(4, pointer: &self.PPUCTRL)) {
+						basePatternTableAddress = 0x1000;
+					}
+					
+					self.patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(nameTable) << 4) + patternRow);
 				} else if(phaseIndex == 0) {
 					// Fetch upper Pattern Table byte
-					self.patternTableHigh = self.ppuMemory.readMemory(0x0008 + (Int(nameTable) << 4) + tileRow);
+					var basePatternTableAddress = 0x0008;
+					
+					if(getBit(4, pointer: &self.PPUCTRL)) {
+						basePatternTableAddress = 0x1008;
+					}
+					
+					self.patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(nameTable) << 4) + patternRow);
 					
 					// Draw pixels from tile
 					for k in 0 ..< 8 {
 						let lowBit = getBit(7 - k, pointer: &self.patternTableLow) ? 1 : 0;
 						let highBit = getBit(7 - k, pointer: &self.patternTableHigh) ? 1 : 0;
 						
-						let patternValue = (highBit << 1) | lowBit;
+						let attributeShift = (tileIndex % 4) / 2 + ((tileRow % 4) / 2) * 2;
+						
+						let attributeBits = (Int(self.attributeTable) >> (attributeShift * 2)) & 0x3;
+						
+						let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
+												
 						let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
 						
-						// TODO: Access palette using attribute data
 						self.frame[self.scanline * 256 + self.cycle - 8 + k] = colors[paletteIndex];
 					}
 				}
@@ -379,93 +410,6 @@ class PPU: NSObject {
 		return false;
 	}
 	
-	func renderScanline() -> Bool {
-		if(scanline < 20) {
-			self.frame[534] = RGB(value: 0xFF0000FF);
-			// VBlank period
-			if(scanline == 1) {
-				
-				// Set VBlank flag
-				setBit(7, value: true, pointer: &self.PPUSTATUS);
-				
-				if((self.PPUCTRL & 0x80) == 0x80) {
-					// NMI enabled
-					self.cpu!.queueInterrupt(CPU.Interrupt.VBlank);
-				}
-			}
-			
-			if(self.writeOAMDATA) {
-				self.writeOAMDATA = false;
-				
-				self.oamMemory.writeMemory(Int(self.OAMADDR), data: self.OAMDATA);
-				
-				self.OAMADDR += 1;
-				
-				if(getBit(2, pointer: &self.PPUCTRL)) {
-					self.OAMADDR = self.OAMADDR + 32;
-				} else {
-					self.OAMADDR = self.OAMADDR + 1;
-				}
-			}
-			
-			
-			scanline += 1;
-			return false;
-		} else if(scanline == 20) {
-			// TODO: Update horizontal and vertical scroll counters
-			
-			// Clear VBlank flag
-			setBit(7, value: false, pointer: &self.PPUSTATUS);
-			
-			scanline += 1;
-			return false;
-		} else if(scanline == 261) {
-			scanline = 0;
-			return true;
-		}
-		
-		let scanlineIndex = self.scanline - 21;
-		
-		// Load playfield
-		for i in 0 ..< 32 {
-			let nameTable = self.ppuMemory.readMemory(0x2000 + scanlineIndex / 8 * 32 + i);
-			let attributeTable = self.ppuMemory.readMemory(0x23C0 + i / 2 + (scanlineIndex / 4) * 8);
-			
-			var patternTableBitmapLow = self.ppuMemory.readMemory(0x0000 + Int(nameTable));
-			var patternTableBitmapHigh = self.ppuMemory.readMemory(0x0000 + Int(nameTable) + 8);
-			
-//			if(nameTable != 0) {
-//				print("Nametable is \(nameTable) with pattern tables \(patternTableBitmapLow) \(patternTableBitmapHigh)");
-//			}
-			
-			for k in 0 ..< 8 {
-				let lowBit = getBit(k, pointer: &patternTableBitmapLow) ? 1 : 0;
-				let highBit = getBit(k, pointer: &patternTableBitmapHigh) ? 1 : 0;
-				
-				// TODO: Incorrect
-				self.frame[(self.scanline - 21) * 256 + i * 8 + k] = colors[(highBit << 1) | lowBit];
-			}
-		}
-		
-		// Load objects for next scanline
-		for i in 0 ..< 8 {
-			// TODO: Load objects
-		}
-		
-		// Load first two tiles of playfield for next scanline
-		for i in 0 ..< 2 {
-			let nameTable = self.ppuMemory.readMemory(0x2000 + scanline / 8 + i);
-			let attributeTable = self.ppuMemory.readMemory(0x23C0 + i);
-			
-			let patternTableOne = self.ppuMemory.readMemory(0x0000 + Int(nameTable));
-			let patternTableTwo = self.ppuMemory.readMemory(0x1000 + Int(nameTable));
-		}
-		
-		scanline += 1;
-		
-		return false;
-	}
-	
 	// MARK - Registers
 	
 	func setBit(index: Int, value: Bool, pointer: UnsafeMutablePointer<UInt8>) {
@@ -486,6 +430,9 @@ class PPU: NSObject {
 		// Clear PPUSCROLL and PPUADDR
 		self.PPUSCROLL = 0;
 		self.PPUADDR = 0;
+		
+		// Reset PPUADDR write high byte
+		self.writeVRAMHigh = true;
 		
 		return temp;
 	}
