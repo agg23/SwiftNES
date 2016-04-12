@@ -27,7 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		let mainMemory = Memory();
 		let ppuMemory = Memory(memoryType: Memory.MemoryType.PPU);
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		fileIO.loadFile("/Users/adam/Downloads/dk.nes");
+		fileIO.loadFile("/Users/adam/Downloads/nestest.nes");
 		
 		let ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
 		mainMemory.ppu = ppu;
@@ -39,15 +39,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
 		var cpuCycles = cpu.step();
 		
-		var ppuCycles = 0;
-		
 		while(cpuCycles != -1) {
-			ppuCycles += cpuCycles * 3;
-			
-			if(ppuCycles > 341) {
-				ppuCycles = ppuCycles - 341;
-				
-				if(ppu.renderScanline()) {
+			for _ in 0 ..< cpuCycles * 3 {
+				if(ppu.step()) {
 					dispatch_async(dispatch_get_main_queue(), {
 						self.render(ppu.frame);
 					})

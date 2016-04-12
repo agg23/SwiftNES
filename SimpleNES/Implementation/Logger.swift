@@ -26,7 +26,6 @@ class Logger: NSObject {
 	}
 	
 	func log(string: String) {
-		self.fileHandle?.seekToEndOfFile();
 		self.fileHandle?.writeData((string + "\n").dataUsingEncoding(NSUTF8StringEncoding)!);
 	}
 	
@@ -40,11 +39,11 @@ class Logger: NSObject {
 		return string;
 	}
 	
-	func logFormattedInstuction(address: UInt16, opcode: UInt8, A: UInt8, X: UInt8, Y: UInt8, P: UInt8, SP: UInt8) {
-		log(String(format: "%@  %@A:%@ X:%@ Y:%@ P:%@ SP:%@", hexString(address, padding: 4),
+	func logFormattedInstuction(address: UInt16, opcode: UInt8, A: UInt8, X: UInt8, Y: UInt8, P: UInt8, SP: UInt8, CYC: Int, SL: Int) {
+		log(String(format: "%@  %@A:%@ X:%@ Y:%@ P:%@ SP:%@ CYC:%@ SL:%@", hexString(address, padding: 4),
 			hexString(opcode, padding: 2).stringByPaddingToLength(42, withString: " ", startingAtIndex: 0),
 			hexString(A, padding: 2), hexString(X, padding: 2), hexString(Y, padding: 2), hexString(P, padding: 2),
-			hexString(SP, padding: 2)).uppercaseString);
+			hexString(SP, padding: 2), String(CYC).stringByPaddingToLength(3, withString: " ", startingAtIndex: 0), String(SL)).uppercaseString);
 	}
 	
 	func endLogging() {

@@ -137,7 +137,6 @@ class PPU: NSObject {
 			
 			self.writeVRAMHigh = !self.writeVRAMHigh;
 			
-			
 			// Update residual lower bits in PPUSTATUS
 			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUADDR & 0x1F);
 		}
@@ -150,7 +149,6 @@ class PPU: NSObject {
 		didSet {
 			self.cpuMemory.memory[0x2007] = PPUDATA;
 			self.ppuMemory.writeMemory(Int(self.vramAddress), data: PPUDATA);
-			
 			
 			// Update residual lower bits in PPUSTATUS
 			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUDATA & 0x1F);
@@ -200,10 +198,24 @@ class PPU: NSObject {
 	*/
 	var frame: [RGB];
 	
+	var cycle: Int;
+	
+	var initFrame = true;
+	
+	var evenFrame = true;
+		
 	var cpu: CPU?;
 	let cpuMemory: Memory;
 	let ppuMemory: Memory;
 	let oamMemory: Memory;
+	
+	// MARK: Stored Values Between Cycles -
+	var nameTable: UInt8;
+	var attributeTable: UInt8;
+	var patternTableLow: UInt8;
+	var patternTableHigh: UInt8;
+	
+	// MARK: Methods -
 	
 	init(cpuMemory: Memory, ppuMemory: Memory) {
 		self.cpu = nil;
@@ -227,8 +239,15 @@ class PPU: NSObject {
 		self.PPUDATA = 0;
 		self.OAMDMA = 0;
 		
-		self.scanline = 0;
+		self.scanline = 241;
 		self.pixelIndex = 0;
+		
+		self.cycle = 0;
+		
+		self.nameTable = 0;
+		self.attributeTable = 0;
+		self.patternTableLow = 0;
+		self.patternTableHigh = 0;
 		
 		let pixel = RGB(value: 0xFF000000);
 		
@@ -237,6 +256,118 @@ class PPU: NSObject {
 	
 	func reset() {
 		
+	}
+	
+	func step() -> Bool {
+		if(self.scanline >= 240) {
+			// VBlank period
+			
+			if(self.scanline == 241 && self.cycle == 1) {
+				if(!self.initFrame) {
+					// Set VBlank flag
+					setBit(7, value: true, pointer: &self.PPUSTATUS);
+				} else {
+					self.initFrame = false;
+				}
+				
+				if((self.PPUCTRL & 0x80) == 0x80) {
+					// NMI enabled
+					self.cpu!.queueInterrupt(CPU.Interrupt.VBlank);
+				}
+			}
+			
+			// Skip tick on odd frame
+			if(!self.evenFrame && self.scanline == 261 && self.cycle == 339) {
+				self.cycle = 0;
+				
+				self.scanline = -1;
+				
+				return true;
+			}
+			
+			// TODO: Handle glitchy increment on non-VBlank scanlines as referenced:
+			// http://wiki.nesdev.com/w/index.php/PPU_registers
+			if(self.writeOAMDATA) {
+				self.writeOAMDATA = false;
+				
+				self.oamMemory.writeMemory(Int(self.OAMADDR), data: self.OAMDATA);
+				
+				self.OAMADDR += 1;
+				
+				if(getBit(2, pointer: &self.PPUCTRL)) {
+					self.OAMADDR = self.OAMADDR + 32;
+				} else {
+					self.OAMADDR = self.OAMADDR + 1;
+				}
+			}
+		} else if(self.scanline == -1) {
+			// TODO: Update horizontal and vertical scroll counters
+			
+			if(self.cycle == 1) {
+				// Clear VBlank flag
+				setBit(7, value: false, pointer: &self.PPUSTATUS);
+			}
+		} else {
+			// Visible scanlines
+			
+			if(self.cycle == 0) {
+				// Do nothing
+			} else if(self.cycle <= 256) {
+				let tileIndex = self.cycle / 8;
+				let phaseIndex = self.cycle % 8;
+				
+				if(phaseIndex == 2) {
+					// Fetch Name Table
+					self.nameTable = self.ppuMemory.readMemory(0x2000 + self.scanline / 8 * 32 + tileIndex);
+				} else if(phaseIndex == 4) {
+					// Fetch Attribute Table
+					self.attributeTable = self.ppuMemory.readMemory(0x23C0 + tileIndex / 2 + (self.scanline / 4) * 8);
+				} else if(phaseIndex == 6) {
+					// Fetch lower Pattern Table byte
+					self.patternTableLow = self.ppuMemory.readMemory(0x0000 + Int(nameTable));
+				} else if(phaseIndex == 0) {
+					// Fetch upper Pattern Table byte
+					self.patternTableHigh = self.ppuMemory.readMemory(0x0000 + Int(nameTable) + 8);
+					
+//					if(nameTable != 0) {
+//						print("Nametable is \(nameTable) with pattern tables \(self.patternTableLow) \(self.patternTableHigh) on \(self.scanline * 256 + self.cycle - 8)");
+//					}
+					
+					// Draw pixels from tile
+					for k in 0 ..< 8 {
+						let lowBit = getBit(k, pointer: &self.patternTableLow) ? 1 : 0;
+						let highBit = getBit(k, pointer: &self.patternTableHigh) ? 1 : 0;
+						
+						// TODO: Incorrect color
+						self.frame[self.scanline * 256 + self.cycle - 8 + k] = colors[(highBit << 1) | lowBit];
+					}
+				}
+			} else if(self.cycle <= 320) {
+				// TODO: Fetch tile data for sprites on next scanline
+			} else if(self.cycle <= 336) {
+				// TODO: Fetch tile data for first two tiles on next scanline
+			} else {
+				// TODO: Fetch garbage Name Table byte
+			}
+		}
+		
+		self.cycle += 1;
+		
+		if(self.cycle == 341) {
+			self.cycle = 0;
+			if(self.scanline == 260) {
+				// Frame completed
+				self.scanline = -1;
+				
+				self.evenFrame = !self.evenFrame;
+				
+				return true;
+			} else {
+				scanline += 1;
+			}
+		}
+		
+		return false;
 	}
 	
 	func renderScanline() -> Bool {

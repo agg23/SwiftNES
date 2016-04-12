@@ -149,7 +149,7 @@ class CPU: NSObject {
 		let opcode = fetchPC();
 		
 //		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC() - 1, opcode));
-		logger.logFormattedInstuction(getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP);
+		logger.logFormattedInstuction(getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: self.ppu.cycle, SL: self.ppu.scanline);
 		
 		switch opcode {
 			// ADC
@@ -787,6 +787,13 @@ class CPU: NSObject {
 				return 0;
         }
     }
+	
+	/**
+	 Returns true if the address lies on the same page as PC
+	*/
+	func checkPage(address: UInt16) -> Bool {
+		return address / 0x1000 == getPC() / 0x1000;
+	}
 	
 	/**
 	 Converts the given value to binary coded decimal, where
@@ -2303,8 +2310,12 @@ class CPU: NSObject {
         let relative = UInt16(fetchPC());
         
 		if(getPBit(1)) {
-			setPC(UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF));
-			return 3;
+			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			
+			let cycles = checkPage(newPC) ? 3 : 4;
+			
+			setPC(newPC);
+			return cycles;
 		}
 		
 		return 2;
