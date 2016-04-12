@@ -495,15 +495,13 @@ class PPU: NSObject {
 		return self.PPUDATA;
 	}
 	
-	func dmaCopy() -> Int {
+	func dmaCopy() {
 		let address = Int((UInt16(self.OAMDMA) << 8) & 0xFF00);
 		
 		for i in 0 ..< 255 {
 			self.oamMemory.writeMemory(Int((UInt16(self.OAMADDR) + UInt16(i)) & 0xFF), data: self.cpuMemory.readMemory(address + i));
 		}
 		
-		// TODO: Block CPU for 513-514 cycles while copy is occuring
-		
-		return 513;
+		self.cpu!.startOAMTransfer();
 	}
 }

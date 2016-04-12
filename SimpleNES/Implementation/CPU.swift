@@ -58,7 +58,30 @@ class CPU: NSObject {
 	
 	let logger: Logger;
 	
+	/**
+	 True if the last cycle run by the CPU was even
+	*/
+	var evenCycle = true;
+	
+	/**
+	 True if page was crossed by last instruction
+	*/
 	var pageCrossed = false;
+	
+	/**
+	 True if CPU is current running an OAM transfer
+	*/
+	var oamTransfer = false;
+	
+	/**
+	 Stores the number of cycles in the current OAM transfer
+	*/
+	var oamCycles = 0;
+	
+	/**
+	 Stores whether OAM transfer will have an extra cycle
+	*/
+	var oamExtraCycle = false;
 	
 //	let loggingQueue = dispatch_queue_create("com.appcannon.simplenes.loggingqueue", DISPATCH_QUEUE_SERIAL);
 	
@@ -148,6 +171,8 @@ class CPU: NSObject {
 			cycleCount += 1;
 		}
 		
+		self.evenCycle = self.evenCycle && (cycleCount % 2 == 0);
+		
 		return cycleCount;
 	}
 
@@ -159,6 +184,18 @@ class CPU: NSObject {
 	*/
 	func stepNoPageCheck() -> Int {
 		self.pageCrossed = false;
+		
+		if(self.oamTransfer) {
+			self.oamCycles += 1;
+			
+			// End the transfer
+			if((self.oamCycles > 513 && !self.oamExtraCycle) || (self.oamCycles > 514 && self.oamExtraCycle)) {
+				self.oamCycles = 0;
+				self.oamTransfer = false;
+			}
+			
+			return 1;
+		}
 		
 		if(self.interrupt != nil) {
 			if(self.interrupt == Interrupt.Software) {
@@ -886,6 +923,18 @@ class CPU: NSObject {
 		push(self.P | 0x10);
 		
 		self.interrupt = nil;
+	}
+	
+	func startOAMTransfer() {
+		self.oamTransfer = true;
+		self.oamCycles = 0;
+		
+		if(self.evenCycle) {
+			// Next cycle will not be even, so extra cycle
+			self.oamExtraCycle = true;
+		} else {
+			self.oamExtraCycle = false;
+		}
 	}
 	
     // MARK: - PC Operations
