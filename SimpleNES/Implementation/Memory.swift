@@ -102,7 +102,7 @@ class Memory: NSObject {
 		} else if(memoryType == MemoryType.CPU) {
 			self.memory = [UInt8](count: 0x10000, repeatedValue: 0);
 		} else {
-			self.memory = [UInt8](count: 0xFF, repeatedValue: 0);
+			self.memory = [UInt8](count: 0x100, repeatedValue: 0);
 		}
 		
 		self.type = memoryType;

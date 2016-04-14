@@ -29,7 +29,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		let mainMemory = Memory();
 		let ppuMemory = Memory(memoryType: Memory.MemoryType.PPU);
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		fileIO.loadFile("/Users/adam/Downloads/nestest.nes");
+		fileIO.loadFile("/Users/adam/Downloads/dk.nes");
 		
 		let ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
 		

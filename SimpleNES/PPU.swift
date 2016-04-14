@@ -28,6 +28,13 @@ struct RGB {
 	}
 }
 
+struct Sprite {
+	var patternTableLow: UInt8;
+	var patternTableHigh: UInt8;
+	var attribute: UInt8;
+	var xCoord: UInt8;
+}
+
 func makeRGBArray(array: [UInt32]) -> [RGB] {
 	var rgbArray = [RGB](count: array.count, repeatedValue: RGB(value: 0));
 	
@@ -216,11 +223,21 @@ class PPU: NSObject {
 	let ppuMemory: Memory;
 	let oamMemory: Memory;
 	
+	var secondaryOAM = [UInt8](count: 32, repeatedValue: 0);
+	
 	// MARK: Stored Values Between Cycles -
 	var nameTable: UInt8;
 	var attributeTable: UInt8;
 	var patternTableLow: UInt8;
 	var patternTableHigh: UInt8;
+	
+	var currentSpriteData = [Sprite](count: 8, repeatedValue: Sprite(patternTableLow: 0xFF, patternTableHigh: 0xFF, attribute: 0, xCoord: 0));
+	
+	var oamByte: UInt8;
+	
+	var oamStage = 0;
+	var oamIndex = 0;
+	var secondaryOAMIndex = 0;
 	
 	// MARK: Methods -
 	
@@ -255,6 +272,8 @@ class PPU: NSObject {
 		self.attributeTable = 0;
 		self.patternTableLow = 0;
 		self.patternTableHigh = 0;
+		
+		self.oamByte = 0;
 		
 		let pixel = RGB(value: 0);
 		
@@ -318,12 +337,59 @@ class PPU: NSObject {
 		} else {
 			// Visible scanlines
 			
+			let phaseIndex = self.cycle % 8;
+			
 			if(self.cycle == 0) {
+				self.oamStage = 0;
+				self.oamIndex = 0;
+				self.secondaryOAMIndex = 0;
+				
 				// Do nothing
 			} else if(self.cycle <= 256 && getBit(3, pointer: &self.PPUMASK)) {
+				// Render sprites
+				if(self.cycle <= 64) {
+					// Set secondary OAM to 0xFF
+					if(self.cycle % 2 == 0) {
+						self.secondaryOAM[self.cycle / 2 - 1] = 0xFF;
+					}
+				} else if(self.cycle <= 256) {
+					if(self.oamStage == 0) {
+						if(self.cycle % 2 == 0) {
+							
+							self.secondaryOAM[self.secondaryOAMIndex] = self.oamByte;
+							
+							let intOAMByte = Int(self.oamByte);
+							let intScanline = Int(self.scanline);
+							
+							if(intOAMByte <= intScanline && intOAMByte + 8 > intScanline) {
+								
+								if(self.secondaryOAMIndex >= 63) {
+									// TODO: Handle overflow
+								} else {
+									// Sprite should be drawn on this line
+									self.secondaryOAM[self.secondaryOAMIndex + 1] = self.oamMemory.readMemory(4 * self.oamIndex + 1);
+									self.secondaryOAM[self.secondaryOAMIndex + 2] = self.oamMemory.readMemory(4 * self.oamIndex + 2);
+									self.secondaryOAM[self.secondaryOAMIndex + 3] = self.oamMemory.readMemory(4 * self.oamIndex + 3);
+									
+									self.secondaryOAMIndex += 4;
+								}
+							}
+							self.oamIndex += 1;
+							
+							if(self.oamIndex >= 64) {
+								self.oamIndex = 0;
+								self.oamStage = 1;
+							}
+							
+						} else {
+							self.oamByte = self.oamMemory.readMemory(4 * self.oamIndex);
+						}
+					}
+				}
+				
+				
 				// If rendering cycle and rendering background bit is set
 				let tileIndex = self.cycle / 8;
-				let phaseIndex = self.cycle % 8;
 				let patternRow = self.scanline % 8;
 				let tileRow = self.scanline / 8;
 				
@@ -379,11 +445,64 @@ class PPU: NSObject {
 												
 						let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
 						
-						self.frame[self.scanline * 256 + self.cycle - 8 + k] = colors[paletteIndex];
+						let pixelXCoord = self.cycle - 8 + k;
+						
+						self.frame[self.scanline * 256 + pixelXCoord] = colors[paletteIndex];
+					}
+				}
+				
+				if(self.cycle == 256) {
+					// Handle sprites
+					for j in 0 ..< 8 {
+						var sprite = currentSpriteData[j];
+						let xCoord = Int(sprite.xCoord) + 1;
+						
+						if(xCoord >= 0x100) {
+							continue;
+						}
+						
+						for x in 0 ..< 8 {
+							let lowBit = getBit(7 - x, pointer: &sprite.patternTableLow) ? 1 : 0;
+							let highBit = getBit(7 - x, pointer: &sprite.patternTableHigh) ? 1 : 0;
+							
+							let attributeBits = Int(sprite.attribute) & 0x3;
+							
+							let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
+							
+							let paletteIndex = Int(self.ppuMemory.readMemory(0x3F10 + patternValue));
+							
+							self.frame[self.scanline * 256 + xCoord + x] = colors[paletteIndex];
+						}
 					}
 				}
 			} else if(self.cycle <= 320) {
 				// TODO: Fetch tile data for sprites on next scanline
+				if(self.cycle == 257) {
+					self.secondaryOAMIndex = 0;
+				}
+				
+				if(phaseIndex == 0 && self.secondaryOAMIndex < 32) {
+					let yCoord = self.secondaryOAM[secondaryOAMIndex];
+					let tileNumber = self.secondaryOAM[secondaryOAMIndex + 1];
+					let attributes = self.secondaryOAM[secondaryOAMIndex + 2];
+					let xCoord = self.secondaryOAM[secondaryOAMIndex + 3];
+					
+					let yShift = self.scanline - Int(yCoord);
+					
+					// TODO: Handle 8x8 sprites
+					var basePatternTableAddress = 0x0000;
+					
+					if(getBit(3, pointer: &self.PPUCTRL)) {
+						basePatternTableAddress = 0x1000;
+					}
+					
+					let patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(tileNumber) << 4) + yShift);
+					let patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(tileNumber) << 4) + yShift + 8);
+					
+					currentSpriteData[self.secondaryOAMIndex / 4] = Sprite(patternTableLow: patternTableLow, patternTableHigh: patternTableHigh, attribute: attributes, xCoord: xCoord);
+					
+					self.secondaryOAMIndex += 4;
+				}
 			} else if(self.cycle <= 336) {
 				// TODO: Fetch tile data for first two tiles on next scanline
 			} else {
