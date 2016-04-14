@@ -10,7 +10,10 @@ import Foundation
 
 struct RGB {
 	var value: UInt32
-	var alpha: UInt8 {
+	/**
+	 Stores the NES color index (ignored when drawing)
+	*/
+	var colorIndex: UInt8 {
 		get { return UInt8((value >> 24) & 0xFF) }
 		set { value = (UInt32(newValue) << 24) | (value & 0x00FFFFFF) }
 	}
@@ -427,6 +430,13 @@ class PPU: NSObject {
 								// TODO: Handle behind background priority
 								// TODO: X coordinate of sprites is off slightly
 								
+								let backgroundPixel = self.frame[self.scanline * 256 + xCoord + x];
+								
+								if(j == 7 && getBit(3, pointer: &self.PPUMASK) && backgroundPixel.colorIndex & 0x3 != 0 && paletteIndex & 0x3 != 0) {
+									// Sprite 0 and Background is not transparent
+									setBit(6, value: true, pointer: &self.PPUSTATUS);
+								}
+								
 								self.frame[self.scanline * 256 + xCoord + x] = colors[paletteIndex];
 							}
 						}
@@ -493,7 +503,10 @@ class PPU: NSObject {
 							
 							let pixelXCoord = self.cycle - 8 + k;
 							
-							self.frame[self.scanline * 256 + pixelXCoord] = colors[paletteIndex];
+							var color = colors[paletteIndex];
+							color.colorIndex = UInt8(paletteIndex);
+							
+							self.frame[self.scanline * 256 + pixelXCoord] = color;
 						}
 					}
 				}
