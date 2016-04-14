@@ -363,7 +363,7 @@ class PPU: NSObject {
 							
 							if(intOAMByte <= intScanline && intOAMByte + 8 > intScanline) {
 								
-								if(self.secondaryOAMIndex >= 63) {
+								if(self.secondaryOAMIndex >= 32) {
 									// TODO: Handle overflow
 								} else {
 									// Sprite should be drawn on this line
@@ -455,9 +455,9 @@ class PPU: NSObject {
 					// Handle sprites, in reverse order in order to properly overlap
 					for j in 0 ..< 8 {
 						var sprite = currentSpriteData[7 - j];
-						let xCoord = Int(sprite.xCoord) + 1;
+						let xCoord = Int(sprite.xCoord);
 						
-						if(xCoord >= 0x100) {
+						if(xCoord >= 0xFF) {
 							continue;
 						}
 						
@@ -477,6 +477,7 @@ class PPU: NSObject {
 							}
 							
 							// TODO: Handle behind background priority
+							// TODO: X coordinate of sprites is off slightly
 							
 							self.frame[self.scanline * 256 + xCoord + x] = colors[paletteIndex];
 						}
