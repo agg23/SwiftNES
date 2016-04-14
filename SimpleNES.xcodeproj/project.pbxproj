@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		664032B61CC0317B00FF7C6B /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 664032B41CC0317B00FF7C6B /* Metal.framework */; };
+		664032B71CC0317B00FF7C6B /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 664032B51CC0317B00FF7C6B /* MetalKit.framework */; };
 		666146AE1CA347300022C10D /* Memory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AD1CA347300022C10D /* Memory.swift */; };
 		666146B01CA34BC40022C10D /* FileIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AF1CA34BC40022C10D /* FileIO.swift */; };
 		66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4361CA2EF3800936DBC /* AppDelegate.swift */; };
@@ -15,6 +17,7 @@
 		66A9C4471CA2EF3800936DBC /* SimpleNESTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4461CA2EF3800936DBC /* SimpleNESTests.swift */; };
 		66A9C4531CA2EF6F00936DBC /* CPU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4521CA2EF6F00936DBC /* CPU.swift */; };
 		66E186901CADB97300EFF583 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E1868F1CADB97300EFF583 /* Logger.swift */; };
+		66F44E9D1CC05494006F0A6E /* Shader.metal in Sources */ = {isa = PBXBuildFile; fileRef = 66F44E9C1CC05494006F0A6E /* Shader.metal */; };
 		66F46AB91CB039B9005B637E /* PPU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F46AB81CB039B9005B637E /* PPU.swift */; };
 /* End PBXBuildFile section */
 
@@ -29,6 +32,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		664032B41CC0317B00FF7C6B /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		664032B51CC0317B00FF7C6B /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		666146AD1CA347300022C10D /* Memory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Memory.swift; path = Implementation/Memory.swift; sourceTree = "<group>"; };
 		666146AF1CA34BC40022C10D /* FileIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FileIO.swift; path = Implementation/FileIO.swift; sourceTree = "<group>"; };
 		66A9C4331CA2EF3800936DBC /* SimpleNES.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimpleNES.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -41,6 +46,7 @@
 		66A9C4481CA2EF3800936DBC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		66A9C4521CA2EF6F00936DBC /* CPU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CPU.swift; path = Implementation/CPU.swift; sourceTree = "<group>"; };
 		66E1868F1CADB97300EFF583 /* Logger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Logger.swift; path = Implementation/Logger.swift; sourceTree = "<group>"; };
+		66F44E9C1CC05494006F0A6E /* Shader.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shader.metal; sourceTree = "<group>"; };
 		66F46AB81CB039B9005B637E /* PPU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PPU.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -49,6 +55,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				664032B61CC0317B00FF7C6B /* Metal.framework in Frameworks */,
+				664032B71CC0317B00FF7C6B /* MetalKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +73,8 @@
 		66A9C42A1CA2EF3800936DBC = {
 			isa = PBXGroup;
 			children = (
+				664032B41CC0317B00FF7C6B /* Metal.framework */,
+				664032B51CC0317B00FF7C6B /* MetalKit.framework */,
 				66A9C4351CA2EF3800936DBC /* SimpleNES */,
 				66A9C4451CA2EF3800936DBC /* SimpleNESTests */,
 				66A9C4341CA2EF3800936DBC /* Products */,
@@ -84,6 +94,7 @@
 			isa = PBXGroup;
 			children = (
 				66A9C4361CA2EF3800936DBC /* AppDelegate.swift */,
+				66F44E9C1CC05494006F0A6E /* Shader.metal */,
 				66A9C4511CA2EF4900936DBC /* Implementation */,
 				66A9C4381CA2EF3800936DBC /* Assets.xcassets */,
 				66A9C43A1CA2EF3800936DBC /* MainMenu.xib */,
@@ -218,6 +229,7 @@
 				666146AE1CA347300022C10D /* Memory.swift in Sources */,
 				66A9C4531CA2EF6F00936DBC /* CPU.swift in Sources */,
 				66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */,
+				66F44E9D1CC05494006F0A6E /* Shader.metal in Sources */,
 				666146B01CA34BC40022C10D /* FileIO.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

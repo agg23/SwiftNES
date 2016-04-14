@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import MetalKit
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -15,10 +16,45 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 	@IBOutlet weak var imageView: NSImageView!
 	
+	@IBOutlet weak var metalView: MTKView!
+	
+	private var device: MTLDevice!;
+	private var commandQueue: MTLCommandQueue! = nil
+	private var pipeline: MTLComputePipelineState! = nil
+	
+	private let textureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(MTLPixelFormat.RGBA8Unorm, width: 256, height: 240, mipmapped: false);
+	
+	private var texture: MTLTexture! = nil;
+	
+	private let threadGroupCount = MTLSizeMake(8, 8, 1);
+	private var threadGroups: MTLSize?;
+	
+	private var textureLoader: MTKTextureLoader?;
+	
 	var ppu: PPU?;
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         // Insert code here to initialize your application
+		
+		// Set up Metal
+		self.device = MTLCreateSystemDefaultDevice();
+		
+		self.metalView.device = self.device;
+		
+		self.metalView.framebufferOnly = false;
+		
+		self.commandQueue = self.device!.newCommandQueue();
+		
+		self.texture = self.device!.newTextureWithDescriptor(self.textureDescriptor);
+		
+		self.textureLoader = MTKTextureLoader(device: self.device!);
+		
+		self.threadGroups = MTLSizeMake((256+threadGroupCount.width)/threadGroupCount.width, (240+threadGroupCount.height)/threadGroupCount.height, 1);
+		
+		let library:MTLLibrary!  = self.device.newDefaultLibrary();
+		let function:MTLFunction! = library.newFunctionWithName("kernel_passthrough");
+		self.pipeline = try! self.device!.newComputePipelineStateWithFunction(function);
+		
 		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
 			self.run();
 		})
@@ -49,6 +85,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 				if(ppu.step()) {
 					dispatch_async(dispatch_get_main_queue(), {
 //						let start = NSDate();
+						//self.render(ppu.frame);
 						self.render(ppu.frame);
 //						let end = NSDate();
 						
@@ -74,23 +111,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 	
 	func render(screen: [RGB]) {
-		/*var screen = [RGB](count:Int(256*240), repeatedValue:RGB(r:0, g:0, b:0));
-		
-		for i in 0 ..< 240 {
-			for k in 0 ..< 256 {
-				screen[i * 256 + k] = RGB(r: UInt8(frame[i][k]), g: 0, b: 0);
-			}
-		}*/
-		
-//		print("Drawing frame");
-		
-		let context: CGContext! = self.window.graphicsContext?.CGContext;
-		
 		let width = 256;
 		let height = 240;
 		
 		let bitsPerComponent = 8;
-		
 		
 		let bytesPerPixel = 4;
 		let bytesPerRow = width * bytesPerPixel;
@@ -103,20 +127,41 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		
 		let imageContext = CGBitmapContextCreateWithData(pixels.baseAddress, width, height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo, nil, nil);
 		
-//		CGContextScaleCTM(imageContext, 2.0, 2.0);
-		
-		CGContextConcatCTM(context, CGAffineTransformMakeScale(2, 2));
-		
 		let image = CGBitmapContextCreateImage(imageContext);
 		
-//		CGContextDrawImage(context, CGRect(x: 0, y: 0, width: 256, height: 240), image);
+		let flippedContext = CGBitmapContextCreateWithData(nil, width, height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo, nil, nil);
 		
-		let nsImage = NSImage(CGImage: image!, size: NSZeroSize);
+		CGContextTranslateCTM(flippedContext, 0, CGFloat(height));
+		CGContextScaleCTM(flippedContext, 1.0, -1.0);
 		
-		self.imageView.image = nsImage;
+		let bounds = CGRect(x: 0, y: 0, width: Int(width), height: Int(height));
+		
+		CGContextDrawImage(flippedContext, bounds, image);
+		
+		let finalImage = CGBitmapContextCreateImage(flippedContext);
+		
+		self.texture = try! self.textureLoader?.newTextureWithCGImage(finalImage!, options: nil);
+		
+		let commandBuffer = commandQueue.commandBuffer()
+		
+		let encoder = commandBuffer.computeCommandEncoder()
+		
+		encoder.setComputePipelineState(pipeline)
+		
+		encoder.setTexture(self.texture, atIndex: 0)
+		
+		encoder.setTexture(metalView.currentDrawable!.texture, atIndex: 1)
+		
+		encoder.dispatchThreadgroups(threadGroups!, threadsPerThreadgroup: threadGroupCount)
+		
+		encoder.endEncoding()
+		
+		commandBuffer.presentDrawable(metalView.currentDrawable!)
+		
+		commandBuffer.commit()
 	}
-
-    func applicationWillTerminate(aNotification: NSNotification) {
+	
+	func applicationWillTerminate(aNotification: NSNotification) {
         // Insert code here to tear down your application
     }
 

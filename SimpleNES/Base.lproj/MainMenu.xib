@@ -15,6 +15,7 @@
         <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="SimpleNES" customModuleProvider="target">
             <connections>
                 <outlet property="imageView" destination="kyH-wd-umQ" id="2cq-WF-2TZ"/>
+                <outlet property="metalView" destination="6HS-0n-2gX" id="cVo-2g-i0Y"/>
                 <outlet property="window" destination="QvC-M9-y7g" id="gIp-Ho-8D9"/>
             </connections>
         </customObject>
@@ -691,6 +692,9 @@
                             <action selector="dumpPPUMemory:" target="Voe-Tx-rLC" id="n5e-EV-IuY"/>
                         </connections>
                     </button>
+                    <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6HS-0n-2gX" customClass="MTKView">
+                        <rect key="frame" x="112" y="60" width="256" height="240"/>
+                    </customView>
                 </subviews>
             </view>
         </window>
