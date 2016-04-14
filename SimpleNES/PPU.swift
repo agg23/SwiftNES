@@ -323,9 +323,9 @@ class PPU: NSObject {
 				self.OAMADDR += 1;
 				
 				if(getBit(2, pointer: &self.PPUCTRL)) {
-					self.OAMADDR = self.OAMADDR + 32;
+					self.OAMADDR = UInt8((Int(self.OAMADDR) + 32) & 0xFF);
 				} else {
-					self.OAMADDR = self.OAMADDR + 1;
+					self.OAMADDR = UInt8((Int(self.OAMADDR) + 1) & 0xFF);
 				}
 			}
 		} else if(self.scanline == -1) {

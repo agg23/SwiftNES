@@ -952,11 +952,11 @@ class CPU: NSObject {
     }
     
     func incrementPC() {
-        setPC(getPC() + 1);
+        setPC(UInt16((Int(getPC()) + 1) & 0xFFFF));
     }
     
     func decrementPC() {
-        setPC(getPC() - 1);
+		setPC(UInt16((Int(getPC()) - 1) & 0xFFFF));
     }
     
     func fetchPC() -> UInt8 {
