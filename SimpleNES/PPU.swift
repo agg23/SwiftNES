@@ -593,7 +593,7 @@ class PPU: NSObject {
 	func dmaCopy() {
 		let address = Int((UInt16(self.OAMDMA) << 8) & 0xFF00);
 		
-		for i in 0 ..< 255 {
+		for i in 0 ..< 256 {
 			self.oamMemory.writeMemory(Int((UInt16(self.OAMADDR) + UInt16(i)) & 0xFF), data: self.cpuMemory.readMemory(address + i));
 		}
 		
