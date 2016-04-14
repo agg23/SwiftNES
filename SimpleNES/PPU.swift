@@ -289,7 +289,7 @@ class PPU: NSObject {
 			// VBlank period
 			
 			if(self.scanline == 241 && self.cycle == 1) {
-				self.cpu?.logger.log("VBlank");
+//				self.cpu?.logger.log("VBlank");
 				if(!self.initFrame) {
 					// Set VBlank flag
 					setBit(7, value: true, pointer: &self.PPUSTATUS);

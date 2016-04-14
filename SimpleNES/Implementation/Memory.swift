@@ -147,6 +147,10 @@ class Memory: NSObject {
 			return;
 		}
 		
+		if(self.type == MemoryType.PPU && address == 0x2070) {
+			
+		}
+		
 		if(self.type == MemoryType.CPU && (address >= 0x2000) && (address < 0x4000)) {
 			switch (address % 8) {
 				case 0:

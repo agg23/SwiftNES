@@ -83,7 +83,7 @@ class CPU: NSObject {
 	*/
 	var oamExtraCycle = false;
 	
-//	let loggingQueue = dispatch_queue_create("com.appcannon.simplenes.loggingqueue", DISPATCH_QUEUE_SERIAL);
+	let loggingQueue = dispatch_queue_create("com.appcannon.simplenes.loggingqueue", DISPATCH_QUEUE_SERIAL);
 	
     enum AddressingMode {
         case Accumulator
@@ -217,7 +217,7 @@ class CPU: NSObject {
 		
 //		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC() - 1, opcode));
 //		dispatch_async(loggingQueue, {
-//			self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: self.ppu.cycle, SL: self.ppu.scanline);
+			self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: self.ppu.cycle, SL: self.ppu.scanline);
 //		})
 		
 		switch opcode {
@@ -905,9 +905,13 @@ class CPU: NSObject {
 		let oldPCL = self.PCL;
 		let oldPCH = self.PCH;
 		
+		var pMask: UInt8 = 0x10;
+		
 		switch self.interrupt! {
 			case Interrupt.VBlank:
 				setPC(self.mainMemory.readTwoBytesMemory(0xFFFA));
+				// When performing a hardware interrupt, do not set the B flag
+				pMask = 0x0;
 			
 			case Interrupt.RESET:
 				reset();
@@ -920,7 +924,7 @@ class CPU: NSObject {
 		push(oldPCH);
 		push(oldPCL);
 		
-		push(self.P | 0x10);
+		push(self.P | pMask);
 		
 		self.interrupt = nil;
 	}
