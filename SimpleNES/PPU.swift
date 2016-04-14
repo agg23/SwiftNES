@@ -452,9 +452,9 @@ class PPU: NSObject {
 				}
 				
 				if(self.cycle == 256) {
-					// Handle sprites
+					// Handle sprites, in reverse order in order to properly overlap
 					for j in 0 ..< 8 {
-						var sprite = currentSpriteData[j];
+						var sprite = currentSpriteData[7 - j];
 						let xCoord = Int(sprite.xCoord) + 1;
 						
 						if(xCoord >= 0x100) {
@@ -471,12 +471,18 @@ class PPU: NSObject {
 							
 							let paletteIndex = Int(self.ppuMemory.readMemory(0x3F10 + patternValue));
 							
+							// First color each section of sprite palette is transparent
+							if(patternValue % 4 == 0) {
+								continue;
+							}
+							
+							// TODO: Handle behind background priority
+							
 							self.frame[self.scanline * 256 + xCoord + x] = colors[paletteIndex];
 						}
 					}
 				}
 			} else if(self.cycle <= 320) {
-				// TODO: Fetch tile data for sprites on next scanline
 				if(self.cycle == 257) {
 					self.secondaryOAMIndex = 0;
 				}
@@ -484,10 +490,10 @@ class PPU: NSObject {
 				if(phaseIndex == 0 && self.secondaryOAMIndex < 32) {
 					let yCoord = self.secondaryOAM[secondaryOAMIndex];
 					let tileNumber = self.secondaryOAM[secondaryOAMIndex + 1];
-					let attributes = self.secondaryOAM[secondaryOAMIndex + 2];
+					var attributes = self.secondaryOAM[secondaryOAMIndex + 2];
 					let xCoord = self.secondaryOAM[secondaryOAMIndex + 3];
 					
-					let yShift = self.scanline - Int(yCoord);
+					var yShift = self.scanline - Int(yCoord);
 					
 					// TODO: Handle 8x8 sprites
 					var basePatternTableAddress = 0x0000;
@@ -496,8 +502,19 @@ class PPU: NSObject {
 						basePatternTableAddress = 0x1000;
 					}
 					
-					let patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(tileNumber) << 4) + yShift);
-					let patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(tileNumber) << 4) + yShift + 8);
+					// Flip sprite vertically
+					if(getBit(7, pointer: &attributes)) {
+						yShift = 7 - yShift;
+					}
+					
+					var patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(tileNumber) << 4) + yShift);
+					var patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(tileNumber) << 4) + yShift + 8);
+					
+					// Flip sprite horizontally
+					if(getBit(6, pointer: &attributes)) {
+						patternTableLow = reverseByte(patternTableLow);
+						patternTableHigh = reverseByte(patternTableHigh);
+					}
 					
 					currentSpriteData[self.secondaryOAMIndex / 4] = Sprite(patternTableLow: patternTableLow, patternTableHigh: patternTableHigh, attribute: attributes, xCoord: xCoord);
 					
@@ -538,6 +555,17 @@ class PPU: NSObject {
 	
 	func getBit(index: Int, pointer: UnsafePointer<UInt8>) -> Bool {
 		return ((pointer.memory >> UInt8(index)) & 0x1) == 1;
+	}
+	
+	/**
+	 Bit level reverses the given byte
+	 From http://stackoverflow.com/a/2602885
+	*/
+	func reverseByte(value: UInt8) -> UInt8 {
+		var b = (value & 0xF0) >> 4 | (value & 0x0F) << 4;
+		b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+		b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+		return b;
 	}
 	
 	func readPPUSTATUS() -> UInt8 {
