@@ -389,7 +389,7 @@ class PPU: NSObject {
 				
 				
 				// If rendering cycle and rendering background bit is set
-				let tileIndex = self.cycle / 8;
+				let tileIndex = (self.cycle - 1) / 8;
 				let patternRow = self.scanline % 8;
 				let tileRow = self.scanline / 8;
 				
