@@ -237,6 +237,7 @@ class PPU: NSObject {
 	
 	var oamStage = 0;
 	var oamIndex = 0;
+	var oamIndexOverflow = 0;
 	var secondaryOAMIndex = 0;
 	
 	// MARK: Methods -
@@ -342,11 +343,13 @@ class PPU: NSObject {
 			if(self.cycle == 0) {
 				self.oamStage = 0;
 				self.oamIndex = 0;
+				self.oamIndexOverflow = 0;
 				self.secondaryOAMIndex = 0;
 				
 				// Do nothing
-			} else if(self.cycle <= 256 && getBit(3, pointer: &self.PPUMASK)) {
-				// Render sprites
+			} else if(self.cycle <= 256) {
+				// Do sprite calculations whether or not draw sprite bit is set
+				
 				if(self.cycle <= 64) {
 					// Set secondary OAM to 0xFF
 					if(self.cycle % 2 == 0) {
@@ -356,8 +359,6 @@ class PPU: NSObject {
 					if(self.oamStage == 0) {
 						if(self.cycle % 2 == 0) {
 							
-							self.secondaryOAM[self.secondaryOAMIndex] = self.oamByte;
-							
 							let intOAMByte = Int(self.oamByte);
 							let intScanline = Int(self.scanline);
 							
@@ -365,15 +366,24 @@ class PPU: NSObject {
 								
 								if(self.secondaryOAMIndex >= 32) {
 									// TODO: Handle overflow
+									setBit(4, value: true, pointer: &self.PPUSTATUS);
 								} else {
 									// Sprite should be drawn on this line
+									self.secondaryOAM[self.secondaryOAMIndex] = self.oamByte;
 									self.secondaryOAM[self.secondaryOAMIndex + 1] = self.oamMemory.readMemory(4 * self.oamIndex + 1);
 									self.secondaryOAM[self.secondaryOAMIndex + 2] = self.oamMemory.readMemory(4 * self.oamIndex + 2);
 									self.secondaryOAM[self.secondaryOAMIndex + 3] = self.oamMemory.readMemory(4 * self.oamIndex + 3);
 									
 									self.secondaryOAMIndex += 4;
 								}
+							} else if(self.secondaryOAMIndex >= 32) {
+								self.oamIndexOverflow += 1;
+								
+								if(self.oamIndexOverflow >= 4) {
+									self.oamIndexOverflow = 0;
+								}
 							}
+							
 							self.oamIndex += 1;
 							
 							if(self.oamIndex >= 64) {
@@ -382,104 +392,108 @@ class PPU: NSObject {
 							}
 							
 						} else {
-							self.oamByte = self.oamMemory.readMemory(4 * self.oamIndex);
+							self.oamByte = self.oamMemory.readMemory(4 * self.oamIndex + self.oamIndexOverflow);
 						}
 					}
 				}
 				
-				
-				// If rendering cycle and rendering background bit is set
-				let tileIndex = (self.cycle - 1) / 8;
-				let patternRow = self.scanline % 8;
-				let tileRow = self.scanline / 8;
-				
-				var baseNameTableAddress = 0x2000;
-				
-				if(getBit(0, pointer: &self.PPUCTRL)) {
-					if(getBit(1, pointer: &self.PPUCTRL)) {
-						baseNameTableAddress = 0x2C00;
-					} else {
-						baseNameTableAddress = 0x2400;
-					}
-				} else {
-					if(getBit(1, pointer: &self.PPUCTRL)) {
-						baseNameTableAddress = 0x2800;
-					}
-				}
-				
-				if(phaseIndex == 2) {
-					// Fetch Name Table
-					self.nameTable = self.ppuMemory.readMemory(baseNameTableAddress + self.scanline / 8 * 32 + tileIndex);
-				} else if(phaseIndex == 4) {
-					// Fetch Attribute Table
-					self.attributeTable = self.ppuMemory.readMemory(baseNameTableAddress + 0x3C0 + tileIndex / 4 + (self.scanline / 8 / 4) * 8);
-				} else if(phaseIndex == 6) {
-					// Fetch lower Pattern Table byte
-					var basePatternTableAddress = 0x0000;
-					
-					if(getBit(4, pointer: &self.PPUCTRL)) {
-						basePatternTableAddress = 0x1000;
-					}
-					
-					self.patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(nameTable) << 4) + patternRow);
-				} else if(phaseIndex == 0) {
-					// Fetch upper Pattern Table byte
-					var basePatternTableAddress = 0x0008;
-					
-					if(getBit(4, pointer: &self.PPUCTRL)) {
-						basePatternTableAddress = 0x1008;
-					}
-					
-					self.patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(nameTable) << 4) + patternRow);
-					
-					// Draw pixels from tile
-					for k in 0 ..< 8 {
-						let lowBit = getBit(7 - k, pointer: &self.patternTableLow) ? 1 : 0;
-						let highBit = getBit(7 - k, pointer: &self.patternTableHigh) ? 1 : 0;
-						
-						let attributeShift = (tileIndex % 4) / 2 + ((tileRow % 4) / 2) * 2;
-						
-						let attributeBits = (Int(self.attributeTable) >> (attributeShift * 2)) & 0x3;
-						
-						let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
-												
-						let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
-						
-						let pixelXCoord = self.cycle - 8 + k;
-						
-						self.frame[self.scanline * 256 + pixelXCoord] = colors[paletteIndex];
-					}
-				}
-				
-				if(self.cycle == 256) {
-					// Handle sprites, in reverse order in order to properly overlap
-					for j in 0 ..< 8 {
-						var sprite = currentSpriteData[7 - j];
-						let xCoord = Int(sprite.xCoord);
-						
-						if(xCoord >= 0xFF) {
-							continue;
-						}
-						
-						for x in 0 ..< 8 {
-							let lowBit = getBit(7 - x, pointer: &sprite.patternTableLow) ? 1 : 0;
-							let highBit = getBit(7 - x, pointer: &sprite.patternTableHigh) ? 1 : 0;
+				if(getBit(4, pointer: &self.PPUMASK)) {
+					// Render sprites
+					if(self.cycle == 256) {
+						// Handle sprites, in reverse order in order to properly overlap
+						for j in 0 ..< 8 {
+							var sprite = currentSpriteData[7 - j];
+							let xCoord = Int(sprite.xCoord);
 							
-							let attributeBits = Int(sprite.attribute) & 0x3;
-							
-							let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
-							
-							let paletteIndex = Int(self.ppuMemory.readMemory(0x3F10 + patternValue));
-							
-							// First color each section of sprite palette is transparent
-							if(patternValue % 4 == 0) {
+							if(xCoord >= 0xFF) {
 								continue;
 							}
 							
-							// TODO: Handle behind background priority
-							// TODO: X coordinate of sprites is off slightly
+							for x in 0 ..< 8 {
+								let lowBit = getBit(7 - x, pointer: &sprite.patternTableLow) ? 1 : 0;
+								let highBit = getBit(7 - x, pointer: &sprite.patternTableHigh) ? 1 : 0;
+								
+								let attributeBits = Int(sprite.attribute) & 0x3;
+								
+								let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
+								
+								let paletteIndex = Int(self.ppuMemory.readMemory(0x3F10 + patternValue));
+								
+								// First color each section of sprite palette is transparent
+								if(patternValue % 4 == 0) {
+									continue;
+								}
+								
+								// TODO: Handle behind background priority
+								// TODO: X coordinate of sprites is off slightly
+								
+								self.frame[self.scanline * 256 + xCoord + x] = colors[paletteIndex];
+							}
+						}
+					}
+				}
+				
+				if(getBit(3, pointer: &self.PPUMASK)) {
+					// If rendering cycle and rendering background bit is set
+					let tileIndex = (self.cycle - 1) / 8;
+					let patternRow = self.scanline % 8;
+					let tileRow = self.scanline / 8;
+					
+					var baseNameTableAddress = 0x2000;
+					
+					if(getBit(0, pointer: &self.PPUCTRL)) {
+						if(getBit(1, pointer: &self.PPUCTRL)) {
+							baseNameTableAddress = 0x2C00;
+						} else {
+							baseNameTableAddress = 0x2400;
+						}
+					} else {
+						if(getBit(1, pointer: &self.PPUCTRL)) {
+							baseNameTableAddress = 0x2800;
+						}
+					}
+					
+					if(phaseIndex == 2) {
+						// Fetch Name Table
+						self.nameTable = self.ppuMemory.readMemory(baseNameTableAddress + self.scanline / 8 * 32 + tileIndex);
+					} else if(phaseIndex == 4) {
+						// Fetch Attribute Table
+						self.attributeTable = self.ppuMemory.readMemory(baseNameTableAddress + 0x3C0 + tileIndex / 4 + (self.scanline / 8 / 4) * 8);
+					} else if(phaseIndex == 6) {
+						// Fetch lower Pattern Table byte
+						var basePatternTableAddress = 0x0000;
+						
+						if(getBit(4, pointer: &self.PPUCTRL)) {
+							basePatternTableAddress = 0x1000;
+						}
+						
+						self.patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(nameTable) << 4) + patternRow);
+					} else if(phaseIndex == 0) {
+						// Fetch upper Pattern Table byte
+						var basePatternTableAddress = 0x0008;
+						
+						if(getBit(4, pointer: &self.PPUCTRL)) {
+							basePatternTableAddress = 0x1008;
+						}
+						
+						self.patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(nameTable) << 4) + patternRow);
+						
+						// Draw pixels from tile
+						for k in 0 ..< 8 {
+							let lowBit = getBit(7 - k, pointer: &self.patternTableLow) ? 1 : 0;
+							let highBit = getBit(7 - k, pointer: &self.patternTableHigh) ? 1 : 0;
 							
-							self.frame[self.scanline * 256 + xCoord + x] = colors[paletteIndex];
+							let attributeShift = (tileIndex % 4) / 2 + ((tileRow % 4) / 2) * 2;
+							
+							let attributeBits = (Int(self.attributeTable) >> (attributeShift * 2)) & 0x3;
+							
+							let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
+							
+							let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
+							
+							let pixelXCoord = self.cycle - 8 + k;
+							
+							self.frame[self.scanline * 256 + pixelXCoord] = colors[paletteIndex];
 						}
 					}
 				}
