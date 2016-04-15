@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		664032B61CC0317B00FF7C6B /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 664032B41CC0317B00FF7C6B /* Metal.framework */; };
 		664032B71CC0317B00FF7C6B /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 664032B51CC0317B00FF7C6B /* MetalKit.framework */; };
+		6659408D1CC117D900BEA04C /* ControllerIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6659408C1CC117D900BEA04C /* ControllerIO.swift */; };
+		665940911CC11CD300BEA04C /* DisplayWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665940901CC11CD300BEA04C /* DisplayWindow.swift */; };
 		666146AE1CA347300022C10D /* Memory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AD1CA347300022C10D /* Memory.swift */; };
 		666146B01CA34BC40022C10D /* FileIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AF1CA34BC40022C10D /* FileIO.swift */; };
 		66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4361CA2EF3800936DBC /* AppDelegate.swift */; };
@@ -34,6 +36,8 @@
 /* Begin PBXFileReference section */
 		664032B41CC0317B00FF7C6B /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		664032B51CC0317B00FF7C6B /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		6659408C1CC117D900BEA04C /* ControllerIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ControllerIO.swift; path = Implementation/ControllerIO.swift; sourceTree = "<group>"; };
+		665940901CC11CD300BEA04C /* DisplayWindow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DisplayWindow.swift; sourceTree = "<group>"; };
 		666146AD1CA347300022C10D /* Memory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Memory.swift; path = Implementation/Memory.swift; sourceTree = "<group>"; };
 		666146AF1CA34BC40022C10D /* FileIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FileIO.swift; path = Implementation/FileIO.swift; sourceTree = "<group>"; };
 		66A9C4331CA2EF3800936DBC /* SimpleNES.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimpleNES.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -94,6 +98,7 @@
 			isa = PBXGroup;
 			children = (
 				66A9C4361CA2EF3800936DBC /* AppDelegate.swift */,
+				665940901CC11CD300BEA04C /* DisplayWindow.swift */,
 				66F44E9C1CC05494006F0A6E /* Shader.metal */,
 				66A9C4511CA2EF4900936DBC /* Implementation */,
 				66A9C4381CA2EF3800936DBC /* Assets.xcassets */,
@@ -117,6 +122,7 @@
 			children = (
 				66A9C4521CA2EF6F00936DBC /* CPU.swift */,
 				666146AD1CA347300022C10D /* Memory.swift */,
+				6659408C1CC117D900BEA04C /* ControllerIO.swift */,
 				666146AF1CA34BC40022C10D /* FileIO.swift */,
 				66E1868F1CADB97300EFF583 /* Logger.swift */,
 				66F46AB81CB039B9005B637E /* PPU.swift */,
@@ -225,11 +231,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				66E186901CADB97300EFF583 /* Logger.swift in Sources */,
+				6659408D1CC117D900BEA04C /* ControllerIO.swift in Sources */,
 				66F46AB91CB039B9005B637E /* PPU.swift in Sources */,
 				666146AE1CA347300022C10D /* Memory.swift in Sources */,
 				66A9C4531CA2EF6F00936DBC /* CPU.swift in Sources */,
 				66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */,
 				66F44E9D1CC05494006F0A6E /* Shader.metal in Sources */,
+				665940911CC11CD300BEA04C /* DisplayWindow.swift in Sources */,
 				666146B01CA34BC40022C10D /* FileIO.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

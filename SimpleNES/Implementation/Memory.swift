@@ -82,6 +82,7 @@ class Memory: NSObject {
 	let type: MemoryType;
 	
 	var ppu: PPU?;
+	var controllerIO: ControllerIO?;
 	
 	/**
 	 Initializes CPU memory
@@ -131,6 +132,8 @@ class Memory: NSObject {
 					return (self.ppu?.readPPUDATA())!;
 				default: break
 			}
+		} else if(self.type == MemoryType.CPU && (address == 0x4016 || address == 0x4017)) {
+			self.controllerIO?.readState();
 		}
 		
 		return self.memory[address];
@@ -145,10 +148,6 @@ class Memory: NSObject {
 			print("ERROR: Memory address \(address) out of bounds for Memory: \(self.type)");
 			
 			return;
-		}
-		
-		if(self.type == MemoryType.PPU && address == 0x2070) {
-			
 		}
 		
 		if(self.type == MemoryType.CPU && (address >= 0x2000) && (address < 0x4000)) {
@@ -173,6 +172,12 @@ class Memory: NSObject {
 			}
 		} else if(self.type == MemoryType.CPU && (address == 0x4014)) {
 			self.ppu?.OAMDMA = data;
+		} else if(self.type == MemoryType.CPU && (address == 0x4016)) {
+			if(data & 0x1 == 1) {
+				self.controllerIO?.strobeHigh = true;
+			} else {
+				self.controllerIO?.strobeHigh = false;
+			}
 		}
 		
 		self.memory[address] = data;

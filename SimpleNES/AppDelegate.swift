@@ -12,9 +12,7 @@ import MetalKit
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 
-    @IBOutlet weak var window: NSWindow!
-
-	@IBOutlet weak var imageView: NSImageView!
+    @IBOutlet weak var window: DisplayWindow!
 	
 	@IBOutlet weak var metalView: MTKView!
 	
@@ -31,14 +29,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	
 	private var textureLoader: MTKTextureLoader?;
 	
+	let controllerIO: ControllerIO;
 	var cpu: CPU;
 	var ppu: PPU;
 	let logger: Logger;
 	
 	override init() {
 		self.logger = Logger(path: "/Users/adam/nes.log");
-
+		
+		self.controllerIO = ControllerIO();
+		
 		let mainMemory = Memory();
+		mainMemory.controllerIO = controllerIO;
+		
 		let ppuMemory = Memory(memoryType: Memory.MemoryType.PPU);
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
 		fileIO.loadFile("/Users/adam/Downloads/dk.nes");
@@ -55,6 +58,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         // Insert code here to initialize your application
+		
+		self.window.controllerIO = self.controllerIO;
 		
 		// Set up Metal
 		self.device = MTLCreateSystemDefaultDevice();
