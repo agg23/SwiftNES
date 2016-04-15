@@ -10,7 +10,7 @@ import Cocoa
 import MetalKit
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 
     @IBOutlet weak var window: NSWindow!
 
@@ -31,7 +31,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	
 	private var textureLoader: MTKTextureLoader?;
 	
-	var ppu: PPU?;
+	var cpu: CPU;
+	var ppu: PPU;
+	let logger: Logger;
+	
+	override init() {
+		self.logger = Logger(path: "/Users/adam/nes.log");
+
+		let mainMemory = Memory();
+		let ppuMemory = Memory(memoryType: Memory.MemoryType.PPU);
+		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
+		fileIO.loadFile("/Users/adam/Downloads/dk.nes");
+		
+		self.ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
+		
+		mainMemory.ppu = self.ppu;
+		
+		self.cpu = CPU(mainMemory: mainMemory, ppu: self.ppu, logger: logger);
+		self.ppu.cpu = self.cpu;
+		
+		self.cpu.reset();
+	}
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         // Insert code here to initialize your application
@@ -40,8 +60,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		self.device = MTLCreateSystemDefaultDevice();
 		
 		self.metalView.device = self.device;
-		
 		self.metalView.framebufferOnly = false;
+		self.metalView.preferredFramesPerSecond = 60;
+		self.metalView.delegate = self;
 		
 		self.commandQueue = self.device!.newCommandQueue();
 		
@@ -55,58 +76,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		let function:MTLFunction! = library.newFunctionWithName("kernel_passthrough");
 		self.pipeline = try! self.device!.newComputePipelineStateWithFunction(function);
 		
-		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
-			self.run();
-		})
+		self.metalView.draw();
     }
-	
-	func run() {
-		let logger = Logger(path: "/Users/adam/nes.log");
-		let mainMemory = Memory();
-		let ppuMemory = Memory(memoryType: Memory.MemoryType.PPU);
-		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		fileIO.loadFile("/Users/adam/Downloads/dk.nes");
-		
-		let ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
-		
-		self.ppu = ppu;
-		
-		mainMemory.ppu = ppu;
-		let cpu = CPU(mainMemory: mainMemory, ppu: ppu, logger: logger);
-		ppu.cpu = cpu;
-		
-		cpu.reset();
-//		cpu.setPC(0xC000);
-		
-		var cpuCycles = cpu.step();
-		
-		while(cpuCycles != -1) {
-			for _ in 0 ..< cpuCycles * 3 {
-				if(ppu.step()) {
-					dispatch_async(dispatch_get_main_queue(), {
-//						let start = NSDate();
-						//self.render(ppu.frame);
-						self.render(ppu.frame);
-//						let end = NSDate();
-						
-//						print("Drew frame in \(end.timeIntervalSinceDate(start))");
-					})
-				}
-			}
-			
-			cpuCycles = cpu.step();
-		}
-		
-		print("Reset Vector: \(mainMemory.readTwoBytesMemory(0xFFFC))");
-		print("First Opcode: \(mainMemory.readMemory(0xf415))");
-		
-		logger.endLogging();
-
-	}
 	
 	@IBAction func dumpPPUMemory(sender: AnyObject) {
 		let logger = Logger(path: "/Users/adam/ppu.dump");
-		logger.dumpMemory(self.ppu!.ppuMemory.memory);
+		logger.dumpMemory(self.ppu.ppuMemory.memory);
 		logger.endLogging();
 	}
 	
@@ -163,8 +138,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	
 	func applicationWillTerminate(aNotification: NSNotification) {
         // Insert code here to tear down your application
+		self.logger.endLogging();
     }
 
+	// MARK: - MTKViewDelegate
+	
+	func mtkView(view: MTKView, drawableSizeWillChange size: CGSize) {
+		
+	}
 
+	func drawInMTKView(view: MTKView) {
+		var cpuCycles = self.cpu.step();
+		
+		while(cpuCycles != -1) {
+			for _ in 0 ..< cpuCycles * 3 {
+				if(self.ppu.step()) {
+					self.render(self.ppu.frame);
+					return;
+				}
+			}
+			
+			cpuCycles = self.cpu.step();
+		}
+	}
 }
 
