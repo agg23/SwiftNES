@@ -142,7 +142,7 @@ class PPU: NSObject {
 			if(self.writeVRAMHigh) {
 				self.vramAddress = (UInt16(PPUADDR) << 8) | (self.vramAddress & 0xFF);
 			} else {
-				self.vramAddress = (self.vramAddress & 0xFF00) | UInt16(PPUADDR);
+				self.vramAddress = ((self.vramAddress & 0xFF00) | UInt16(PPUADDR)) % 0x4000;
 			}
 			
 			self.writeVRAMHigh = !self.writeVRAMHigh;
@@ -169,6 +169,8 @@ class PPU: NSObject {
 			} else {
 				self.vramAddress += 1;
 			}
+			
+			self.vramAddress = self.vramAddress % 0x4000;
 		}
 	}
 	
@@ -289,6 +291,10 @@ class PPU: NSObject {
 	}
 	
 	func step() -> Bool {
+		if(self.cycle > 256) {
+			self.OAMADDR = 0;
+		}
+		
 		if(self.scanline >= 240) {
 			// VBlank period
 			
@@ -322,8 +328,6 @@ class PPU: NSObject {
 				self.writeOAMDATA = false;
 				
 				self.oamMemory.writeMemory(Int(self.OAMADDR), data: self.OAMDATA);
-				
-				self.OAMADDR += 1;
 				
 				if(getBit(2, pointer: &self.PPUCTRL)) {
 					self.OAMADDR = UInt8((Int(self.OAMADDR) + 32) & 0xFF);

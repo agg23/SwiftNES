@@ -67,7 +67,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		let height = Int(self.sizingRect!.height);
 		
 		self.textureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(MTLPixelFormat.RGBA8Unorm, width: width, height: height, mipmapped: false);
-				
+		
 		self.window.controllerIO = self.controllerIO;
 		
 		// Set up Metal
