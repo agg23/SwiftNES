@@ -133,7 +133,7 @@ class Memory: NSObject {
 				default: break
 			}
 		} else if(self.type == MemoryType.CPU && (address == 0x4016 || address == 0x4017)) {
-			self.controllerIO?.readState();
+			return self.controllerIO!.readState();
 		}
 		
 		return self.memory[address];

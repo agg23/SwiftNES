@@ -11,7 +11,11 @@ import Carbon
 
 class ControllerIO: NSObject {
 	var controllerState: Int = -1;
-	var strobeHigh = false;
+	var strobeHigh: Bool {
+		didSet {
+			controllerState = -1;
+		}
+	};
 	
 	var aPressed: Bool = false;
 	var bPressed: Bool = false;
@@ -23,6 +27,10 @@ class ControllerIO: NSObject {
 	var downPressed: Bool = false;
 	var leftPressed: Bool = false;
 	var rightPressed: Bool = false;
+	
+	override init() {
+		self.strobeHigh = false;
+	}
 	
 	func buttonPressEvent(value: Int) {
 		switch(value) {
@@ -110,12 +118,12 @@ class ControllerIO: NSObject {
 			case 7:
 				// Right
 				print("Right \(self.rightPressed)");
-				self.controllerState = -1;
 				return buttonState(self.rightPressed);
 			default:
 				break;
 		}
 		
-		return 0;
+		self.controllerState = 8;
+		return 0x41;
 	}
 }
