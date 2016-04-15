@@ -20,7 +20,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	private var commandQueue: MTLCommandQueue! = nil
 	private var pipeline: MTLComputePipelineState! = nil
 	
-	private let textureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(MTLPixelFormat.RGBA8Unorm, width: 256, height: 240, mipmapped: false);
+	var sizingRect: NSRect? = nil;
+	
+	var textureDescriptor: MTLTextureDescriptor? = nil;
 	
 	private var texture: MTLTexture! = nil;
 	
@@ -59,6 +61,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         // Insert code here to initialize your application
 		
+		self.sizingRect = self.window.convertRectToBacking(NSMakeRect(0, 0, 256, 240));
+		
+		let width = Int(self.sizingRect!.width);
+		let height = Int(self.sizingRect!.height);
+		
+		self.textureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(MTLPixelFormat.RGBA8Unorm, width: width, height: height, mipmapped: false);
+				
 		self.window.controllerIO = self.controllerIO;
 		
 		// Set up Metal
@@ -71,11 +80,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		self.commandQueue = self.device!.newCommandQueue();
 		
-		self.texture = self.device!.newTextureWithDescriptor(self.textureDescriptor);
+		self.texture = self.device!.newTextureWithDescriptor(self.textureDescriptor!);
 		
 		self.textureLoader = MTKTextureLoader(device: self.device!);
 		
-		self.threadGroups = MTLSizeMake((256+threadGroupCount.width)/threadGroupCount.width, (240+threadGroupCount.height)/threadGroupCount.height, 1);
+		self.threadGroups = MTLSizeMake((width+threadGroupCount.width)/threadGroupCount.width, (height+threadGroupCount.height)/threadGroupCount.height, 1);
 		
 		let library:MTLLibrary!  = self.device.newDefaultLibrary();
 		let function:MTLFunction! = library.newFunctionWithName("kernel_passthrough");
@@ -94,10 +103,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		let width = 256;
 		let height = 240;
 		
+		let finalWidth = Int(self.sizingRect!.width);
+		let finalHeight = Int(self.sizingRect!.height);
+		
 		let bitsPerComponent = 8;
 		
 		let bytesPerPixel = 4;
 		let bytesPerRow = width * bytesPerPixel;
+		let bytesPerRowFinal = finalWidth * bytesPerPixel;
 		let colorSpace = CGColorSpaceCreateDeviceRGB();
 		
 		let pixels = UnsafeMutableBufferPointer<RGB>(start: UnsafeMutablePointer<RGB>(screen), count: screen.count);
@@ -109,12 +122,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		let image = CGBitmapContextCreateImage(imageContext);
 		
-		let flippedContext = CGBitmapContextCreateWithData(nil, width, height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo, nil, nil);
+		let flippedContext = CGBitmapContextCreateWithData(nil, finalWidth, finalHeight, bitsPerComponent, bytesPerRowFinal, colorSpace, bitmapInfo, nil, nil);
 		
-		CGContextTranslateCTM(flippedContext, 0, CGFloat(height));
+		CGContextTranslateCTM(flippedContext, 0, CGFloat(finalHeight));
 		CGContextScaleCTM(flippedContext, 1.0, -1.0);
 		
-		let bounds = CGRect(x: 0, y: 0, width: Int(width), height: Int(height));
+		let bounds = CGRect(x: 0, y: 0, width: Int(finalWidth), height: Int(finalHeight));
 		
 		CGContextDrawImage(flippedContext, bounds, image);
 		

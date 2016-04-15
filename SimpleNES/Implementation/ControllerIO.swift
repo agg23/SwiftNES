@@ -93,31 +93,24 @@ class ControllerIO: NSObject {
 		switch self.controllerState {
 			case 1:
 				// B
-				print("B \(self.bPressed)");
 				return buttonState(self.bPressed);
 			case 2:
 				// Select
-				print("Select \(self.selectPressed)");
 				return buttonState(self.selectPressed);
 			case 3:
 				// Start
-				print("Start \(self.startPressed)");
 				return buttonState(self.startPressed);
 			case 4:
 				// Up
-				print("Up \(self.upPressed)");
 				return buttonState(self.upPressed);
 			case 5:
 				// Down
-				print("Down \(self.downPressed)");
 				return buttonState(self.downPressed);
 			case 6:
 				// Left
-				print("Left \(self.leftPressed)");
 				return buttonState(self.leftPressed);
 			case 7:
 				// Right
-				print("Right \(self.rightPressed)");
 				return buttonState(self.rightPressed);
 			default:
 				break;
