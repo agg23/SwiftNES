@@ -521,7 +521,7 @@ class PPU: NSObject {
 							let pixelXCoord = self.cycle - 8 + k;
 							
 							var color = colors[paletteIndex];
-							color.colorIndex = UInt8(paletteIndex);
+							color.colorIndex = UInt8(patternValue);
 							
 							self.frame[self.scanline * 256 + pixelXCoord] = color;
 						}

@@ -150,6 +150,18 @@ class SimpleNESTests: XCTestCase {
 		romTest(defaultPath + "instr_test-v5/rom_singles/16-special.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
+	// MARK: - Instruction Timing
+	
+	func testInstructionTiming() {
+		// Needs implemented APU
+		romTest(defaultPath + "instr_timing/rom_singles/1-instr_timing.nes ", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testBranchTiming() {
+		// Needs implemented APU
+		romTest(defaultPath + "instr_timing/rom_singles/2-branch_timing.nes ", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
 	// MARK: - Instruction Execution from Any Address
 	
 	func testCPUExecSpace() {
@@ -197,5 +209,67 @@ class SimpleNESTests: XCTestCase {
 		// Needs implemented APU
 		romTest(defaultPath + "instr_misc/rom_singles/04-dummy_reads_apu.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
+	
+	// MARK: - PPU Testing
+	
+	func testPaletteRAM() {
+		// Needs implemented APU
+		romTest(defaultPath + "blargg_ppu_tests_2005.09.15b/palette_ram.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testOAMRead() {
+		romTest(defaultPath + "oam_read/oam_read.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testOAMStress() {
+		romTest(defaultPath + "oam_stress/oam_stress.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testPPUOpenBus() {
+		romTest(defaultPath + "ppu_open_bus/ppu_open_bus.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	// MARK: - VBlank flag and NMI Testing
+	
+	func testVBLBasics() {
+		romTest(defaultPath + "ppu_vbl_nmi/rom_singles/01-vbl_basics.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testVBLSetTiming() {
+		romTest(defaultPath + "ppu_vbl_nmi/rom_singles/02-vbl_set_time.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testVBLClearTiming() {
+		romTest(defaultPath + "ppu_vbl_nmi/rom_singles/03-vbl_clear_time.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testNMIControl() {
+		romTest(defaultPath + "ppu_vbl_nmi/rom_singles/04-nmi_control.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testNMITiming() {
+		romTest(defaultPath + "ppu_vbl_nmi/rom_singles/05-nmi_timing.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testVBLSupression() {
+		romTest(defaultPath + "ppu_vbl_nmi/rom_singles/06-suppression.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testNMINearVBLClear() {
+		romTest(defaultPath + "ppu_vbl_nmi/rom_singles/07-nmi_on_timing.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testNMINearVBLSet() {
+		romTest(defaultPath + "ppu_vbl_nmi/rom_singles/08-nmi_off_timing.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testEvenOddFrameSkipping() {
+		romTest(defaultPath + "ppu_vbl_nmi/rom_singles/09-even_odd_frames.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testEvenOddFrameTiming() {
+		romTest(defaultPath + "ppu_vbl_nmi/rom_singles/10-even_odd_timing.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+
 	
 }
