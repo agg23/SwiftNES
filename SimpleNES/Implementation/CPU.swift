@@ -122,6 +122,8 @@ class CPU: NSObject {
 		case RESET
 		
 		case Software
+		
+		case IRQ
 	}
 
 	/**
@@ -203,7 +205,7 @@ class CPU: NSObject {
 		}
 		
 		if(self.interrupt != nil) {
-			if(self.interrupt == Interrupt.Software) {
+			if(self.interrupt == Interrupt.IRQ) {
 				if(!getPBit(2)) {
 					handleInterrupt();
 					
@@ -940,13 +942,13 @@ class CPU: NSObject {
 		let oldPCL = self.PCL;
 		let oldPCH = self.PCH;
 		
-		var pMask: UInt8 = 0x10;
+		var pMask: UInt8 = 0x30;
 		
 		switch self.interrupt! {
 			case Interrupt.VBlank:
 				setPC(self.mainMemory.readTwoBytesMemory(0xFFFA));
 				// When performing a hardware interrupt, do not set the B flag
-				pMask = 0x0;
+				pMask = 0x20;
 			
 			case Interrupt.RESET:
 				reset();
@@ -954,12 +956,20 @@ class CPU: NSObject {
 			
 			case Interrupt.Software:
 				setPC(self.mainMemory.readTwoBytesMemory(0xFFFE));
+			
+			case Interrupt.IRQ:
+				// When performing a hardware interrupt, do not set the B flag
+				pMask = 0x20;
+				setPC(self.mainMemory.readTwoBytesMemory(0xFFFE));
 		}
 		
 		push(oldPCH);
 		push(oldPCL);
 		
 		push(self.P | pMask);
+		
+		// Set interrupt flag
+		setPBit(2, value: true);
 		
 		self.interrupt = nil;
 	}
@@ -1022,9 +1032,10 @@ class CPU: NSObject {
      Simulate Interrupt ReQuest (IRQ)
     */
     func BRK() -> Int {
+		incrementPC();
 		queueInterrupt(Interrupt.Software);
 		
-        return 7;
+        return 0;
     }
     
     /**
@@ -1034,6 +1045,9 @@ class CPU: NSObject {
         self.P = pop();
         self.PCL = pop();
         self.PCH = pop();
+		
+		// Force B flag to be clear
+		setPBit(4, value: false);
 		
 		// Force unused flag to be set
 		setPBit(5, value: true);
