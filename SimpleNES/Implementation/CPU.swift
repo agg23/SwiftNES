@@ -1006,24 +1006,12 @@ class CPU: NSObject {
     func push(byte: UInt8) {
         self.mainMemory.writeMemory(0x100 + Int(self.SP), data: byte);
         
-        if(self.SP == 0) {
-            print("ERROR: Stack underflow");
-			self.errorOccured = true;
-			return;
-        }
-        
-        self.SP = self.SP - 1;
+        self.SP = UInt8((Int(self.SP) - 1) & 0xFF);
     }
     
     func pop() -> UInt8 {
-        if(self.SP == 0xFF) {
-            print("ERROR: Stack overflow");
-			self.errorOccured = true;
-			return 0;
-        }
-        
-        self.SP = self.SP + 1;
-        
+		self.SP = UInt8((Int(self.SP) + 1) & 0xFF);
+		
         return self.mainMemory.readMemory(0x100 + Int(self.SP));
     }
     
