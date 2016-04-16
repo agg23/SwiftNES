@@ -117,7 +117,7 @@ class Memory: NSObject {
 				case 0:
 					return (self.ppu?.PPUCTRL)!;
 				case 1:
-					return (self.ppu?.PPUMASK)!;
+					return (self.ppu?.readWriteOnlyRegister())!;
 				case 2:
 					return (self.ppu?.readPPUSTATUS())!;
 				case 3:
@@ -127,7 +127,7 @@ class Memory: NSObject {
 				case 5:
 					return (self.ppu?.PPUSCROLL)!;
 				case 6:
-					return (self.ppu?.PPUADDR)!;
+					return (self.ppu?.readWriteOnlyRegister())!;
 				case 7:
 					return (self.ppu?.readPPUDATA())!;
 				default: break
@@ -151,25 +151,7 @@ class Memory: NSObject {
 		}
 		
 		if(self.type == MemoryType.CPU && (address >= 0x2000) && (address < 0x4000)) {
-			switch (address % 8) {
-				case 0:
-					self.ppu?.PPUCTRL = data;
-				case 1:
-					self.ppu?.PPUMASK = data;
-				case 2:
-					self.ppu?.PPUSTATUS = data;
-				case 3:
-					self.ppu?.OAMADDR = data;
-				case 4:
-					self.ppu?.OAMDATA = data;
-				case 5:
-					self.ppu?.PPUSCROLL = data;
-				case 6:
-					self.ppu?.PPUADDR = data;
-				case 7:
-					self.ppu?.PPUDATA = data;
-				default: break
-			}
+			self.ppu?.cpuWrite(address % 8, data: data);
 		} else if(self.type == MemoryType.CPU && (address == 0x4014)) {
 			self.ppu?.OAMDMA = data;
 		} else if(self.type == MemoryType.CPU && (address == 0x4016)) {

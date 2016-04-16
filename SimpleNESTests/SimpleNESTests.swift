@@ -159,6 +159,7 @@ class SimpleNESTests: XCTestCase {
 	// MARK: - Interrupts
 	
 	func testCLILatency() {
+		// Needs implemented APU
 		romTest(defaultPath + "cpu_interrupts_v2/rom_singles/1-cli_latency.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
@@ -193,6 +194,7 @@ class SimpleNESTests: XCTestCase {
 	}
 	
 	func testDummyReadsAPU() {
+		// Needs implemented APU
 		romTest(defaultPath + "instr_misc/rom_singles/04-dummy_reads_apu.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	

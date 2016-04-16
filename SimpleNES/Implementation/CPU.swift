@@ -1059,6 +1059,8 @@ class CPU: NSObject {
      ReTurn from Subroutine
     */
     func RTS() -> Int {
+		self.mainMemory.readMemory(Int(getPC()));
+		
         self.PCL = pop();
         self.PCH = pop();
         

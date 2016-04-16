@@ -230,6 +230,16 @@ class PPU: NSObject {
 	
 	var secondaryOAM = [UInt8](count: 32, repeatedValue: 0);
 	
+	/**
+	 Buffers PPUDATA reads
+	*/
+	var ppuDataReadBuffer: UInt8;
+	
+	/**
+	 Any write to a PPU register will set this value
+	*/
+	var lastWrittenRegisterValue: UInt8;
+	
 	// MARK: Stored Values Between Cycles -
 	var nameTable: UInt8;
 	var attributeTable: UInt8;
@@ -273,6 +283,9 @@ class PPU: NSObject {
 		self.pixelIndex = 0;
 		
 		self.cycle = 0;
+		
+		self.ppuDataReadBuffer = 0;
+		self.lastWrittenRegisterValue = 0;
 		
 		self.nameTable = 0;
 		self.attributeTable = 0;
@@ -600,6 +613,34 @@ class PPU: NSObject {
 		return b;
 	}
 	
+	func cpuWrite(index: Int, data: UInt8) {
+		switch (index) {
+			case 0:
+				self.PPUCTRL = data;
+				self.lastWrittenRegisterValue = data;
+			case 1:
+				self.PPUMASK = data;
+				self.lastWrittenRegisterValue = data;
+			case 2:
+				//self.PPUSTATUS = data;
+				break;
+			case 3:
+				self.OAMADDR = data;
+				self.lastWrittenRegisterValue = data;
+			case 4:
+				self.OAMDATA = data;
+			case 5:
+				self.PPUSCROLL = data;
+			case 6:
+				self.PPUADDR = data;
+				self.lastWrittenRegisterValue = data;
+			case 7:
+				self.PPUDATA = data;
+			default:
+				print("ERROR: Invalid CPU write index");
+		}
+	}
+	
 	func readPPUSTATUS() -> UInt8 {
 		let temp = self.PPUSTATUS;
 		
@@ -616,9 +657,22 @@ class PPU: NSObject {
 		return temp;
 	}
 	
+	func readWriteOnlyRegister() -> UInt8 {
+		// Reading any write only register should return last written value to a PPU register
+		return self.lastWrittenRegisterValue;
+	}
+	
 	func readPPUDATA() -> UInt8 {
-		self.PPUDATA = self.ppuMemory.readMemory(Int(self.vramAddress));
-		return self.PPUDATA;
+		var temp = self.ppuDataReadBuffer;
+		
+		self.ppuDataReadBuffer = self.ppuMemory.readMemory(Int(self.vramAddress));
+		
+		if(self.vramAddress >= 0x3F00) {
+			// Palette data is instantly returned
+			temp = self.ppuDataReadBuffer;
+		}
+		
+		return temp;
 	}
 	
 	func dmaCopy() {
