@@ -86,64 +86,68 @@ class SimpleNESTests: XCTestCase {
 	
 	// MARK: - blargg's CPU Behavior Instruction Tests
 	
+	func testCPUBasics() {
+		romTest(defaultPath + "instr_test-v5/rom_singles/01-basics.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
 	func testImplied() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/01-implied.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/02-implied.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testImmediate() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/02-immediate.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/03-immediate.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testZeroPage() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/03-zero_page.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/04-zero_page.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testZeroPageXY() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/04-zp_xy.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/05-zp_xy.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testAbsolute() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/05-absolute.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/06-absolute.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testAbsoluteXY() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/06-abs_xy.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/07-abs_xy.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testIndirectX() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/07-ind_x.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/08-ind_x.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testIndirectY() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/08-ind_y.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/09-ind_y.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testBranches() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/09-branches.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/10-branches.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testStack() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/10-stack.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/11-stack.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testJump() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/11-jmp_jsr.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/12-jmp_jsr.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testRTS() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/12-rts.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/13-rts.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testRTI() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/13-rti.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/14-rti.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testBRK() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/14-brk.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/15-brk.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	func testSpecialInstructions() {
-		romTest(defaultPath + "instr_test-v3/rom_singles/15-special.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_test-v5/rom_singles/16-special.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
 	// MARK: - Instruction Execution from Any Address

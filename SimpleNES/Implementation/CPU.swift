@@ -244,6 +244,14 @@ class CPU: NSObject {
 			case 0x71:
 				return ADC(.IndirectY);
 			
+			// ALR
+			case 0x4B:
+				return ALR();
+			
+			// ANC
+			case 0x0B, 0x2B:
+				return ANC();
+			
 			// AND
 			case 0x29:
 				return AND(.Immediate);
@@ -273,7 +281,15 @@ class CPU: NSObject {
 				return ASL(.Absolute);
 			case 0x1E:
 				return ASL(.AbsoluteIndexedX);
-				
+			
+			// ARR
+			case 0x6B:
+				return ARR();
+			
+			// AXS
+			case 0xCB:
+				return AXS();
+			
 			// BCC
 			case 0x90:
 				return BCC();
@@ -527,7 +543,12 @@ class CPU: NSObject {
 				return LDY(.Absolute);
 			case 0xBC:
 				return LDY(.AbsoluteIndexedX);
-				
+			
+			// LXA
+			// Assuming XAA (0x8B) is the same as LXA
+			case 0x8B, 0xAB:
+				return LXA();
+			
 			// LSR
 			case 0x4A:
 				return LSR(.Accumulator);
@@ -2329,19 +2350,131 @@ class CPU: NSObject {
         
         return length;
     }
-    
+	
+	/**
+	 AND immediate with A (unofficial)
+	*/
+	func ANC() -> Int {
+		self.A = self.A & readFromMemoryUsingAddressingMode(.Immediate);
+		
+		// Set negative flag
+		let negative = (self.A >> 7) & 0x1 == 1;
+		setPBit(7, value: negative);
+		
+		// Set zero flag
+		setPBit(1, value: (self.A == 0));
+		
+		// Set carry flag (if negative)
+		setPBit(0, value: negative);
+		
+		return 2;
+	}
+	
+	/**
+	 AND immediate with A, then shift right 1 (unofficial)
+	*/
+	func ALR() -> Int {
+		AND(.Immediate);
+		LSR(.Accumulator);
+		
+		return 2;
+	}
+	
+	/**
+	 AND immediate with A, then rotate right 1 (unofficial)
+	*/
+	func ARR() -> Int {
+		AND(.Immediate);
+		ROR(.Accumulator);
+		
+		let bit5 = (self.A >> 5) & 0x1 == 1;
+		let bit6 = (self.A >> 6) & 0x1 == 1;
+		
+		if(bit5) {
+			if(bit6) {
+				// Set carry flag
+				setPBit(0, value: true);
+				
+				// Clear overflow flag
+				setPBit(6, value: false);
+			} else {
+				// Clear carry flag
+				setPBit(0, value: false);
+				
+				// Set overflow flag
+				setPBit(6, value: true);
+			}
+		} else if(bit6) {
+			// Set carry flag
+			setPBit(0, value: true);
+			
+			// Set overflow flag
+			setPBit(6, value: true);
+		} else {
+			// Clear carry flag
+			setPBit(0, value: false);
+			
+			// Clear overflow flag
+			setPBit(6, value: false);
+		}
+		
+		return 2;
+	}
+	
+	/**
+	 AND immediate with A, then transfer A to X (unofficial)
+	*/
+	func LXA() -> Int {
+		let immediate = readFromMemoryUsingAddressingMode(.Immediate);
+		
+		self.A = immediate;
+		self.X = immediate;
+		
+		// Set zero flag
+		setPBit(1, value: (self.A == 0));
+		
+		// Set negative flag
+		setPBit(7, value: (self.A >> 7) & 0x1 == 1);
+		
+		return 2;
+	}
+	
+	/**
+	 AND X with A, then subtract immediate from X (unofficial)
+	*/
+	func AXS() -> Int {
+		self.X = self.A & self.X;
+		
+		let memoryValue = readFromMemoryUsingAddressingMode(.Immediate);
+		
+		let temp = Int(self.X) - Int(memoryValue);
+		
+		// Set carry flag
+		setPBit(0, value: temp >= 0);
+		
+		// Set negative flag
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+		
+		// Set zero flag
+		setPBit(1, value: (temp & 0xFF) == 0);
+		
+		self.X = UInt8(temp & 0xFF);
+		
+		return 2;
+	}
+	
     // MARK: Flow Control
-    
+	
     /**
      Compare A with Memory
     */
     func CMP(mode: AddressingMode) -> Int {
         var length = 4;
-        
+		
         switch mode {
             case .Immediate:
                 length = 2;
-            
+			
             case .ZeroPage:
                 length = 3;
             
