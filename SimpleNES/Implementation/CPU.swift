@@ -770,7 +770,15 @@ class CPU: NSObject {
 				return STY(.ZeroPageIndexedX);
 			case 0x8C:
 				return STY(.Absolute);
-				
+			
+			// SXA
+			case 0x9E:
+				return SXA();
+			
+			// SYA
+			case 0x9C:
+				return SYA();
+			
 			// TAX
 			case 0xAA:
 				return TAX();
@@ -1948,7 +1956,7 @@ class CPU: NSObject {
             setPBit(7, value: false);
             
             // Set carry flag
-            setPBit(0, value: (self.A & 0x1) == 1);
+            setPBit(0, value: (value & 0x1) == 1);
             
             let temp = (value >> 1) & 0x7F;
             
@@ -2459,6 +2467,32 @@ class CPU: NSObject {
 		setPBit(1, value: (temp & 0xFF) == 0);
 		
 		self.X = UInt8(temp & 0xFF);
+		
+		return 2;
+	}
+	
+	/**
+	 AND X with high byte from Memory
+	*/
+	func SXA() -> Int {
+		let address = addressUsingAddressingMode(.AbsoluteIndexedY);
+		
+		let high = self.X & UInt8(((address >> 8) + Int(1)) & 0xFF);
+		
+		self.mainMemory.writeMemory((Int(high) << 8) | (address & 0xFF), data: self.X);
+		
+		return 2;
+	}
+	
+	/**
+	 AND Y with high byte from Memory
+	*/
+	func SYA() -> Int {
+		let address = addressUsingAddressingMode(.AbsoluteIndexedX);
+		
+		let high = self.Y & UInt8(((address >> 8) + Int(1)) & 0xFF);
+		
+		self.mainMemory.writeMemory((Int(high) << 8) | (address & 0xFF), data: self.Y);
 		
 		return 2;
 	}
