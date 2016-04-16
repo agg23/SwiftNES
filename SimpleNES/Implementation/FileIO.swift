@@ -19,12 +19,12 @@ class FileIO: NSObject {
 		self.ppuMemory = ppuMemory;
 	}
 	
-	func loadFile(path: String) {
+	func loadFile(path: String) -> Bool {
 		let data = NSFileManager.defaultManager().contentsAtPath(path);
 		
 		if(data == nil) {
 			print("File failed to load");
-			return;
+			return false;
 		}
 		
 		let count = data!.length / sizeof(UInt32);
@@ -37,7 +37,7 @@ class FileIO: NSObject {
 		// NES(escape) in little endian
 		if(nesHead != 0x1a53454e) {
 			print("Invalid input file, does not contain NES header");
-			return;
+			return false;
 		}
 		
 		let banksHead = bytes[1];
@@ -121,5 +121,7 @@ class FileIO: NSObject {
 		}
 		
 		print("Memory initialized, wrote \(i * 4) bytes");
+		
+		return true;
 	}
 }

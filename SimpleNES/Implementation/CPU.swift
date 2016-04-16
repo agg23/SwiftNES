@@ -83,6 +83,11 @@ class CPU: NSObject {
 	*/
 	var oamExtraCycle = false;
 	
+	/**
+	 True if an error occurred
+	*/
+	var errorOccured = false;
+	
 	let loggingQueue = dispatch_queue_create("com.appcannon.simplenes.loggingqueue", DISPATCH_QUEUE_SERIAL);
 	
     enum AddressingMode {
@@ -771,6 +776,7 @@ class CPU: NSObject {
 			
 			default:
 				print("ERROR: Instruction with opcode 0x\(logger.hexString(opcode, padding: 2)) not found");
+				self.errorOccured = true;
 				return -1;
 		}
 	}
@@ -973,6 +979,7 @@ class CPU: NSObject {
         
         if(self.SP == 0) {
             print("ERROR: Stack underflow");
+			self.errorOccured = true;
 			return;
         }
         
@@ -982,6 +989,7 @@ class CPU: NSObject {
     func pop() -> UInt8 {
         if(self.SP == 0xFF) {
             print("ERROR: Stack overflow");
+			self.errorOccured = true;
 			return 0;
         }
         
