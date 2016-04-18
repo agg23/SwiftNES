@@ -229,6 +229,15 @@ class SimpleNESTests: XCTestCase {
 		romTest(defaultPath + "ppu_open_bus/ppu_open_bus.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 	
+	// Sprite hit tests cannot be automated.
+	// Fails Screen Bottom #4
+	// Fails Double Height #3 - Needs 16x8 sprites implemented
+	// Fails Timing Basics with black screen
+	// Fails Timing Order with black screen
+	// Fails Edge Timing with black screen
+	// Black screens possibly need implemented APU
+	// Passes all others
+	
 	// MARK: - VBlank flag and NMI Testing
 	
 	func testVBLBasics() {

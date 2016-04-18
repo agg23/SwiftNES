@@ -36,6 +36,7 @@ struct Sprite {
 	var patternTableHigh: UInt8;
 	var attribute: UInt8;
 	var xCoord: UInt8;
+	var yCoord: UInt8;
 }
 
 func makeRGBArray(array: [UInt32]) -> [RGB] {
@@ -246,7 +247,7 @@ class PPU: NSObject {
 	var patternTableLow: UInt8;
 	var patternTableHigh: UInt8;
 	
-	var currentSpriteData = [Sprite](count: 8, repeatedValue: Sprite(patternTableLow: 0xFF, patternTableHigh: 0xFF, attribute: 0, xCoord: 0));
+	var currentSpriteData = [Sprite](count: 8, repeatedValue: Sprite(patternTableLow: 0xFF, patternTableHigh: 0xFF, attribute: 0, xCoord: 0, yCoord: 0));
 	
 	var oamByte: UInt8;
 	
@@ -352,6 +353,9 @@ class PPU: NSObject {
 			// TODO: Update horizontal and vertical scroll counters
 			
 			if(self.cycle == 1) {
+				// Clear sprite 0 hit flag
+				setBit(6, value: false, pointer: &self.PPUSTATUS);
+				
 				// Clear VBlank flag
 				setBit(7, value: false, pointer: &self.PPUSTATUS);
 			}
@@ -409,6 +413,15 @@ class PPU: NSObject {
 							if(self.oamIndex >= 64) {
 								self.oamIndex = 0;
 								self.oamStage = 1;
+								
+								while(self.secondaryOAMIndex < 32) {
+									self.secondaryOAM[self.secondaryOAMIndex] = 0xFF;
+									self.secondaryOAM[self.secondaryOAMIndex + 1] = 0xFF;
+									self.secondaryOAM[self.secondaryOAMIndex + 2] = 0xFF;
+									self.secondaryOAM[self.secondaryOAMIndex + 3] = 0xFF;
+									
+									self.secondaryOAMIndex += 4;
+								}
 							}
 							
 						} else {
@@ -451,7 +464,15 @@ class PPU: NSObject {
 								
 								if(j == 7 && getBit(3, pointer: &self.PPUMASK) && backgroundPixel.colorIndex & 0x3 != 0 && paletteIndex & 0x3 != 0) {
 									// Sprite 0 and Background is not transparent
-									setBit(6, value: true, pointer: &self.PPUSTATUS);
+									
+									// If bits 1 or 2 in PPUMASK are clear and the x coordinate is between 0 and 7, don't hit
+									// If x coordinate is 255 or greater, don't hit
+									// If y coordinate is 239 or greater, don't hit
+									if(!((!getBit(1, pointer: &self.PPUMASK) || !getBit(2, pointer: &self.PPUMASK)) && xCoord + x < 8)
+										&& xCoord + x < 255
+										&& sprite.yCoord < 239) {
+										setBit(6, value: true, pointer: &self.PPUSTATUS);
+									}
 								}
 								
 								self.frame[self.scanline * 256 + xCoord + x] = colors[paletteIndex];
@@ -561,7 +582,7 @@ class PPU: NSObject {
 						patternTableHigh = reverseByte(patternTableHigh);
 					}
 					
-					currentSpriteData[self.secondaryOAMIndex / 4] = Sprite(patternTableLow: patternTableLow, patternTableHigh: patternTableHigh, attribute: attributes, xCoord: xCoord);
+					currentSpriteData[self.secondaryOAMIndex / 4] = Sprite(patternTableLow: patternTableLow, patternTableHigh: patternTableHigh, attribute: attributes, xCoord: xCoord, yCoord: yCoord);
 					
 					self.secondaryOAMIndex += 4;
 				}
