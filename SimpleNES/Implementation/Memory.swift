@@ -76,6 +76,8 @@ class Memory: NSObject {
 	
 	var memory: [UInt8];
 	
+	var mirrorPRGROM = false;
+	
 	/**
 	 Stores the type of this Memory object
 	*/
@@ -134,13 +136,15 @@ class Memory: NSObject {
 			}
 		} else if(self.type == MemoryType.CPU && (address == 0x4016 || address == 0x4017)) {
 			return self.controllerIO!.readState();
+		} else if(self.mirrorPRGROM && address >= 0xC000) {
+			return self.memory[0x8000 + address % 0xC000];
 		}
 		
 		return self.memory[address];
 	}
 	
 	func readTwoBytesMemory(address: Int) -> UInt16 {
-		return UInt16(self.memory[address + 1]) << 8 | UInt16(self.memory[address]);
+		return UInt16(self.readMemory(address + 1)) << 8 | UInt16(self.readMemory(address));
 	}
 	
 	func writeMemory(address: Int, data: UInt8) {
@@ -160,6 +164,8 @@ class Memory: NSObject {
 			} else {
 				self.controllerIO?.strobeHigh = false;
 			}
+		} else if(self.mirrorPRGROM && address >= 0xC000) {
+			self.memory[0x8000 + address % 0xC000] = data;
 		}
 		
 		self.memory[address] = data;

@@ -43,6 +43,11 @@ class FileIO: NSObject {
 		let banksHead = bytes[1];
 		
 		let romBanks = UInt8(banksHead & 0xFF);
+		
+		if(romBanks == 1) {
+			self.mainMemory.mirrorPRGROM = true;
+		}
+		
 		let vROMBanks = UInt8((banksHead & 0xFF00) >> 8);
 		let misc = UInt8((banksHead & 0xFF0000) >> 16);
 		
@@ -78,13 +83,14 @@ class FileIO: NSObject {
 		print("Trainer: \(trainer), Four Screen VRAM: \(fourScreenVRAM), NES VS System: \(nesVSSystem)");
 		print("ROM Mapper \(romMapper), RAM Banks: \(ramBanks), NTSC: \(NTSC)");
 		
-		var b = bytes[4];
+//		var b = bytes[4];
 		
 		var i = 0;
 		
 		let romEndingOffset = Int(romBanks) * 0x4000;
 		
-		while(i + 5 < count) {
+		while(i < count - 4) {
+			let b = bytes[4 + i];
 			let offset = i * 4;
 			
 			if(offset+3 > romEndingOffset) {
@@ -104,20 +110,19 @@ class FileIO: NSObject {
 				self.mainMemory.writeMemory(0x8002 + offset, data: UInt8((b & 0xFF0000) >> 16));
 				self.mainMemory.writeMemory(0x8003 + offset, data: UInt8((b & 0xFF000000) >> 24));
 				
-				if(romBanks == 1) {
-					// If there is only 1 ROM bank, the bank is duplicated at $C000
-					self.mainMemory.writeMemory(0xC000 + offset, data: UInt8(b & 0xFF));
-					self.mainMemory.writeMemory(0xC001 + offset, data: UInt8((b & 0xFF00) >> 8));
-					self.mainMemory.writeMemory(0xC002 + offset, data: UInt8((b & 0xFF0000) >> 16));
-					self.mainMemory.writeMemory(0xC003 + offset, data: UInt8((b & 0xFF000000) >> 24));
-                    
-//                    print(String(format: "Byte: 0x%8x", b));
-//                    print(String(format: "A: 0x%2x, B: 0x%2x, C: 0x%2x, D: 0x%2x", UInt8(b & 0xFF), UInt8((b & 0xFF00) >> 8), UInt8((b & 0xFF0000) >> 16), UInt8((b & 0xFF000000) >> 24)));
-				}
+//				if(romBanks == 1) {
+//					// If there is only 1 ROM bank, the bank is duplicated at $C000
+//					self.mainMemory.writeMemory(0xC000 + offset, data: UInt8(b & 0xFF));
+//					self.mainMemory.writeMemory(0xC001 + offset, data: UInt8((b & 0xFF00) >> 8));
+//					self.mainMemory.writeMemory(0xC002 + offset, data: UInt8((b & 0xFF0000) >> 16));
+//					self.mainMemory.writeMemory(0xC003 + offset, data: UInt8((b & 0xFF000000) >> 24));
+////
+//////                    print(String(format: "Byte: 0x%8x", b));
+//                    print(String(format: "%d A: 0x%2x, B: 0x%2x, C: 0x%2x, D: 0x%2x", i, UInt8(b & 0xFF), UInt8((b & 0xFF00) >> 8), UInt8((b & 0xFF0000) >> 16), UInt8((b & 0xFF000000) >> 24)));
+//				}
 			}
             
 			i += 1;
-			b = bytes[4 + i];
 		}
 		
 		print("Memory initialized, wrote \(i * 4) bytes");
