@@ -228,6 +228,158 @@ class CPU: NSObject {
 //		})
 		
 		switch opcode {
+			// LDA
+			case 0xA5:
+				return LDA(.ZeroPage);
+			case 0xA9:
+				return LDA(.Immediate);
+			case 0xB5:
+				return LDA(.ZeroPageIndexedX);
+			case 0xAD:
+				return LDA(.Absolute);
+			case 0xBD:
+				return LDA(.AbsoluteIndexedX);
+			case 0xB9:
+				return LDA(.AbsoluteIndexedY);
+			case 0xA1:
+				return LDA(.IndirectX);
+			case 0xB1:
+				return LDA(.IndirectY);
+			
+			// BNE
+			case 0xD0:
+				return BNE();
+			
+			// JMP
+			case 0x4C:
+				return JMP(.Absolute);
+			case 0x6C:
+				return JMP(.AbsoluteIndirect);
+			
+			// INX
+			case 0xE8:
+				return INX();
+			
+			// BPL
+			case 0x10:
+				return BPL();
+			
+			// CMP
+			case 0xC9:
+				return CMP(.Immediate);
+			case 0xC5:
+				return CMP(.ZeroPage);
+			case 0xD5:
+				return CMP(.ZeroPageIndexedX);
+			case 0xCD:
+				return CMP(.Absolute);
+			case 0xDD:
+				return CMP(.AbsoluteIndexedX);
+			case 0xD9:
+				return CMP(.AbsoluteIndexedY);
+			case 0xC1:
+				return CMP(.IndirectX);
+			case 0xD1:
+				return CMP(.IndirectY);
+			
+			// BMI
+			case 0x30:
+				return BMI();
+			
+			// BEQ
+			case 0xF0:
+				return BEQ();
+			
+			// BIT
+			case 0x24:
+				return BIT(.ZeroPage);
+			case 0x2C:
+				return BIT(.Absolute);
+			
+			// STA
+			case 0x85:
+				return STA(.ZeroPage);
+			case 0x95:
+				return STA(.ZeroPageIndexedX);
+			case 0x8D:
+				return STA(.Absolute);
+			case 0x9D:
+				return STA(.AbsoluteIndexedX);
+			case 0x99:
+				return STA(.AbsoluteIndexedY);
+			case 0x81:
+				return STA(.IndirectX);
+			case 0x91:
+				return STA(.IndirectY);
+			
+			// DEX
+			case 0xCA:
+				return DEX();
+			
+			// INY
+			case 0xC8:
+				return INY();
+			
+			// TAY
+			case 0xA8:
+				return TAY();
+			
+			// INC
+			case 0xE6:
+				return INC(.ZeroPage);
+			case 0xF6:
+				return INC(.ZeroPageIndexedX);
+			case 0xEE:
+				return INC(.Absolute);
+			case 0xFE:
+				return INC(.AbsoluteIndexedX);
+			
+			// BCS
+			case 0xB0:
+				return BCS();
+			
+			// JSR
+			case 0x20:
+				return JSR();
+			
+			// LSR
+			case 0x4A:
+				return LSR(.Accumulator);
+			case 0x46:
+				return LSR(.ZeroPage);
+			case 0x56:
+				return LSR(.ZeroPageIndexedX);
+			case 0x4E:
+				return LSR(.Absolute);
+			case 0x5E:
+				return LSR(.AbsoluteIndexedX);
+			
+			// RTS
+			case 0x60:
+				return RTS();
+			
+			// CLC
+			case 0x18:
+				return CLC();
+			
+			// AND
+			case 0x29:
+				return AND(.Immediate);
+			case 0x25:
+				return AND(.ZeroPage);
+			case 0x35:
+				return AND(.ZeroPageIndexedX);
+			case 0x2D:
+				return AND(.Absolute);
+			case 0x3D:
+				return AND(.AbsoluteIndexedX);
+			case 0x39:
+				return AND(.AbsoluteIndexedY);
+			case 0x21:
+				return AND(.IndirectX);
+			case 0x31:
+				return AND(.IndirectY);
+			
 			// ADC
 			case 0x69:
 				return ADC(.Immediate);
@@ -254,24 +406,6 @@ class CPU: NSObject {
 			case 0x0B, 0x2B:
 				return ANC();
 			
-			// AND
-			case 0x29:
-				return AND(.Immediate);
-			case 0x25:
-				return AND(.ZeroPage);
-			case 0x35:
-				return AND(.ZeroPageIndexedX);
-			case 0x2D:
-				return AND(.Absolute);
-			case 0x3D:
-				return AND(.AbsoluteIndexedX);
-			case 0x39:
-				return AND(.AbsoluteIndexedY);
-			case 0x21:
-				return AND(.IndirectX);
-			case 0x31:
-				return AND(.IndirectY);
-				
 			// ASL
 			case 0x0A:
 				return ASL(.Accumulator);
@@ -296,32 +430,6 @@ class CPU: NSObject {
 			case 0x90:
 				return BCC();
 				
-			// BCS
-			case 0xB0:
-				return BCS();
-				
-			// BEQ
-			case 0xF0:
-				return BEQ();
-				
-			// BIT
-			case 0x24:
-				return BIT(.ZeroPage);
-			case 0x2C:
-				return BIT(.Absolute);
-				
-			// BMI
-			case 0x30:
-				return BMI();
-				
-			// BNE
-			case 0xD0:
-				return BNE();
-				
-			// BPL
-			case 0x10:
-				return BPL();
-				
 			// BRK
 			case 0x00:
 				return BRK();
@@ -334,10 +442,6 @@ class CPU: NSObject {
 			case 0x70:
 				return BVS();
 				
-			// CLC
-			case 0x18:
-				return CLC();
-				
 			// CLD
 			case 0xD8:
 				return CLD();
@@ -349,24 +453,6 @@ class CPU: NSObject {
 			// CLV
 			case 0xB8:
 				return CLV();
-				
-			// CMP
-			case 0xC9:
-				return CMP(.Immediate);
-			case 0xC5:
-				return CMP(.ZeroPage);
-			case 0xD5:
-				return CMP(.ZeroPageIndexedX);
-			case 0xCD:
-				return CMP(.Absolute);
-			case 0xDD:
-				return CMP(.AbsoluteIndexedX);
-			case 0xD9:
-				return CMP(.AbsoluteIndexedY);
-			case 0xC1:
-				return CMP(.IndirectX);
-			case 0xD1:
-				return CMP(.IndirectY);
 				
 			// CPX
 			case 0xE0:
@@ -410,10 +496,6 @@ class CPU: NSObject {
 			case 0xDE:
 				return DEC(.AbsoluteIndexedX);
 				
-			// DEX
-			case 0xCA:
-				return DEX();
-				
 			// DEY
 			case 0x88:
 				return DEY();
@@ -446,24 +528,6 @@ class CPU: NSObject {
 			case 0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4:
 				return IGN(.ZeroPageIndexedX);
 			
-			// INC
-			case 0xE6:
-				return INC(.ZeroPage);
-			case 0xF6:
-				return INC(.ZeroPageIndexedX);
-			case 0xEE:
-				return INC(.Absolute);
-			case 0xFE:
-				return INC(.AbsoluteIndexedX);
-				
-			// INX
-			case 0xE8:
-				return INX();
-				
-			// INY
-			case 0xC8:
-				return INY();
-			
 			// ISC
 			case 0xEF:
 				return ISC(.Absolute);
@@ -480,16 +544,6 @@ class CPU: NSObject {
 			case 0xF3:
 				return ISC(.IndirectY);
 			
-			// JMP
-			case 0x4C:
-				return JMP(.Absolute);
-			case 0x6C:
-				return JMP(.AbsoluteIndirect);
-				
-			// JSR
-			case 0x20:
-				return JSR();
-			
 			// LAX
 			case 0xA7:
 				return LAX(.ZeroPage);
@@ -504,24 +558,6 @@ class CPU: NSObject {
 			case 0xB3:
 				return LAX(.IndirectY);
 			
-			// LDA
-			case 0xA9:
-				return LDA(.Immediate);
-			case 0xA5:
-				return LDA(.ZeroPage);
-			case 0xB5:
-				return LDA(.ZeroPageIndexedX);
-			case 0xAD:
-				return LDA(.Absolute);
-			case 0xBD:
-				return LDA(.AbsoluteIndexedX);
-			case 0xB9:
-				return LDA(.AbsoluteIndexedY);
-			case 0xA1:
-				return LDA(.IndirectX);
-			case 0xB1:
-				return LDA(.IndirectY);
-				
 			// LDX
 			case 0xA2:
 				return LDX(.Immediate);
@@ -550,18 +586,6 @@ class CPU: NSObject {
 			// Assuming XAA (0x8B) is the same as LXA
 			case 0x8B, 0xAB:
 				return LXA();
-			
-			// LSR
-			case 0x4A:
-				return LSR(.Accumulator);
-			case 0x46:
-				return LSR(.ZeroPage);
-			case 0x56:
-				return LSR(.ZeroPageIndexedX);
-			case 0x4E:
-				return LSR(.Absolute);
-			case 0x5E:
-				return LSR(.AbsoluteIndexedX);
 				
 			// NOP
 			case 0xEA, 0x1A, 0x3A, 0x5A, 0x7A, 0xDA, 0xEA, 0xFA:
@@ -660,10 +684,6 @@ class CPU: NSObject {
 			// RTI
 			case 0x40:
 				return RTI();
-				
-			// RTS
-			case 0x60:
-				return RTS();
 			
 			// SAX
 			case 0x8F:
@@ -740,22 +760,6 @@ class CPU: NSObject {
 				return SRE(.IndirectX);
 			case 0x53:
 				return SRE(.IndirectY);
-			
-			// STA
-			case 0x85:
-				return STA(.ZeroPage);
-			case 0x95:
-				return STA(.ZeroPageIndexedX);
-			case 0x8D:
-				return STA(.Absolute);
-			case 0x9D:
-				return STA(.AbsoluteIndexedX);
-			case 0x99:
-				return STA(.AbsoluteIndexedY);
-			case 0x81:
-				return STA(.IndirectX);
-			case 0x91:
-				return STA(.IndirectY);
 				
 			// STX
 			case 0x86:
@@ -784,10 +788,6 @@ class CPU: NSObject {
 			// TAX
 			case 0xAA:
 				return TAX();
-				
-			// TAY
-			case 0xA8:
-				return TAY();
 				
 			// TSX
 			case 0xBA:
