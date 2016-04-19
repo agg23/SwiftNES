@@ -558,31 +558,38 @@ class PPU: NSObject {
 					// TODO: Handle 8x16 sprites
 					var basePatternTableAddress = 0x0000;
 					
-					var height = 8;
+					let verticalFlip = getBit(7, pointer: &attributes);
 					
 					if(getBit(5, pointer: &self.PPUCTRL)) {
 						// 8x16
-						height = 16;
-						
 						if(tileNumber & 0x1 == 1) {
 							basePatternTableAddress = 0x1000;
 							tileNumber = tileNumber - 1;
 						}
 						
 						if(yShift > 7) {
+							// Flip sprite vertically
+							if(verticalFlip) {
+								yShift = 15 - yShift;
+							} else {
+								tileNumber += 1;
+								yShift -= 8;
+							}
+							
+						} else if(verticalFlip) {
 							tileNumber += 1;
-							yShift -= 8;
+							yShift = 7 - yShift;
 						}
 					} else {
 						// 8x8
 						if(getBit(3, pointer: &self.PPUCTRL)) {
 							basePatternTableAddress = 0x1000;
 						}
-					}
-					
-					// Flip sprite vertically
-					if(getBit(7, pointer: &attributes)) {
-						yShift = height - 1 - yShift;
+						
+						// Flip sprite vertically
+						if(verticalFlip) {
+							yShift = 7 - yShift;
+						}
 					}
 					
 					var patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(tileNumber) << 4) + yShift);
