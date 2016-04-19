@@ -36,6 +36,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	private var ppu: PPU;
 	private let logger: Logger;
 	
+	private var frameCount = 0;
+	private var lastFrameUpdate: Double = 0;
+	
 	override init() {
 		self.logger = Logger(path: "/Users/adam/nes.log");
 		
@@ -166,6 +169,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 
 	func drawInMTKView(view: MTKView) {
+		self.frameCount += 1;
+		let now  = getTimestamp();
+		let diff = now - self.lastFrameUpdate;
+		if diff >= 1000 {
+			let fps = (Double(self.frameCount) / diff) * 1000;
+			
+			self.window.title = String(format: "SimpleNES [%.0f]", fps);
+			
+			self.frameCount = 0;
+			self.lastFrameUpdate = now;
+		}
+		
 		var cpuCycles = self.cpu.step();
 		
 		while(cpuCycles != -1) {
@@ -178,6 +193,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 			
 			cpuCycles = self.cpu.step();
 		}
+	}
+	
+	func getTimestamp() -> Double {
+		var tv:timeval = timeval()
+		gettimeofday(&tv, nil)
+		return (Double(tv.tv_sec)*1e3 + Double(tv.tv_usec)*1e-3)
 	}
 }
 
