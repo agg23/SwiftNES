@@ -568,13 +568,17 @@ class PPU: NSObject {
 							basePatternTableAddress = 0x1000;
 							tileNumber = tileNumber - 1;
 						}
+						
+						if(yShift > 7) {
+							tileNumber += 1;
+							yShift -= 8;
+						}
 					} else {
 						// 8x8
 						if(getBit(3, pointer: &self.PPUCTRL)) {
 							basePatternTableAddress = 0x1000;
 						}
 					}
-					
 					
 					// Flip sprite vertically
 					if(getBit(7, pointer: &attributes)) {
