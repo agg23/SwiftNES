@@ -114,30 +114,36 @@ class Memory: NSObject {
 	}
 	
 	func readMemory(address: Int) -> UInt8 {
-		if(self.type == MemoryType.CPU && (address >= 0x2000) && (address < 0x4000)) {
-			switch (address % 8) {
-				case 0:
-					return (self.ppu?.PPUCTRL)!;
-				case 1:
-					return (self.ppu?.readWriteOnlyRegister())!;
-				case 2:
-					return (self.ppu?.readPPUSTATUS())!;
-				case 3:
-					return (self.ppu?.OAMADDR)!;
-				case 4:
-					return (self.ppu?.OAMDATA)!;
-				case 5:
-					return (self.ppu?.PPUSCROLL)!;
-				case 6:
-					return (self.ppu?.readWriteOnlyRegister())!;
-				case 7:
-					return (self.ppu?.readPPUDATA())!;
-				default: break
+		if(self.type == MemoryType.CPU) {
+			if((address >= 0x2000) && (address < 0x4000)) {
+				switch (address % 8) {
+					case 0:
+						return (self.ppu?.PPUCTRL)!;
+					case 1:
+						return (self.ppu?.readWriteOnlyRegister())!;
+					case 2:
+						return (self.ppu?.readPPUSTATUS())!;
+					case 3:
+						return (self.ppu?.OAMADDR)!;
+					case 4:
+						return (self.ppu?.OAMDATA)!;
+					case 5:
+						return (self.ppu?.PPUSCROLL)!;
+					case 6:
+						return (self.ppu?.readWriteOnlyRegister())!;
+					case 7:
+						return (self.ppu?.readPPUDATA())!;
+					default: break
+				}
+			} else if((address == 0x4016 || address == 0x4017)) {
+				return self.controllerIO!.readState();
+			} else if(self.mirrorPRGROM && address >= 0xC000) {
+				return self.memory[0x8000 + address % 0xC000];
 			}
-		} else if(self.type == MemoryType.CPU && (address == 0x4016 || address == 0x4017)) {
-			return self.controllerIO!.readState();
-		} else if(self.mirrorPRGROM && address >= 0xC000) {
-			return self.memory[0x8000 + address % 0xC000];
+		} else if(self.type == MemoryType.PPU) {
+			if((address >= 0x3F00) && (address < 0x3F20) && (address & 0x3 == 0)) {
+				return self.memory[0x3F00];
+			}
 		}
 		
 		return self.memory[address];
@@ -154,18 +160,25 @@ class Memory: NSObject {
 			return;
 		}
 		
-		if(self.type == MemoryType.CPU && (address >= 0x2000) && (address < 0x4000)) {
-			self.ppu?.cpuWrite(address % 8, data: data);
-		} else if(self.type == MemoryType.CPU && (address == 0x4014)) {
-			self.ppu?.OAMDMA = data;
-		} else if(self.type == MemoryType.CPU && (address == 0x4016)) {
-			if(data & 0x1 == 1) {
-				self.controllerIO?.strobeHigh = true;
-			} else {
-				self.controllerIO?.strobeHigh = false;
+		if(self.type == MemoryType.CPU) {
+			if((address >= 0x2000) && (address < 0x4000)) {
+				self.ppu?.cpuWrite(address % 8, data: data);
+			} else if(address == 0x4014) {
+				self.ppu?.OAMDMA = data;
+			} else if(address == 0x4016) {
+				if(data & 0x1 == 1) {
+					self.controllerIO?.strobeHigh = true;
+				} else {
+					self.controllerIO?.strobeHigh = false;
+				}
+			} else if(self.mirrorPRGROM && address >= 0xC000) {
+				self.memory[0x8000 + address % 0xC000] = data;
 			}
-		} else if(self.mirrorPRGROM && address >= 0xC000) {
-			self.memory[0x8000 + address % 0xC000] = data;
+		} else if(self.type == MemoryType.PPU) {
+			if((address >= 0x3F00) && (address < 0x3F20) && (address & 0x3 == 0)) {
+				self.memory[0x3F00] = data;
+				return;
+			}
 		}
 		
 		self.memory[address] = data;
