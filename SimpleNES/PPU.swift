@@ -313,7 +313,6 @@ class PPU: NSObject {
 			// VBlank period
 			
 			if(self.scanline == 241 && self.cycle == 1) {
-//				self.cpu?.logger.log("VBlank");
 				if(!self.initFrame) {
 					// Set VBlank flag
 					setBit(7, value: true, pointer: &self.PPUSTATUS);
@@ -353,6 +352,9 @@ class PPU: NSObject {
 			// TODO: Update horizontal and vertical scroll counters
 			
 			if(self.cycle == 1) {
+				// Clear sprite overflow flag
+				setBit(5, value: false, pointer: &self.PPUSTATUS);
+				
 				// Clear sprite 0 hit flag
 				setBit(6, value: false, pointer: &self.PPUSTATUS);
 				
@@ -386,11 +388,19 @@ class PPU: NSObject {
 							let intOAMByte = Int(self.oamByte);
 							let intScanline = Int(self.scanline);
 							
-							if(intOAMByte <= intScanline && intOAMByte + 8 > intScanline) {
+							var spriteHeight = 8;
+							
+							if(getBit(5, pointer: &self.PPUCTRL)) {
+								spriteHeight = 16;
+							}
+							
+							if(intOAMByte <= intScanline && intOAMByte + spriteHeight > intScanline) {
 								
 								if(self.secondaryOAMIndex >= 32) {
-									// TODO: Handle overflow
-									setBit(4, value: true, pointer: &self.PPUSTATUS);
+									if(getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK)) {
+										// TODO: Handle overflow
+										setBit(5, value: true, pointer: &self.PPUSTATUS);
+									}
 								} else {
 									// Sprite should be drawn on this line
 									self.secondaryOAM[self.secondaryOAMIndex] = self.oamByte;
@@ -555,22 +565,36 @@ class PPU: NSObject {
 				
 				if(phaseIndex == 0 && self.secondaryOAMIndex < 32) {
 					let yCoord = self.secondaryOAM[secondaryOAMIndex];
-					let tileNumber = self.secondaryOAM[secondaryOAMIndex + 1];
+					var tileNumber = self.secondaryOAM[secondaryOAMIndex + 1];
 					var attributes = self.secondaryOAM[secondaryOAMIndex + 2];
 					let xCoord = self.secondaryOAM[secondaryOAMIndex + 3];
 					
 					var yShift = self.scanline - Int(yCoord);
 					
-					// TODO: Handle 8x8 sprites
+					// TODO: Handle 8x16 sprites
 					var basePatternTableAddress = 0x0000;
 					
-					if(getBit(3, pointer: &self.PPUCTRL)) {
-						basePatternTableAddress = 0x1000;
+					var height = 8;
+					
+					if(getBit(5, pointer: &self.PPUCTRL)) {
+						// 8x16
+						height = 16;
+						
+						if(tileNumber & 0x1 == 1) {
+							basePatternTableAddress = 0x1000;
+							tileNumber = tileNumber - 1;
+						}
+					} else {
+						// 8x8
+						if(getBit(3, pointer: &self.PPUCTRL)) {
+							basePatternTableAddress = 0x1000;
+						}
 					}
+					
 					
 					// Flip sprite vertically
 					if(getBit(7, pointer: &attributes)) {
-						yShift = 7 - yShift;
+						yShift = height - 1 - yShift;
 					}
 					
 					var patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(tileNumber) << 4) + yShift);
