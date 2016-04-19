@@ -77,7 +77,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.device = MTLCreateSystemDefaultDevice();
 		
 		self.metalView.device = self.device;
-		self.metalView.framebufferOnly = false;
 		self.metalView.preferredFramesPerSecond = 60;
 		self.metalView.delegate = self;
 		
@@ -129,6 +128,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		CGContextTranslateCTM(flippedContext, 0, CGFloat(finalHeight));
 		CGContextScaleCTM(flippedContext, 1.0, -1.0);
+		
+		CGContextSetInterpolationQuality(flippedContext, CGInterpolationQuality.None);
 		
 		let bounds = CGRect(x: 0, y: 0, width: Int(finalWidth), height: Int(finalHeight));
 		
