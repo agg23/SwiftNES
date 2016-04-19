@@ -49,7 +49,7 @@ func makeRGBArray(array: [UInt32]) -> [RGB] {
 	return rgbArray;
 }
 
-let rawColors: [UInt32] = [0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940084, 0xA80020, 0xA81000,
+private let rawColors: [UInt32] = [0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940084, 0xA80020, 0xA81000,
 				0x881400, 0x503000, 0x007800, 0x006800, 0x005800, 0x004058, 0x000000,
 				0x000000, 0x000000, 0xBCBCBC, 0x0078F8, 0x0058F8, 0x6844FC, 0xD800CC,
 				0xE40058, 0xF83800, 0xE45C10, 0xAC7C00, 0x00B800, 0x00A800, 0x00A844,
@@ -60,7 +60,7 @@ let rawColors: [UInt32] = [0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940084, 0xA
 				0xF8D878, 0xD8F878, 0xB8F8B8, 0xB8F8D8, 0x00FCFC, 0xF8D8F8, 0x000000,
 				0x000000];
 
-let colors = makeRGBArray(rawColors);
+private let colors = makeRGBArray(rawColors);
 
 class PPU: NSObject {
 	/**
@@ -68,8 +68,6 @@ class PPU: NSObject {
 	*/
 	var PPUCTRL: UInt8 {
 		didSet {
-			self.cpuMemory.memory[0x2000] = PPUCTRL;
-			
 			// Update residual lower bits in PPUSTATUS
 			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUCTRL & 0x1F);
 		}
@@ -80,8 +78,6 @@ class PPU: NSObject {
 	*/
 	var PPUMASK: UInt8 {
 		didSet {
-			self.cpuMemory.memory[0x2001] = PPUMASK;
-			
 			// Update residual lower bits in PPUSTATUS
 			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUMASK & 0x1F);
 		}
@@ -90,19 +86,13 @@ class PPU: NSObject {
 	/**
 	 PPU Status Register
 	*/
-	var PPUSTATUS: UInt8 {
-		didSet {
-			self.cpuMemory.memory[0x2002] = PPUSTATUS;
-		}
-	}
+	var PPUSTATUS: UInt8;
 	
 	/**
 	 OAM Address Port
 	*/
 	var OAMADDR: UInt8 {
 		didSet {
-			self.cpuMemory.memory[0x2003] = OAMADDR;
-			
 			// Update residual lower bits in PPUSTATUS
 			PPUSTATUS = (PPUSTATUS & 0xE0) | (OAMADDR & 0x1F);
 		}
@@ -113,7 +103,6 @@ class PPU: NSObject {
 	*/
 	var OAMDATA: UInt8 {
 		didSet {
-			self.cpuMemory.memory[0x2004] = OAMDATA;
 			self.writeOAMDATA = true;
 			
 			// Update residual lower bits in PPUSTATUS
@@ -126,8 +115,6 @@ class PPU: NSObject {
 	*/
 	var PPUSCROLL: UInt8 {
 		didSet {
-			self.cpuMemory.memory[0x2005] = PPUSCROLL;
-			
 			// Update residual lower bits in PPUSTATUS
 			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUSCROLL & 0x1F);
 		}
@@ -138,8 +125,6 @@ class PPU: NSObject {
 	*/
 	var PPUADDR: UInt8 {
 		didSet {
-			self.cpuMemory.memory[0x2006] = PPUADDR;
-			
 			if(self.writeVRAMHigh) {
 				self.vramAddress = (UInt16(PPUADDR) << 8) | (self.vramAddress & 0xFF);
 			} else {
@@ -158,7 +143,6 @@ class PPU: NSObject {
 	*/
 	var PPUDATA: UInt8 {
 		didSet {
-			self.cpuMemory.memory[0x2007] = PPUDATA;
 			self.ppuMemory.writeMemory(Int(self.vramAddress), data: PPUDATA);
 			
 			// Update residual lower bits in PPUSTATUS
@@ -180,7 +164,7 @@ class PPU: NSObject {
 	*/
 	var OAMDMA: UInt8 {
 		didSet {
-			self.cpuMemory.memory[0x4014] = OAMDMA;
+//			self.cpuMemory.memory[0x4014] = OAMDMA;
 			dmaCopy();
 			
 			// Update residual lower bits in PPUSTATUS
@@ -191,70 +175,70 @@ class PPU: NSObject {
 	/**
 	 Used to indicate whether OAMDATA needs to be written
 	*/
-	var writeOAMDATA: Bool;
+	private var writeOAMDATA: Bool;
 	
 	/**
 	 Stores the VRAM address pointed to with the help of PPUADDR
 	*/
-	var vramAddress: UInt16;
+	private var vramAddress: UInt16;
 	
 	/**
 	 Indicates whether a given PPUADDR write is the high or low byte
 	*/
-	var writeVRAMHigh: Bool;
+	private var writeVRAMHigh: Bool;
 	
 	/**
 	 Stores the current scanline of the PPU
 	*/
-	var scanline: Int;
+	private var scanline: Int;
 	
 	/**
 	 Stores the current pixel of the PPU
 	*/
-	var pixelIndex: Int;
+	private var pixelIndex: Int;
 	
 	/**
 	 Stores the current frame data to be drawn to the screen
 	*/
 	var frame: [RGB];
 	
-	var cycle: Int;
+	private var cycle: Int;
 	
-	var initFrame = true;
+	private var initFrame = true;
 	
-	var evenFrame = true;
+	private var evenFrame = true;
 		
 	var cpu: CPU?;
-	let cpuMemory: Memory;
-	let ppuMemory: Memory;
-	let oamMemory: Memory;
+	private let cpuMemory: Memory;
+	private let ppuMemory: Memory;
+	private let oamMemory: Memory;
 	
-	var secondaryOAM = [UInt8](count: 32, repeatedValue: 0);
+	private var secondaryOAM = [UInt8](count: 32, repeatedValue: 0);
 	
 	/**
 	 Buffers PPUDATA reads
 	*/
-	var ppuDataReadBuffer: UInt8;
+	private var ppuDataReadBuffer: UInt8;
 	
 	/**
 	 Any write to a PPU register will set this value
 	*/
-	var lastWrittenRegisterValue: UInt8;
+	private var lastWrittenRegisterValue: UInt8;
 	
 	// MARK: Stored Values Between Cycles -
-	var nameTable: UInt8;
-	var attributeTable: UInt8;
-	var patternTableLow: UInt8;
-	var patternTableHigh: UInt8;
+	private var nameTable: UInt8;
+	private var attributeTable: UInt8;
+	private var patternTableLow: UInt8;
+	private var patternTableHigh: UInt8;
 	
-	var currentSpriteData = [Sprite](count: 8, repeatedValue: Sprite(patternTableLow: 0xFF, patternTableHigh: 0xFF, attribute: 0, xCoord: 0, yCoord: 0));
+	private var currentSpriteData = [Sprite](count: 8, repeatedValue: Sprite(patternTableLow: 0xFF, patternTableHigh: 0xFF, attribute: 0, xCoord: 0, yCoord: 0));
 	
-	var oamByte: UInt8;
+	private var oamByte: UInt8;
 	
-	var oamStage = 0;
-	var oamIndex = 0;
-	var oamIndexOverflow = 0;
-	var secondaryOAMIndex = 0;
+	private var oamStage = 0;
+	private var oamIndex = 0;
+	private var oamIndexOverflow = 0;
+	private var secondaryOAMIndex = 0;
 	
 	// MARK: Methods -
 	

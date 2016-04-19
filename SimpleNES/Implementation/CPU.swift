@@ -15,78 +15,78 @@ class CPU: NSObject {
 	/**
 	 Lower Half of PC
 	*/
-	var PCL: UInt8;
+	private var PCL: UInt8;
 
 	/**
 	 Upper Half of PC
 	*/
-	var PCH: UInt8;
+	private var PCH: UInt8;
 
 	/**
 	 Stack Pointer
 	*/
-	var SP: UInt8;
+	private var SP: UInt8;
 
 	/**
 	 Processor Status
 	*/
-	var P: UInt8;
+	private var P: UInt8;
 
 	/**
 	 Accumulator
 	*/
-	var A: UInt8;
+	private var A: UInt8;
 
 	/**
 	 Index Register X
 	*/
-	var X: UInt8;
+	private var X: UInt8;
 
 	/**
 	 Index Register Y
 	*/
-	var Y: UInt8;
+	private var Y: UInt8;
 	
 	
 	/**
 	 The queued interrupt
 	*/
-	var interrupt: Interrupt?;
+	private var interrupt: Interrupt?;
 
-	let mainMemory: Memory;
-    let ppu: PPU;
+	private let mainMemory: Memory;
+    private let ppu: PPU;
 	
-	let logger: Logger;
+	private let logger: Logger;
 	
 	/**
 	 True if the last cycle run by the CPU was even
 	*/
-	var evenCycle = true;
+	private var evenCycle = true;
 	
 	/**
 	 True if page was crossed by last instruction
 	*/
-	var pageCrossed = false;
+	private var pageCrossed = false;
 	
 	/**
 	 True if CPU is current running an OAM transfer
 	*/
-	var oamTransfer = false;
+	private var oamTransfer = false;
 	
 	/**
 	 Stores the number of cycles in the current OAM transfer
 	*/
-	var oamCycles = 0;
+	private var oamCycles = 0;
 	
 	/**
 	 Stores whether OAM transfer will have an extra cycle
 	*/
-	var oamExtraCycle = false;
+	private var oamExtraCycle = false;
 	
 	/**
 	 True if an error occurred
 	*/
-	var errorOccured = false;
+	private var errorOccured = false;
 	
 	let loggingQueue = dispatch_queue_create("com.appcannon.simplenes.loggingqueue", DISPATCH_QUEUE_SERIAL);
 	

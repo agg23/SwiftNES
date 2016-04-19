@@ -31,10 +31,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	
 	private var textureLoader: MTKTextureLoader?;
 	
-	let controllerIO: ControllerIO;
-	var cpu: CPU;
-	var ppu: PPU;
-	let logger: Logger;
+	private let controllerIO: ControllerIO;
+	private var cpu: CPU;
+	private var ppu: PPU;
+	private let logger: Logger;
 	
 	override init() {
 		self.logger = Logger(path: "/Users/adam/nes.log");
@@ -46,7 +46,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		let ppuMemory = Memory(memoryType: Memory.MemoryType.PPU);
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		fileIO.loadFile("/Users/adam/Downloads/dk.nes");
+		fileIO.loadFile("/Users/adam/testROMs/games/digdug.nes");
 		
 		self.ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
 		
@@ -95,7 +95,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	
 	@IBAction func dumpPPUMemory(sender: AnyObject) {
 		let logger = Logger(path: "/Users/adam/ppu.dump");
-		logger.dumpMemory(self.ppu.ppuMemory.memory);
+//		logger.dumpMemory(self.ppu.ppuMemory.memory);
 		logger.endLogging();
 	}
 	

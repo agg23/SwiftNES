@@ -74,14 +74,14 @@ class Memory: NSObject {
 		case OAM
 	}
 	
-	var memory: [UInt8];
+	private var memory: [UInt8];
 	
 	var mirrorPRGROM = false;
 	
 	/**
 	 Stores the type of this Memory object
 	*/
-	let type: MemoryType;
+	private let type: MemoryType;
 	
 	var ppu: PPU?;
 	var controllerIO: ControllerIO?;
