@@ -307,6 +307,12 @@ class PPU: NSObject {
 			self.OAMADDR = 0;
 		}
 		
+		if(self.cycle == 256 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
+			incrementY();
+		} else if(self.cycle == 257 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
+			copyX();
+		}
+		
 		if(self.scanline >= 240) {
 			// VBlank period
 			
@@ -359,6 +365,10 @@ class PPU: NSObject {
 				// Clear VBlank flag
 				setBit(7, value: false, pointer: &self.PPUSTATUS);
 			}
+			
+			if(self.cycle == 304 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
+				copyY();
+			}
 		} else {
 			// Visible scanlines
 			
@@ -372,14 +382,6 @@ class PPU: NSObject {
 				
 				// Do nothing
 			} else if(self.cycle <= 256) {
-				if(self.cycle == 256 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
-					incrementY();
-				} else if(self.cycle == 257 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
-					copyX();
-				} else if((self.cycle > 279 && self.cycle < 305) && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
-					copyY();
-				}
-				
 				// Do sprite calculations whether or not draw sprite bit is set
 				
 				if(self.cycle <= 64) {
@@ -552,9 +554,9 @@ class PPU: NSObject {
 							let lowBit = getBit(7 - k, pointer: &self.patternTableLow) ? 1 : 0;
 							let highBit = getBit(7 - k, pointer: &self.patternTableHigh) ? 1 : 0;
 							
-							let attributeShift = (tileIndex % 4) / 2 + ((tileRow % 4) / 2) * 2;
+							let attributeShift = Int(((self.currentVramAddress >> 4) & 4) | (self.currentVramAddress & 2));
 							
-							let attributeBits = (Int(self.attributeTable) >> (attributeShift * 2)) & 0x3;
+							let attributeBits = (Int(self.attributeTable) >> attributeShift) & 0x3;
 							
 							let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
 							
@@ -766,10 +768,6 @@ class PPU: NSObject {
 		
 		// Clear VBlank flag
 		setBit(7, value: false, pointer: &self.PPUSTATUS);
-		
-		// Clear PPUSCROLL and PPUADDR
-		self.PPUSCROLL = 0;
-		self.PPUADDR = 0;
 		
 		self.writeToggle = false;
 		
