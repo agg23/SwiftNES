@@ -68,6 +68,9 @@ class PPU: NSObject {
 	*/
 	var PPUCTRL: UInt8 {
 		didSet {
+			// Update tempVramAddress
+			self.tempVramAddress = (self.tempVramAddress & 0xF3FF) | ((UInt16(PPUCTRL) & 0x03) << 10);
+			
 			// Update residual lower bits in PPUSTATUS
 			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUCTRL & 0x1F);
 		}
@@ -115,6 +118,17 @@ class PPU: NSObject {
 	*/
 	var PPUSCROLL: UInt8 {
 		didSet {
+			if(self.writeToggle) {
+				// Second write
+				self.tempVramAddress = (self.tempVramAddress & 0x8FFF) | ((UInt16(PPUSCROLL) & 0x7) << 12);
+				self.tempVramAddress = (self.tempVramAddress & 0xFC1F) | ((UInt16(PPUSCROLL) & 0xF8) << 2);
+			} else {
+				self.tempVramAddress = (self.tempVramAddress & 0xFFE0) | (UInt16(PPUSCROLL) >> 3);
+				self.fineXScroll = PPUSCROLL & 0x7;
+			}
+			
+			self.writeToggle = !self.writeToggle;
+			
 			// Update residual lower bits in PPUSTATUS
 			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUSCROLL & 0x1F);
 		}
@@ -125,13 +139,15 @@ class PPU: NSObject {
 	*/
 	var PPUADDR: UInt8 {
 		didSet {
-			if(self.writeVRAMHigh) {
-				self.vramAddress = (UInt16(PPUADDR) << 8) | (self.vramAddress & 0xFF);
+			if(self.writeToggle) {
+				// Second write
+				self.tempVramAddress = (self.tempVramAddress & 0xFF00) | UInt16(PPUADDR);
+				self.currentVramAddress = self.tempVramAddress;
 			} else {
-				self.vramAddress = ((self.vramAddress & 0xFF00) | UInt16(PPUADDR)) % 0x4000;
+				self.tempVramAddress = (self.tempVramAddress & 0x80FF) | ((UInt16(PPUADDR) & 0x3F) << 8);
 			}
 			
-			self.writeVRAMHigh = !self.writeVRAMHigh;
+			self.writeToggle = !self.writeToggle;
 			
 			// Update residual lower bits in PPUSTATUS
 			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUADDR & 0x1F);
@@ -143,19 +159,19 @@ class PPU: NSObject {
 	*/
 	var PPUDATA: UInt8 {
 		didSet {
-			self.ppuMemory.writeMemory(Int(self.vramAddress), data: PPUDATA);
+			self.ppuMemory.writeMemory(Int(self.currentVramAddress), data: PPUDATA);
 			
 			// Update residual lower bits in PPUSTATUS
 			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUDATA & 0x1F);
 			
 			// Increment VRAM address
 			if(getBit(2, pointer: &self.PPUCTRL)) {
-				self.vramAddress += 32;
+				self.currentVramAddress += 32;
 			} else {
-				self.vramAddress += 1;
+				self.currentVramAddress += 1;
 			}
 			
-			self.vramAddress = self.vramAddress % 0x4000;
+			self.currentVramAddress = self.currentVramAddress & 0x7FFF;
 		}
 	}
 	
@@ -164,7 +180,6 @@ class PPU: NSObject {
 	*/
 	var OAMDMA: UInt8 {
 		didSet {
-//			self.cpuMemory.memory[0x4014] = OAMDMA;
 			dmaCopy();
 			
 			// Update residual lower bits in PPUSTATUS
@@ -176,16 +191,6 @@ class PPU: NSObject {
 	 Used to indicate whether OAMDATA needs to be written
 	*/
 	private var writeOAMDATA: Bool;
-	
-	/**
-	 Stores the VRAM address pointed to with the help of PPUADDR
-	*/
-	private var vramAddress: UInt16;
-	
-	/**
-	 Indicates whether a given PPUADDR write is the high or low byte
-	*/
-	private var writeVRAMHigh: Bool;
 	
 	/**
 	 Stores the current scanline of the PPU
@@ -225,6 +230,12 @@ class PPU: NSObject {
 	*/
 	private var lastWrittenRegisterValue: UInt8;
 	
+	private var currentVramAddress: UInt16;
+	private var tempVramAddress: UInt16;
+	private var fineXScroll: UInt8;
+	private var writeToggle: Bool;
+	
+	
 	// MARK: Stored Values Between Cycles -
 	private var nameTable: UInt8;
 	private var attributeTable: UInt8;
@@ -250,8 +261,11 @@ class PPU: NSObject {
 		self.oamMemory = Memory(memoryType: Memory.MemoryType.OAM);
 		
 		self.writeOAMDATA = false;
-		self.vramAddress = 0;
-		self.writeVRAMHigh = true;
+		
+		self.currentVramAddress = 0;
+		self.tempVramAddress = 0;
+		self.fineXScroll = 0;
+		self.writeToggle = false;
 		
 		self.PPUCTRL = 0;
 		self.PPUMASK = 0;
@@ -291,6 +305,12 @@ class PPU: NSObject {
 	func step() -> Bool {
 		if(self.cycle > 256) {
 			self.OAMADDR = 0;
+		}
+		
+		if(self.cycle == 256 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
+			incrementY();
+		} else if(self.cycle == 257 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
+			copyX();
 		}
 		
 		if(self.scanline >= 240) {
@@ -344,6 +364,10 @@ class PPU: NSObject {
 				
 				// Clear VBlank flag
 				setBit(7, value: false, pointer: &self.PPUSTATUS);
+			}
+			
+			if(self.cycle == 304 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
+				copyY();
 			}
 		} else {
 			// Visible scanlines
@@ -481,26 +505,27 @@ class PPU: NSObject {
 					let patternRow = self.scanline % 8;
 					let tileRow = self.scanline / 8;
 					
-					var baseNameTableAddress = 0x2000;
+//					var baseNameTableAddress = 0x2000;
 					
-					if(getBit(0, pointer: &self.PPUCTRL)) {
-						if(getBit(1, pointer: &self.PPUCTRL)) {
-							baseNameTableAddress = 0x2C00;
-						} else {
-							baseNameTableAddress = 0x2400;
-						}
-					} else {
-						if(getBit(1, pointer: &self.PPUCTRL)) {
-							baseNameTableAddress = 0x2800;
-						}
-					}
+//					if(getBit(0, pointer: &self.PPUCTRL)) {
+//						if(getBit(1, pointer: &self.PPUCTRL)) {
+//							baseNameTableAddress = 0x2C00;
+//						} else {
+//							baseNameTableAddress = 0x2400;
+//						}
+//					} else {
+//						if(getBit(1, pointer: &self.PPUCTRL)) {
+//							baseNameTableAddress = 0x2800;
+//						}
+//					}
 					
 					if(phaseIndex == 2) {
 						// Fetch Name Table
-						self.nameTable = self.ppuMemory.readMemory(baseNameTableAddress + self.scanline / 8 * 32 + tileIndex);
+						self.nameTable = self.ppuMemory.readMemory(0x2000 | (Int(self.currentVramAddress) & 0x0FFF));
 					} else if(phaseIndex == 4) {
 						// Fetch Attribute Table
-						self.attributeTable = self.ppuMemory.readMemory(baseNameTableAddress + 0x3C0 + tileIndex / 4 + (self.scanline / 8 / 4) * 8);
+						let currentVramAddress = Int(self.currentVramAddress);
+						self.attributeTable = self.ppuMemory.readMemory(0x23C0 | (currentVramAddress & 0x0C00) | ((currentVramAddress >> 4) & 0x38) | ((currentVramAddress >> 2) & 0x07));
 					} else if(phaseIndex == 6) {
 						// Fetch lower Pattern Table byte
 						var basePatternTableAddress = 0x0000;
@@ -509,7 +534,9 @@ class PPU: NSObject {
 							basePatternTableAddress = 0x1000;
 						}
 						
-						self.patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(nameTable) << 4) + patternRow);
+						let fineY = Int((self.currentVramAddress >> 12) & 7);
+						
+						self.patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(self.nameTable) << 4) + fineY);
 					} else if(phaseIndex == 0) {
 						// Fetch upper Pattern Table byte
 						var basePatternTableAddress = 0x0008;
@@ -518,16 +545,18 @@ class PPU: NSObject {
 							basePatternTableAddress = 0x1008;
 						}
 						
-						self.patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(nameTable) << 4) + patternRow);
+						let fineY = Int((self.currentVramAddress >> 12) & 7);
+						
+						self.patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(self.nameTable) << 4) + fineY);
 						
 						// Draw pixels from tile
 						for k in 0 ..< 8 {
 							let lowBit = getBit(7 - k, pointer: &self.patternTableLow) ? 1 : 0;
 							let highBit = getBit(7 - k, pointer: &self.patternTableHigh) ? 1 : 0;
 							
-							let attributeShift = (tileIndex % 4) / 2 + ((tileRow % 4) / 2) * 2;
+							let attributeShift = Int(((self.currentVramAddress >> 4) & 4) | (self.currentVramAddress & 2));
 							
-							let attributeBits = (Int(self.attributeTable) >> (attributeShift * 2)) & 0x3;
+							let attributeBits = (Int(self.attributeTable) >> attributeShift) & 0x3;
 							
 							let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
 							
@@ -540,6 +569,8 @@ class PPU: NSObject {
 							
 							self.frame[self.scanline * 256 + pixelXCoord] = color;
 						}
+						
+						incrementX();
 					}
 				}
 			} else if(self.cycle <= 320) {
@@ -558,31 +589,38 @@ class PPU: NSObject {
 					// TODO: Handle 8x16 sprites
 					var basePatternTableAddress = 0x0000;
 					
-					var height = 8;
+					let verticalFlip = getBit(7, pointer: &attributes);
 					
 					if(getBit(5, pointer: &self.PPUCTRL)) {
 						// 8x16
-						height = 16;
-						
 						if(tileNumber & 0x1 == 1) {
 							basePatternTableAddress = 0x1000;
 							tileNumber = tileNumber - 1;
 						}
 						
 						if(yShift > 7) {
+							// Flip sprite vertically
+							if(verticalFlip) {
+								yShift = 15 - yShift;
+							} else {
+								tileNumber += 1;
+								yShift -= 8;
+							}
+							
+						} else if(verticalFlip) {
 							tileNumber += 1;
-							yShift -= 8;
+							yShift = 7 - yShift;
 						}
 					} else {
 						// 8x8
 						if(getBit(3, pointer: &self.PPUCTRL)) {
 							basePatternTableAddress = 0x1000;
 						}
-					}
-					
-					// Flip sprite vertically
-					if(getBit(7, pointer: &attributes)) {
-						yShift = height - 1 - yShift;
+						
+						// Flip sprite vertically
+						if(verticalFlip) {
+							yShift = 7 - yShift;
+						}
 					}
 					
 					var patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(tileNumber) << 4) + yShift);
@@ -622,6 +660,57 @@ class PPU: NSObject {
 		}
 		
 		return false;
+	}
+	
+	func incrementY() {
+		// If fine Y < 7
+		if((self.currentVramAddress & 0x7000) != 0x7000) {
+			// Increment fine Y
+			self.currentVramAddress += 0x1000;
+		} else {
+			// Fine Y = 0
+			self.currentVramAddress &= 0x8FFF;
+			// var y = coarse Y
+			var y = (self.currentVramAddress & 0x03E0) >> 5;
+			if(y == 29) {
+				// Coarse Y = 0
+				y = 0;
+				// Switch vertical nametable
+				self.currentVramAddress ^= 0x0800;
+			} else if(y == 31) {
+				// Coarse Y = 0, nametable not switched
+				y = 0;
+			} else {
+				// Increment coarse Y
+				y += 1;
+			}
+			
+			// Put coarse Y back into v
+			self.currentVramAddress = (self.currentVramAddress & 0xFC1F) | (y << 5);
+		}
+
+	}
+	
+	func incrementX() {
+		// If coarse X == 31
+		if((self.currentVramAddress & 0x001F) == 31) {
+			// Coarse X = 0
+			self.currentVramAddress &= 0xFFE0;
+			
+			// Switch horizontal nametable
+			self.currentVramAddress ^= 0x0400;
+		} else {
+			// Increment coarse X
+			self.currentVramAddress += 1;
+		}
+	}
+	
+	func copyY() {
+		self.currentVramAddress = (self.currentVramAddress & 0x841F) | (self.tempVramAddress & 0x7BE0);
+	}
+	
+	func copyX() {
+		self.currentVramAddress = (self.currentVramAddress & 0xFBE0) | (self.tempVramAddress & 0x041F);
 	}
 	
 	// MARK - Registers
@@ -680,12 +769,7 @@ class PPU: NSObject {
 		// Clear VBlank flag
 		setBit(7, value: false, pointer: &self.PPUSTATUS);
 		
-		// Clear PPUSCROLL and PPUADDR
-		self.PPUSCROLL = 0;
-		self.PPUADDR = 0;
-		
-		// Reset PPUADDR write high byte
-		self.writeVRAMHigh = true;
+		self.writeToggle = false;
 		
 		return temp;
 	}
@@ -698,9 +782,9 @@ class PPU: NSObject {
 	func readPPUDATA() -> UInt8 {
 		var temp = self.ppuDataReadBuffer;
 		
-		self.ppuDataReadBuffer = self.ppuMemory.readMemory(Int(self.vramAddress));
+		self.ppuDataReadBuffer = self.ppuMemory.readMemory(Int(self.currentVramAddress));
 		
-		if(self.vramAddress >= 0x3F00) {
+		if(self.currentVramAddress >= 0x3F00) {
 			// Palette data is instantly returned
 			temp = self.ppuDataReadBuffer;
 		}

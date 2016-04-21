@@ -61,7 +61,7 @@ class SimpleNESTests: XCTestCase {
 				return;
 			}
 			
-			let result = mainMemory.memory[testAddress];
+			let result = mainMemory.readMemory(testAddress);
 			
 			if(result == intermediary) {
 				intermediaryFound = true;
@@ -231,7 +231,6 @@ class SimpleNESTests: XCTestCase {
 	
 	// Sprite hit tests cannot be automated.
 	// Fails Screen Bottom #4
-	// Fails Double Height #3 - Needs 16x8 sprites implemented
 	// Fails Timing Basics with black screen
 	// Fails Timing Order with black screen
 	// Fails Edge Timing with black screen

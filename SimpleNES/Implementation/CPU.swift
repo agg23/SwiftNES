@@ -86,7 +86,7 @@ class CPU: NSObject {
 	/**
 	 True if an error occurred
 	*/
-	private var errorOccured = false;
+	var errorOccured = false;
 	
 	let loggingQueue = dispatch_queue_create("com.appcannon.simplenes.loggingqueue", DISPATCH_QUEUE_SERIAL);
 	

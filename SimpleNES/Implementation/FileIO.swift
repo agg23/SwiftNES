@@ -53,6 +53,12 @@ class FileIO: NSObject {
 		
 		let verticalMirroring = misc & 0x1 == 1;
 		
+		if(verticalMirroring) {
+			self.ppuMemory.nametableMirroring = .Vertical;
+		} else {
+			self.ppuMemory.nametableMirroring = .Horizontal;
+		}
+		
 		// Battery Backed RAM at $6000 - $7FFF
 		let batteryBackedRAM = misc & 0x2 == 1;
 		

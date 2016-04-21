@@ -49,7 +49,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		let ppuMemory = Memory(memoryType: Memory.MemoryType.PPU);
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		fileIO.loadFile("/Users/adam/testROMs/games/digdug.nes");
+		fileIO.loadFile("/Users/adam/testROMs/games/smb.nes");
 		
 		self.ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
 		
