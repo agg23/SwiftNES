@@ -148,7 +148,7 @@ class Memory: NSObject {
 						return (self.ppu?.readPPUDATA())!;
 					default: break
 				}
-			} else if((address == 0x4016 || address == 0x4017)) {
+			} else if(address == 0x4016) {
 				return self.controllerIO!.readState();
 			} else if(self.mirrorPRGROM && address >= 0xC000) {
 				return self.memory[0x8000 + address % 0xC000];
