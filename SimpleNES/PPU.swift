@@ -569,7 +569,13 @@ class PPU: NSObject {
 							
 							let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
 							
-							let pixelXCoord = self.cycle - 8 + k;
+							var pixelXCoord = self.cycle - 8 + k - Int(self.fineXScroll);
+							
+							// TODO: Wraps around from other side of screen, which is not the desired action
+							// TODO: Add loading of the final column of tiles, to prevent this glitch
+							if(pixelXCoord < 0) {
+								pixelXCoord += 256;
+							}
 							
 							var color = colors[paletteIndex];
 							color.colorIndex = UInt8(patternValue);
@@ -593,7 +599,6 @@ class PPU: NSObject {
 					
 					var yShift = self.scanline - Int(yCoord);
 					
-					// TODO: Handle 8x16 sprites
 					var basePatternTableAddress = 0x0000;
 					
 					let verticalFlip = getBit(7, pointer: &attributes);
