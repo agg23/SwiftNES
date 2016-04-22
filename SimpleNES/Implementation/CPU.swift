@@ -1032,6 +1032,8 @@ class CPU: NSObject {
      Simulate Interrupt ReQuest (IRQ)
     */
     func BRK() -> Int {
+		self.mainMemory.readMemory(Int(getPC()));
+		
 		incrementPC();
 		queueInterrupt(Interrupt.Software);
 		
@@ -1042,6 +1044,8 @@ class CPU: NSObject {
      ReTurn from Interrupt
     */
     func RTI() -> Int {
+		self.mainMemory.readMemory(Int(getPC()));
+		
         self.P = pop();
         self.PCL = pop();
         self.PCH = pop();
