@@ -478,7 +478,14 @@ class PPU: NSObject {
 								// TODO: Handle behind background priority
 								// TODO: X coordinate of sprites is off slightly
 								
-								let backgroundPixel = self.frame[self.scanline * 256 + xCoord + x];
+								let address = self.scanline * 256 + xCoord + x;
+								
+								if(address >= 256 * 240) {
+									// TODO: Fix
+									continue;
+								}
+								
+								let backgroundPixel = self.frame[address];
 								
 								if(j == 7 && getBit(3, pointer: &self.PPUMASK) && backgroundPixel.colorIndex & 0x3 != 0 && paletteIndex & 0x3 != 0) {
 									// Sprite 0 and Background is not transparent
@@ -493,7 +500,7 @@ class PPU: NSObject {
 									}
 								}
 								
-								self.frame[self.scanline * 256 + xCoord + x] = colors[paletteIndex];
+								self.frame[address] = colors[paletteIndex];
 							}
 						}
 					}
@@ -534,7 +541,7 @@ class PPU: NSObject {
 							basePatternTableAddress = 0x1000;
 						}
 						
-						let fineY = Int((self.currentVramAddress >> 12) & 7);
+						let fineY = (Int(self.currentVramAddress) >> 12) & 7;
 						
 						self.patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(self.nameTable) << 4) + fineY);
 					} else if(phaseIndex == 0) {
@@ -545,7 +552,7 @@ class PPU: NSObject {
 							basePatternTableAddress = 0x1008;
 						}
 						
-						let fineY = Int((self.currentVramAddress >> 12) & 7);
+						let fineY = (Int(self.currentVramAddress) >> 12) & 7;
 						
 						self.patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(self.nameTable) << 4) + fineY);
 						
@@ -666,7 +673,7 @@ class PPU: NSObject {
 		// If fine Y < 7
 		if((self.currentVramAddress & 0x7000) != 0x7000) {
 			// Increment fine Y
-			self.currentVramAddress += 0x1000;
+			self.currentVramAddress = UInt16((Int(self.currentVramAddress) + 0x1000) & 0xFFFF);
 		} else {
 			// Fine Y = 0
 			self.currentVramAddress &= 0x8FFF;
@@ -780,16 +787,23 @@ class PPU: NSObject {
 	}
 	
 	func readPPUDATA() -> UInt8 {
-		var temp = self.ppuDataReadBuffer;
-		
-		self.ppuDataReadBuffer = self.ppuMemory.readMemory(Int(self.currentVramAddress));
-		
-		if(self.currentVramAddress >= 0x3F00) {
-			// Palette data is instantly returned
-			temp = self.ppuDataReadBuffer;
+		var value = self.ppuMemory.readMemory(Int(self.currentVramAddress));
+
+		if (self.currentVramAddress % 0x4000 < 0x3F00) {
+			let buffered = self.ppuDataReadBuffer;
+			self.ppuDataReadBuffer = value;
+			value = buffered;
+		} else {
+			self.ppuDataReadBuffer = self.ppuMemory.readMemory(Int(self.currentVramAddress) - 0x1000);
 		}
 		
-		return temp;
+		if(getBit(2, pointer: &self.PPUCTRL)) {
+			self.currentVramAddress += 32;
+		} else {
+			self.currentVramAddress += 1;
+		}
+		
+		return value
 	}
 	
 	func dmaCopy() {

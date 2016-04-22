@@ -126,6 +126,7 @@ class Memory: NSObject {
 	}
 	
 	func readMemory(address: Int) -> UInt8 {
+		var address = address;
 		if(self.type == MemoryType.CPU) {
 			if((address >= 0x2000) && (address < 0x4000)) {
 				switch (address % 8) {
@@ -153,6 +154,7 @@ class Memory: NSObject {
 				return self.memory[0x8000 + address % 0xC000];
 			}
 		} else if(self.type == MemoryType.PPU) {
+			address = address % 0x4000;
 			if((address >= 0x2000) && (address < 0x3000)) {
 				if(self.nametableMirroring == .OneScreen) {
 					return self.memory[0x2000 | (address % 0x200)];
@@ -171,6 +173,8 @@ class Memory: NSObject {
 				} else {
 					print("ERROR: Nametable mirroring type not implemented");
 				}
+			} else if((address > 0x2FFF) && (address < 0x3F00)) {
+				address -= 0x1000;
 			} else if((address >= 0x3F00) && (address < 0x3F20) && (address & 0x3 == 0)) {
 				return self.memory[0x3F00];
 			}
@@ -184,7 +188,9 @@ class Memory: NSObject {
 	}
 	
 	func writeMemory(address: Int, data: UInt8) {
-		if((self.type == MemoryType.CPU && (address > 0xFFFF)) || (self.type == MemoryType.PPU && address > 0x3FFF)) {
+		var address = address;
+		
+		if((self.type == MemoryType.CPU && (address > 0xFFFF))) {
 			print("ERROR: Memory address \(address) out of bounds for Memory: \(self.type)");
 			
 			return;
@@ -205,6 +211,7 @@ class Memory: NSObject {
 				self.memory[0x8000 + address % 0xC000] = data;
 			}
 		} else if(self.type == MemoryType.PPU) {
+			address = address % 0x4000;
 			if((address >= 0x2000) && (address < 0x3000)) {
 				if(self.nametableMirroring == .OneScreen) {
 					self.memory[0x2000 | (address % 0x200)] = data;
@@ -223,6 +230,8 @@ class Memory: NSObject {
 				} else {
 					print("ERROR: Nametable mirroring type not implemented");
 				}
+			} else if((address > 0x2FFF) && (address < 0x3F00)) {
+				address -= 0x1000;
 			} else if((address >= 0x3F00) && (address < 0x3F20) && (address & 0x3 == 0)) {
 				self.memory[0x3F00] = data;
 				return;
