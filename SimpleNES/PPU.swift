@@ -565,7 +565,11 @@ class PPU: NSObject {
 							
 							let attributeBits = (Int(self.attributeTable) >> attributeShift) & 0x3;
 							
-							let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
+							var patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
+							
+							if(patternValue & 0x3 == 0) {
+								patternValue = 0;
+							}
 							
 							let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
 							
