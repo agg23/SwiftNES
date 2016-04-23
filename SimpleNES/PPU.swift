@@ -471,11 +471,10 @@ class PPU: NSObject {
 								let paletteIndex = Int(self.ppuMemory.readMemory(0x3F10 + patternValue));
 								
 								// First color each section of sprite palette is transparent
-								if(patternValue % 4 == 0) {
+								if(patternValue & 0x3 == 0) {
 									continue;
 								}
 								
-								// TODO: Handle behind background priority
 								// TODO: X coordinate of sprites is off slightly
 								
 								let address = self.scanline * 256 + xCoord + x;
@@ -487,7 +486,9 @@ class PPU: NSObject {
 								
 								let backgroundPixel = self.frame[address];
 								
-								if(j == 7 && getBit(3, pointer: &self.PPUMASK) && backgroundPixel.colorIndex & 0x3 != 0 && paletteIndex & 0x3 != 0) {
+								let backgroundTransparent = backgroundPixel.colorIndex & 0x3 == 0;
+								
+								if(j == 7 && getBit(3, pointer: &self.PPUMASK) && !backgroundTransparent && paletteIndex & 0x3 != 0) {
 									// Sprite 0 and Background is not transparent
 									
 									// If bits 1 or 2 in PPUMASK are clear and the x coordinate is between 0 and 7, don't hit
@@ -500,7 +501,9 @@ class PPU: NSObject {
 									}
 								}
 								
-								self.frame[address] = colors[paletteIndex];
+								if(!getBit(5, pointer: &sprite.attribute) || backgroundTransparent) {
+									self.frame[address] = colors[paletteIndex];
+								}
 							}
 						}
 					}
@@ -508,24 +511,6 @@ class PPU: NSObject {
 				
 				if(getBit(3, pointer: &self.PPUMASK)) {
 					// If rendering cycle and rendering background bit is set
-					let tileIndex = (self.cycle - 1) / 8;
-					let patternRow = self.scanline % 8;
-					let tileRow = self.scanline / 8;
-					
-//					var baseNameTableAddress = 0x2000;
-					
-//					if(getBit(0, pointer: &self.PPUCTRL)) {
-//						if(getBit(1, pointer: &self.PPUCTRL)) {
-//							baseNameTableAddress = 0x2C00;
-//						} else {
-//							baseNameTableAddress = 0x2400;
-//						}
-//					} else {
-//						if(getBit(1, pointer: &self.PPUCTRL)) {
-//							baseNameTableAddress = 0x2800;
-//						}
-//					}
-					
 					if(phaseIndex == 2) {
 						// Fetch Name Table
 						self.nameTable = self.ppuMemory.readMemory(0x2000 | (Int(self.currentVramAddress) & 0x0FFF));
