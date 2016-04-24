@@ -212,11 +212,6 @@ class SimpleNESTests: XCTestCase {
 	
 	// MARK: - PPU Testing
 	
-	func testPaletteRAM() {
-		// Needs implemented APU
-		romTest(defaultPath + "blargg_ppu_tests_2005.09.15b/palette_ram.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
-	}
-	
 	func testOAMRead() {
 		romTest(defaultPath + "oam_read/oam_read.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
@@ -228,6 +223,12 @@ class SimpleNESTests: XCTestCase {
 	func testPPUOpenBus() {
 		romTest(defaultPath + "ppu_open_bus/ppu_open_bus.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
+	
+	// Blargg's PPU tests cannot be automated
+	// Fails Power Up Palette (expected)
+	// Fails Sprite RAM #4
+	// Fails VRAM Access #3 (VBL cleared too late)
+	// Passes all others
 	
 	// Sprite hit tests cannot be automated.
 	// Fails Screen Bottom #4

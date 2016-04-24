@@ -175,8 +175,12 @@ class Memory: NSObject {
 				}
 			} else if((address > 0x2FFF) && (address < 0x3F00)) {
 				address -= 0x1000;
-			} else if((address >= 0x3F10) && (address < 0x3F20) && (address & 0x3 == 0)) {
-				address -= 0x10;
+			} else if(address >= 0x3F10) {
+				address = 0x3F00 + address % 0x20;
+				
+				if((address >= 0x3F10) && (address < 0x3F20) && (address & 0x3 == 0)) {
+					address -= 0x10;
+				}
 			}
 		}
 		
@@ -232,8 +236,12 @@ class Memory: NSObject {
 				}
 			} else if((address > 0x2FFF) && (address < 0x3F00)) {
 				address -= 0x1000;
-			} else if((address >= 0x3F10) && (address < 0x3F20) && (address & 0x3 == 0)) {
-				address -= 0x10;
+			} else if(address >= 0x3F10) {
+				address = 0x3F00 + address % 0x20;
+				
+				if((address >= 0x3F10) && (address < 0x3F20) && (address & 0x3 == 0)) {
+					address -= 0x10;
+				}
 			}
 		}
 		
