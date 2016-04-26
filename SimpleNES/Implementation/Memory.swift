@@ -148,7 +148,7 @@ class Memory: NSObject {
 						return (self.ppu?.readPPUDATA())!;
 					default: break
 				}
-			} else if((address == 0x4016 || address == 0x4017)) {
+			} else if(address == 0x4016) {
 				return self.controllerIO!.readState();
 			} else if(self.mirrorPRGROM && address >= 0xC000) {
 				return self.memory[0x8000 + address % 0xC000];
@@ -157,26 +157,28 @@ class Memory: NSObject {
 			address = address % 0x4000;
 			if((address >= 0x2000) && (address < 0x3000)) {
 				if(self.nametableMirroring == .OneScreen) {
-					return self.memory[0x2000 | (address % 0x200)];
+					address = 0x2000 | (address % 0x200);
 				} else if(self.nametableMirroring == .Horizontal) {
-					if(address & 0x800 == 0x800) {
-						return self.memory[0x2800 | ((address - 0x2800) % 0x400)];
+					if(address >= 0x2C00) {
+						address -= 0x800;
+					} else if(address >= 0x2400) {
+						address -= 0x400;
 					}
-					
-					return self.memory[0x2000 | (address % 0x400)];
 				} else if(self.nametableMirroring == .Vertical) {
-					if(address & 0x400 == 0x400) {
-						return self.memory[0x2400 | ((address - 0x2400) % 0x800)];
+					if(address >= 0x2800) {
+						address -= 0x800;
 					}
-					
-					return self.memory[0x2000 | (address % 0x800)];
 				} else {
 					print("ERROR: Nametable mirroring type not implemented");
 				}
 			} else if((address > 0x2FFF) && (address < 0x3F00)) {
 				address -= 0x1000;
-			} else if((address >= 0x3F00) && (address < 0x3F20) && (address & 0x3 == 0)) {
-				return self.memory[0x3F00];
+			} else if(address >= 0x3F10) {
+				address = 0x3F00 + address % 0x20;
+				
+				if((address >= 0x3F10) && (address < 0x3F20) && (address & 0x3 == 0)) {
+					address -= 0x10;
+				}
 			}
 		}
 		
@@ -214,27 +216,28 @@ class Memory: NSObject {
 			address = address % 0x4000;
 			if((address >= 0x2000) && (address < 0x3000)) {
 				if(self.nametableMirroring == .OneScreen) {
-					self.memory[0x2000 | (address % 0x200)] = data;
+					address = 0x2000 | (address % 0x200);
 				} else if(self.nametableMirroring == .Horizontal) {
-					if(address & 0x800 == 0x800) {
-						self.memory[0x2800 | ((address - 0x2800) % 0x400)] = data;
+					if(address >= 0x2C00) {
+						address -= 0x800;
+					} else if(address >= 0x2400) {
+						address -= 0x400;
 					}
-					
-					self.memory[0x2000 | (address % 0x400)] = data;
 				} else if(self.nametableMirroring == .Vertical) {
-					if(address & 0x400 == 0x400) {
-						self.memory[0x2400 | ((address - 0x2400) % 0x800)] = data;
+					if(address >= 0x2800) {
+						address -= 0x800;
 					}
-					
-					self.memory[0x2000 | (address % 0x800)] = data;
 				} else {
 					print("ERROR: Nametable mirroring type not implemented");
 				}
 			} else if((address > 0x2FFF) && (address < 0x3F00)) {
 				address -= 0x1000;
-			} else if((address >= 0x3F00) && (address < 0x3F20) && (address & 0x3 == 0)) {
-				self.memory[0x3F00] = data;
-				return;
+			} else if(address >= 0x3F10) {
+				address = 0x3F00 + address % 0x20;
+				
+				if((address >= 0x3F10) && (address < 0x3F20) && (address & 0x3 == 0)) {
+					address -= 0x10;
+				}
 			}
 		}
 		

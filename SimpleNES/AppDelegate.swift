@@ -39,6 +39,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	private var frameCount = 0;
 	private var lastFrameUpdate: Double = 0;
 	
+	private var remainingCycles = 0;
+	
 	override init() {
 		self.logger = Logger(path: "/Users/adam/nes.log");
 		
@@ -49,7 +51,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		let ppuMemory = Memory(memoryType: Memory.MemoryType.PPU);
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		fileIO.loadFile("/Users/adam/testROMs/games/smb.nes");
+		fileIO.loadFile("/Users/adam/testROMs/nestest.nes");
 		
 		self.ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
 		
@@ -59,6 +61,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.ppu.cpu = self.cpu;
 		
 		self.cpu.reset();
+		
+		self.cpu.setPC(0xC000);
 	}
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
@@ -182,12 +186,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 			self.lastFrameUpdate = now;
 		}
 		
+		while(self.remainingCycles != 0) {
+			self.ppu.step();
+			self.remainingCycles -= 1;
+		}
+		
 		var cpuCycles = self.cpu.step();
 		
 		while(cpuCycles != -1) {
-			for _ in 0 ..< cpuCycles * 3 {
+			for i in 0 ..< cpuCycles * 3 {
 				if(self.ppu.step()) {
 					self.render(self.ppu.frame);
+					self.remainingCycles = cpuCycles * 3 - i - 1;
 					return;
 				}
 			}

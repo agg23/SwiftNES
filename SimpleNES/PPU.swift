@@ -73,6 +73,8 @@ class PPU: NSObject {
 			
 			// Update residual lower bits in PPUSTATUS
 			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUCTRL & 0x1F);
+			
+			nmiChange();
 		}
 	}
 	
@@ -195,7 +197,7 @@ class PPU: NSObject {
 	/**
 	 Stores the current scanline of the PPU
 	*/
-	private var scanline: Int;
+	var scanline: Int;
 	
 	/**
 	 Stores the current pixel of the PPU
@@ -207,11 +209,14 @@ class PPU: NSObject {
 	*/
 	var frame: [RGB];
 	
-	private var cycle: Int;
+	var cycle: Int;
 	
 	private var initFrame = true;
 	
 	private var evenFrame = true;
+	
+	private var nmiPrevious = false;
+	private var nmiDelay: Int = 0;
 		
 	var cpu: CPU?;
 	private let cpuMemory: Memory;
@@ -302,7 +307,34 @@ class PPU: NSObject {
 		
 	}
 	
+	func setVBlank() {
+		setBit(7, value: true, pointer: &self.PPUSTATUS);
+		nmiChange();
+	}
+	
+	func clearVBlank() {
+		setBit(7, value: false, pointer: &self.PPUSTATUS);
+		nmiChange();
+	}
+	
+	func nmiChange() {
+		let nmi = getBit(7, pointer: &self.PPUCTRL) && getBit(7, pointer: &self.PPUSTATUS);
+		
+		if(nmi && !self.nmiPrevious) {
+			self.nmiDelay = 15;
+		}
+		
+		self.nmiPrevious = nmi;
+	}
+	
 	func step() -> Bool {
+		if(self.nmiDelay > 0) {
+			self.nmiDelay -= 1;
+			if(self.nmiDelay == 0 && getBit(7, pointer: &self.PPUCTRL) && getBit(7, pointer: &self.PPUSTATUS)) {
+				self.cpu!.queueInterrupt(CPU.Interrupt.VBlank);
+			}
+		}
+		
 		if(self.cycle > 256) {
 			self.OAMADDR = 0;
 		}
@@ -317,17 +349,7 @@ class PPU: NSObject {
 			// VBlank period
 			
 			if(self.scanline == 241 && self.cycle == 1) {
-				if(!self.initFrame) {
-					// Set VBlank flag
-					setBit(7, value: true, pointer: &self.PPUSTATUS);
-				} else {
-					self.initFrame = false;
-				}
-				
-				if((self.PPUCTRL & 0x80) == 0x80) {
-					// NMI enabled
-					self.cpu!.queueInterrupt(CPU.Interrupt.VBlank);
-				}
+				setVBlank();
 			}
 			
 			// Skip tick on odd frame
@@ -363,7 +385,7 @@ class PPU: NSObject {
 				setBit(6, value: false, pointer: &self.PPUSTATUS);
 				
 				// Clear VBlank flag
-				setBit(7, value: false, pointer: &self.PPUSTATUS);
+				clearVBlank();
 			}
 			
 			if(self.cycle == 304 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
@@ -471,11 +493,10 @@ class PPU: NSObject {
 								let paletteIndex = Int(self.ppuMemory.readMemory(0x3F10 + patternValue));
 								
 								// First color each section of sprite palette is transparent
-								if(patternValue % 4 == 0) {
+								if(patternValue & 0x3 == 0) {
 									continue;
 								}
 								
-								// TODO: Handle behind background priority
 								// TODO: X coordinate of sprites is off slightly
 								
 								let address = self.scanline * 256 + xCoord + x;
@@ -487,7 +508,9 @@ class PPU: NSObject {
 								
 								let backgroundPixel = self.frame[address];
 								
-								if(j == 7 && getBit(3, pointer: &self.PPUMASK) && backgroundPixel.colorIndex & 0x3 != 0 && paletteIndex & 0x3 != 0) {
+								let backgroundTransparent = backgroundPixel.colorIndex & 0x3 == 0;
+								
+								if(j == 7 && getBit(3, pointer: &self.PPUMASK) && !backgroundTransparent && paletteIndex & 0x3 != 0) {
 									// Sprite 0 and Background is not transparent
 									
 									// If bits 1 or 2 in PPUMASK are clear and the x coordinate is between 0 and 7, don't hit
@@ -500,7 +523,9 @@ class PPU: NSObject {
 									}
 								}
 								
-								self.frame[address] = colors[paletteIndex];
+								if(!getBit(5, pointer: &sprite.attribute) || backgroundTransparent) {
+									self.frame[address] = colors[paletteIndex];
+								}
 							}
 						}
 					}
@@ -508,24 +533,6 @@ class PPU: NSObject {
 				
 				if(getBit(3, pointer: &self.PPUMASK)) {
 					// If rendering cycle and rendering background bit is set
-					let tileIndex = (self.cycle - 1) / 8;
-					let patternRow = self.scanline % 8;
-					let tileRow = self.scanline / 8;
-					
-//					var baseNameTableAddress = 0x2000;
-					
-//					if(getBit(0, pointer: &self.PPUCTRL)) {
-//						if(getBit(1, pointer: &self.PPUCTRL)) {
-//							baseNameTableAddress = 0x2C00;
-//						} else {
-//							baseNameTableAddress = 0x2400;
-//						}
-//					} else {
-//						if(getBit(1, pointer: &self.PPUCTRL)) {
-//							baseNameTableAddress = 0x2800;
-//						}
-//					}
-					
 					if(phaseIndex == 2) {
 						// Fetch Name Table
 						self.nameTable = self.ppuMemory.readMemory(0x2000 | (Int(self.currentVramAddress) & 0x0FFF));
@@ -565,7 +572,11 @@ class PPU: NSObject {
 							
 							let attributeBits = (Int(self.attributeTable) >> attributeShift) & 0x3;
 							
-							let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
+							var patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
+							
+							if(patternValue & 0x3 == 0) {
+								patternValue = 0;
+							}
 							
 							let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
 							
@@ -782,6 +793,8 @@ class PPU: NSObject {
 		setBit(7, value: false, pointer: &self.PPUSTATUS);
 		
 		self.writeToggle = false;
+		
+		nmiChange();
 		
 		return temp;
 	}
