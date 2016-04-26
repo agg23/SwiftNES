@@ -73,6 +73,8 @@ class PPU: NSObject {
 			
 			// Update residual lower bits in PPUSTATUS
 			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUCTRL & 0x1F);
+			
+			nmiChange();
 		}
 	}
 	
@@ -212,6 +214,9 @@ class PPU: NSObject {
 	private var initFrame = true;
 	
 	private var evenFrame = true;
+	
+	private var nmiPrevious = false;
+	private var nmiDelay: Int = 0;
 		
 	var cpu: CPU?;
 	private let cpuMemory: Memory;
@@ -302,7 +307,34 @@ class PPU: NSObject {
 		
 	}
 	
+	func setVBlank() {
+		setBit(7, value: true, pointer: &self.PPUSTATUS);
+		nmiChange();
+	}
+	
+	func clearVBlank() {
+		setBit(7, value: false, pointer: &self.PPUSTATUS);
+		nmiChange();
+	}
+	
+	func nmiChange() {
+		let nmi = getBit(7, pointer: &self.PPUCTRL) && getBit(7, pointer: &self.PPUSTATUS);
+		
+		if(nmi && !self.nmiPrevious) {
+			self.nmiDelay = 15;
+		}
+		
+		self.nmiPrevious = nmi;
+	}
+	
 	func step() -> Bool {
+		if(self.nmiDelay > 0) {
+			self.nmiDelay -= 1;
+			if(self.nmiDelay == 0 && getBit(7, pointer: &self.PPUCTRL) && getBit(7, pointer: &self.PPUSTATUS)) {
+				self.cpu!.queueInterrupt(CPU.Interrupt.VBlank);
+			}
+		}
+		
 		if(self.cycle > 256) {
 			self.OAMADDR = 0;
 		}
@@ -317,17 +349,7 @@ class PPU: NSObject {
 			// VBlank period
 			
 			if(self.scanline == 241 && self.cycle == 1) {
-				if(!self.initFrame) {
-					// Set VBlank flag
-					setBit(7, value: true, pointer: &self.PPUSTATUS);
-				} else {
-					self.initFrame = false;
-				}
-				
-				if((self.PPUCTRL & 0x80) == 0x80) {
-					// NMI enabled
-					self.cpu!.queueInterrupt(CPU.Interrupt.VBlank);
-				}
+				setVBlank();
 			}
 			
 			// Skip tick on odd frame
@@ -363,7 +385,7 @@ class PPU: NSObject {
 				setBit(6, value: false, pointer: &self.PPUSTATUS);
 				
 				// Clear VBlank flag
-				setBit(7, value: false, pointer: &self.PPUSTATUS);
+				clearVBlank();
 			}
 			
 			if(self.cycle == 304 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
@@ -771,6 +793,8 @@ class PPU: NSObject {
 		setBit(7, value: false, pointer: &self.PPUSTATUS);
 		
 		self.writeToggle = false;
+		
+		nmiChange();
 		
 		return temp;
 	}
