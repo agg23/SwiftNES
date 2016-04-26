@@ -131,17 +131,17 @@ class Memory: NSObject {
 			if((address >= 0x2000) && (address < 0x4000)) {
 				switch (address % 8) {
 					case 0:
-						return (self.ppu?.PPUCTRL)!;
+						return (self.ppu?.readWriteOnlyRegister())!;
 					case 1:
 						return (self.ppu?.readWriteOnlyRegister())!;
 					case 2:
 						return (self.ppu?.readPPUSTATUS())!;
 					case 3:
-						return (self.ppu?.OAMADDR)!;
+						return (self.ppu?.readWriteOnlyRegister())!;
 					case 4:
-						return (self.ppu?.OAMDATA)!;
+						return (self.ppu?.readOAMDATA())!;
 					case 5:
-						return (self.ppu?.PPUSCROLL)!;
+						return (self.ppu?.readWriteOnlyRegister())!;
 					case 6:
 						return (self.ppu?.readWriteOnlyRegister())!;
 					case 7:

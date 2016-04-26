@@ -71,9 +71,6 @@ class PPU: NSObject {
 			// Update tempVramAddress
 			self.tempVramAddress = (self.tempVramAddress & 0xF3FF) | ((UInt16(PPUCTRL) & 0x03) << 10);
 			
-			// Update residual lower bits in PPUSTATUS
-			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUCTRL & 0x1F);
-			
 			nmiChange();
 		}
 	}
@@ -81,12 +78,7 @@ class PPU: NSObject {
 	/**
 	 PPU Mask Register
 	*/
-	var PPUMASK: UInt8 {
-		didSet {
-			// Update residual lower bits in PPUSTATUS
-			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUMASK & 0x1F);
-		}
-	}
+	var PPUMASK: UInt8;
 
 	/**
 	 PPU Status Register
@@ -96,22 +88,14 @@ class PPU: NSObject {
 	/**
 	 OAM Address Port
 	*/
-	var OAMADDR: UInt8 {
-		didSet {
-			// Update residual lower bits in PPUSTATUS
-			PPUSTATUS = (PPUSTATUS & 0xE0) | (OAMADDR & 0x1F);
-		}
-	}
-	
+	var OAMADDR: UInt8;
+
 	/**
 	 OAM Data Port
 	*/
 	var OAMDATA: UInt8 {
 		didSet {
 			self.writeOAMDATA = true;
-			
-			// Update residual lower bits in PPUSTATUS
-			PPUSTATUS = (PPUSTATUS & 0xE0) | (OAMDATA & 0x1F);
 		}
 	}
 	
@@ -130,9 +114,6 @@ class PPU: NSObject {
 			}
 			
 			self.writeToggle = !self.writeToggle;
-			
-			// Update residual lower bits in PPUSTATUS
-			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUSCROLL & 0x1F);
 		}
 	}
 	
@@ -150,9 +131,6 @@ class PPU: NSObject {
 			}
 			
 			self.writeToggle = !self.writeToggle;
-			
-			// Update residual lower bits in PPUSTATUS
-			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUADDR & 0x1F);
 		}
 	}
 	
@@ -162,9 +140,6 @@ class PPU: NSObject {
 	var PPUDATA: UInt8 {
 		didSet {
 			self.ppuMemory.writeMemory(Int(self.currentVramAddress), data: PPUDATA);
-			
-			// Update residual lower bits in PPUSTATUS
-			PPUSTATUS = (PPUSTATUS & 0xE0) | (PPUDATA & 0x1F);
 			
 			// Increment VRAM address
 			if(getBit(2, pointer: &self.PPUCTRL)) {
@@ -184,8 +159,8 @@ class PPU: NSObject {
 		didSet {
 			dmaCopy();
 			
-			// Update residual lower bits in PPUSTATUS
-			PPUSTATUS = (PPUSTATUS & 0xE0) | (OAMDMA & 0x1F);
+//			// Update residual lower bits in PPUSTATUS
+//			PPUSTATUS = (PPUSTATUS & 0xE0) | (OAMDMA & 0x1F);
 		}
 	}
 	
@@ -234,6 +209,8 @@ class PPU: NSObject {
 	 Any write to a PPU register will set this value
 	*/
 	private var lastWrittenRegisterValue: UInt8;
+	private var lastWrittenRegisterDecayed = true;
+	private var lastWrittenRegisterSetCycle: Int;
 	
 	private var currentVramAddress: UInt16;
 	private var tempVramAddress: UInt16;
@@ -291,6 +268,8 @@ class PPU: NSObject {
 		self.ppuDataReadBuffer = 0;
 		self.lastWrittenRegisterValue = 0;
 		
+		self.lastWrittenRegisterSetCycle = 0;
+		
 		self.nameTable = 0;
 		self.attributeTable = 0;
 		self.patternTableLow = 0;
@@ -321,7 +300,7 @@ class PPU: NSObject {
 		let nmi = getBit(7, pointer: &self.PPUCTRL) && getBit(7, pointer: &self.PPUSTATUS);
 		
 		if(nmi && !self.nmiPrevious) {
-			self.nmiDelay = 15;
+			self.nmiDelay = 1;
 		}
 		
 		self.nmiPrevious = nmi;
@@ -349,7 +328,11 @@ class PPU: NSObject {
 			// VBlank period
 			
 			if(self.scanline == 241 && self.cycle == 1) {
-				setVBlank();
+				if(!self.initFrame) {
+					setVBlank();
+				} else {
+					self.initFrame = false;
+				}
 			}
 			
 			// Skip tick on odd frame
@@ -668,6 +651,16 @@ class PPU: NSObject {
 		
 		self.cycle += 1;
 		
+		if(!self.lastWrittenRegisterDecayed) {
+			self.lastWrittenRegisterSetCycle += 1;
+			
+			if(self.lastWrittenRegisterSetCycle > 5369318) {
+				self.lastWrittenRegisterDecayed = true;
+				self.lastWrittenRegisterSetCycle = 0;
+				self.lastWrittenRegisterValue = 0;
+			}
+		}
+		
 		if(self.cycle == 341) {
 			self.cycle = 0;
 			if(self.scanline == 260) {
@@ -762,32 +755,32 @@ class PPU: NSObject {
 		switch (index) {
 			case 0:
 				self.PPUCTRL = data;
-				self.lastWrittenRegisterValue = data;
 			case 1:
 				self.PPUMASK = data;
-				self.lastWrittenRegisterValue = data;
 			case 2:
-				//self.PPUSTATUS = data;
 				break;
 			case 3:
 				self.OAMADDR = data;
-				self.lastWrittenRegisterValue = data;
 			case 4:
 				self.OAMDATA = data;
 			case 5:
 				self.PPUSCROLL = data;
 			case 6:
 				self.PPUADDR = data;
-				self.lastWrittenRegisterValue = data;
 			case 7:
 				self.PPUDATA = data;
 			default:
 				print("ERROR: Invalid CPU write index");
 		}
+		
+		// Update decay register
+		self.lastWrittenRegisterValue = data;
+		self.lastWrittenRegisterDecayed = false;
+		self.lastWrittenRegisterSetCycle = 0;
 	}
 	
 	func readPPUSTATUS() -> UInt8 {
-		let temp = self.PPUSTATUS;
+		let temp = (self.PPUSTATUS & 0xE0) | (self.lastWrittenRegisterValue & 0x1F);
 		
 		// Clear VBlank flag
 		setBit(7, value: false, pointer: &self.PPUSTATUS);
@@ -804,15 +797,30 @@ class PPU: NSObject {
 		return self.lastWrittenRegisterValue;
 	}
 	
+	func readOAMDATA() -> UInt8 {
+		var value = self.oamMemory.readMemory(Int(self.OAMADDR));
+		
+		if(self.OAMADDR % 4 == 2) {
+			value = value & 0xE3;
+			
+			self.lastWrittenRegisterValue = value;
+			self.lastWrittenRegisterDecayed = false;
+			self.lastWrittenRegisterSetCycle = 0;
+		}
+		
+		return value;
+	}
+	
 	func readPPUDATA() -> UInt8 {
 		var value = self.ppuMemory.readMemory(Int(self.currentVramAddress));
-
+		
 		if (self.currentVramAddress % 0x4000 < 0x3F00) {
 			let buffered = self.ppuDataReadBuffer;
 			self.ppuDataReadBuffer = value;
 			value = buffered;
 		} else {
 			self.ppuDataReadBuffer = self.ppuMemory.readMemory(Int(self.currentVramAddress) - 0x1000);
+			value = (self.ppuDataReadBuffer & 0x3F) | (self.lastWrittenRegisterValue & 0xC0);
 		}
 		
 		if(getBit(2, pointer: &self.PPUCTRL)) {
@@ -821,7 +829,11 @@ class PPU: NSObject {
 			self.currentVramAddress += 1;
 		}
 		
-		return value
+		// Update decay register
+		self.lastWrittenRegisterValue = value;
+		self.lastWrittenRegisterDecayed = false;
+		
+		return value;
 	}
 	
 	func dmaCopy() {

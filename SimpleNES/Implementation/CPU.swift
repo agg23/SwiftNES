@@ -224,7 +224,7 @@ class CPU: NSObject {
 		
 //		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC() - 1, opcode));
 //		dispatch_async(loggingQueue, {
-			self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: self.ppu.cycle, SL: self.ppu.scanline);
+//			self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: self.ppu.cycle, SL: self.ppu.scanline);
 //		})
 		
 		switch opcode {
@@ -1908,6 +1908,8 @@ class CPU: NSObject {
 		let address = addressUsingAddressingMode(mode);
 		let value = self.mainMemory.readMemory(address);
 		
+		self.pageCrossed = false;
+		
 		// Set carry flag
 		setPBit(0, value: (value >> 7) == 1);
 		
@@ -2011,6 +2013,8 @@ class CPU: NSObject {
 		
 		let address = addressUsingAddressingMode(mode);
 		let value = self.mainMemory.readMemory(address);
+		
+		self.pageCrossed = false;
 		
 		// Set carry flag
 		setPBit(0, value: (value & 0x1) == 1);
@@ -2186,6 +2190,8 @@ class CPU: NSObject {
 		let address = addressUsingAddressingMode(mode);
 		var value = self.mainMemory.readMemory(address);
 		
+		self.pageCrossed = false;
+		
 		let carry = (value >> 7) & 0x1;
 		value = (value << 1) & 0xFE;
 		value = value | (getPBit(0) ? 1:0);
@@ -2232,6 +2238,8 @@ class CPU: NSObject {
         
         let address = addressUsingAddressingMode(mode);
         var value = self.mainMemory.readMemory(address);
+		
+		self.pageCrossed = false;
         
         let carry = value & 0x1;
         value = (value >> 1) & 0x7F;

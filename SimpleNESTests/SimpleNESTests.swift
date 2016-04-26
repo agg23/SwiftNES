@@ -24,7 +24,7 @@ class SimpleNESTests: XCTestCase {
     }
 	
 	func romTest(path: String, testAddress: Int, desiredResult: UInt8, intermediary: UInt8, maxInstructions: Int) {
-		let logger = Logger(path: "/Users/adam/nestest.log");
+		let logger = Logger(path: "/Users/adam/nestesting.log");
 		
 		let controllerIO = ControllerIO();
 		

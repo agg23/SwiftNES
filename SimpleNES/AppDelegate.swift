@@ -61,8 +61,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.ppu.cpu = self.cpu;
 		
 		self.cpu.reset();
-		
-		self.cpu.setPC(0xC000);
 	}
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
