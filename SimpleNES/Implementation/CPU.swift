@@ -224,7 +224,7 @@ class CPU: NSObject {
 		
 //		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC() - 1, opcode));
 //		dispatch_async(loggingQueue, {
-//			self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: self.ppu.cycle, SL: self.ppu.scanline);
+			self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: self.ppu.cycle, SL: self.ppu.scanline);
 //		})
 		
 		switch opcode {
@@ -1449,6 +1449,8 @@ class CPU: NSObject {
      JuMP
     */
     func JMP(mode: AddressingMode) -> Int {
+		var length = 3;
+		
         switch mode {
             case AddressingMode.Absolute:
                 let lowByte = fetchPC();
@@ -1456,6 +1458,8 @@ class CPU: NSObject {
                 self.PCH = fetchPC();
                 self.PCL = lowByte;
             case AddressingMode.AbsoluteIndirect:
+				length = 5;
+				
 				let lowerByte = UInt16(fetchPC());
 				let higherByte = UInt16(fetchPC()) << 8;
 				
@@ -1466,7 +1470,7 @@ class CPU: NSObject {
                 print("Invalid AddressingMode on JMP");
         }
         
-        return 3;
+        return length;
     }
 	
     // MARK: Math
@@ -1680,6 +1684,8 @@ class CPU: NSObject {
 		let address = addressUsingAddressingMode(mode);
 		var value = Int(self.mainMemory.readMemory(address));
 		
+		self.pageCrossed = false;
+		
 		value = value + 1;
 		
 		let temp = Int(self.A) - Int(value & 0xFF) - (getPBit(0) ? 0 : 1);
@@ -1725,6 +1731,8 @@ class CPU: NSObject {
 		
 		let address = addressUsingAddressingMode(mode);
 		var value = Int(self.mainMemory.readMemory(address));
+		
+		self.pageCrossed = false;
 		
 		value = value - 1;
 		
@@ -2298,13 +2306,13 @@ class CPU: NSObject {
         var length = 4;
         
         switch mode {
-            case .Immediate, .ZeroPage:
+            case .Immediate:
                 length = 2;
             
-            case .ZeroPageIndexedX:
+            case .ZeroPage:
                 length = 3;
             
-            case .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY:
+            case .ZeroPageIndexedX, .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY:
                 length = 4;
             
             case .IndirectX:
@@ -2336,13 +2344,13 @@ class CPU: NSObject {
         var length = 4;
         
         switch mode {
-            case .Immediate, .ZeroPage:
+            case .Immediate:
                 length = 2;
                 
-            case .ZeroPageIndexedX:
+            case .ZeroPage:
                 length = 3;
                 
-            case .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY:
+            case .ZeroPageIndexedX, .Absolute, .AbsoluteIndexedX, .AbsoluteIndexedY:
                 length = 4;
                 
             case .IndirectX:
@@ -2813,11 +2821,10 @@ class CPU: NSObject {
 	 NOP here
 	*/
 	func IGN(mode: AddressingMode) -> Int {
-		fetchPC();
+		readFromMemoryUsingAddressingMode(mode);
 		
 		switch mode {
 			case .Absolute, .AbsoluteIndexedX:
-				fetchPC();
 				return 4;
 			case .ZeroPage:
 				return 3;

@@ -197,7 +197,7 @@ class PPU: NSObject {
 	/**
 	 Stores the current scanline of the PPU
 	*/
-	private var scanline: Int;
+	var scanline: Int;
 	
 	/**
 	 Stores the current pixel of the PPU
@@ -209,7 +209,7 @@ class PPU: NSObject {
 	*/
 	var frame: [RGB];
 	
-	private var cycle: Int;
+	var cycle: Int;
 	
 	private var initFrame = true;
 	
