@@ -188,7 +188,7 @@ class PPU: NSObject {
 	
 	private var initFrame = true;
 	
-	private var evenFrame = true;
+	private var evenFrame = false;
 	
 	private var nmiPrevious = false;
 	private var nmiDelay: Int = 0;
@@ -335,15 +335,6 @@ class PPU: NSObject {
 				}
 			}
 			
-			// Skip tick on odd frame
-			if(!self.evenFrame && self.scanline == 261 && self.cycle == 339) {
-				self.cycle = 0;
-				
-				self.scanline = -1;
-				
-				return true;
-			}
-			
 			// TODO: Handle glitchy increment on non-VBlank scanlines as referenced:
 			// http://wiki.nesdev.com/w/index.php/PPU_registers
 			if(self.writeOAMDATA) {
@@ -369,6 +360,13 @@ class PPU: NSObject {
 				
 				// Clear VBlank flag
 				clearVBlank();
+			} else if(!self.evenFrame && self.cycle == 339 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
+				// Skip tick on odd frame
+				self.cycle = 0;
+				
+				self.scanline = 0;
+				
+				return true;
 			}
 			
 			if(self.cycle == 304 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
@@ -410,7 +408,7 @@ class PPU: NSObject {
 							if(intOAMByte <= intScanline && intOAMByte + spriteHeight > intScanline) {
 								
 								if(self.secondaryOAMIndex >= 32) {
-									if(getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK)) {
+									if(getBit(4, pointer: &self.PPUMASK)) {
 										// TODO: Handle overflow
 										setBit(5, value: true, pointer: &self.PPUSTATUS);
 									}
