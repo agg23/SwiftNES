@@ -78,7 +78,20 @@ class PPU: NSObject {
 	/**
 	 PPU Mask Register
 	*/
-	var PPUMASK: UInt8;
+	var PPUMASK: UInt8 {
+		didSet {
+			self.greyscale = (PPUMASK & 0x1) == 0x1;
+			self.backgroundClipping = (PPUMASK & 0x2) == 0x2;
+			self.spriteClipping = (PPUMASK & 0x4) == 0x4;
+			self.renderBackground = (PPUMASK & 0x8) == 0x8;
+			self.renderSprites = (PPUMASK & 0x10) == 0x10;
+			self.emphasizeRed = (PPUMASK & 0x20) == 0x20;
+			self.emphasizeGreen = (PPUMASK & 0x40) == 0x40;
+			self.emphasizeBlue = (PPUMASK & 0x80) == 0x80;
+			
+			self.shouldRender = (self.renderBackground || self.renderSprites);
+		}
+	};
 
 	/**
 	 PPU Status Register
@@ -163,6 +176,24 @@ class PPU: NSObject {
 //			PPUSTATUS = (PPUSTATUS & 0xE0) | (OAMDMA & 0x1F);
 		}
 	}
+	
+	// MARK: - Register Bits
+	
+	/*
+		PPUMASK Bits
+	*/
+	private var greyscale: Bool;
+	private var backgroundClipping: Bool;
+	private var spriteClipping: Bool;
+	private var renderBackground: Bool;
+	private var renderSprites: Bool;
+	private var emphasizeRed: Bool;
+	private var emphasizeGreen: Bool;
+	private var emphasizeBlue: Bool;
+	
+	// MARK: - Other Variables
+	
+	private var shouldRender: Bool;
 	
 	/**
 	 Used to indicate whether OAMDATA needs to be written
@@ -260,6 +291,17 @@ class PPU: NSObject {
 		self.PPUDATA = 0;
 		self.OAMDMA = 0;
 		
+		self.greyscale = false;
+		self.backgroundClipping = false;
+		self.spriteClipping = false;
+		self.renderBackground = false;
+		self.renderSprites = false;
+		self.emphasizeRed = false;
+		self.emphasizeGreen = false;
+		self.emphasizeBlue = false;
+		
+		self.shouldRender = false;
+		
 		self.scanline = 241;
 		self.pixelIndex = 0;
 		
@@ -318,9 +360,9 @@ class PPU: NSObject {
 			self.OAMADDR = 0;
 		}
 		
-		if(self.cycle == 256 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
+		if(self.cycle == 256 && self.shouldRender) {
 			incrementY();
-		} else if(self.cycle == 257 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
+		} else if(self.cycle == 257 && self.shouldRender) {
 			copyX();
 		}
 		
@@ -360,16 +402,16 @@ class PPU: NSObject {
 				
 				// Clear VBlank flag
 				clearVBlank();
-			} else if(!self.evenFrame && self.cycle == 339 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
+			} else if(!self.evenFrame && self.cycle == 339 && self.shouldRender) {
 				// Skip tick on odd frame
 				self.cycle = 0;
 				
 				self.scanline = 0;
 				
-				return true;
+				return false;
 			}
 			
-			if(self.cycle == 304 && (getBit(3, pointer: &self.PPUMASK) || getBit(4, pointer: &self.PPUMASK))) {
+			if(self.cycle == 304 && self.shouldRender) {
 				copyY();
 			}
 		} else {
@@ -408,7 +450,7 @@ class PPU: NSObject {
 							if(intOAMByte <= intScanline && intOAMByte + spriteHeight > intScanline) {
 								
 								if(self.secondaryOAMIndex >= 32) {
-									if(getBit(4, pointer: &self.PPUMASK)) {
+									if(self.renderSprites) {
 										// TODO: Handle overflow
 										setBit(5, value: true, pointer: &self.PPUSTATUS);
 									}
@@ -451,7 +493,7 @@ class PPU: NSObject {
 					}
 				}
 				
-				if(getBit(4, pointer: &self.PPUMASK)) {
+				if(self.renderSprites) {
 					// Render sprites
 					if(self.cycle == 256) {
 						// Handle sprites, in reverse order in order to properly overlap
@@ -491,13 +533,13 @@ class PPU: NSObject {
 								
 								let backgroundTransparent = backgroundPixel.colorIndex & 0x3 == 0;
 								
-								if(j == 7 && getBit(3, pointer: &self.PPUMASK) && !backgroundTransparent && paletteIndex & 0x3 != 0) {
+								if(j == 7 && self.renderBackground && !backgroundTransparent && paletteIndex & 0x3 != 0) {
 									// Sprite 0 and Background is not transparent
 									
 									// If bits 1 or 2 in PPUMASK are clear and the x coordinate is between 0 and 7, don't hit
 									// If x coordinate is 255 or greater, don't hit
 									// If y coordinate is 239 or greater, don't hit
-									if(!((!getBit(1, pointer: &self.PPUMASK) || !getBit(2, pointer: &self.PPUMASK)) && xCoord + x < 8)
+									if(!((!self.backgroundClipping || !self.spriteClipping) && xCoord + x < 8)
 										&& xCoord + x < 255
 										&& sprite.yCoord < 239) {
 										setBit(6, value: true, pointer: &self.PPUSTATUS);
@@ -512,7 +554,7 @@ class PPU: NSObject {
 					}
 				}
 				
-				if(getBit(3, pointer: &self.PPUMASK)) {
+				if(self.renderBackground) {
 					// If rendering cycle and rendering background bit is set
 					if(phaseIndex == 2) {
 						// Fetch Name Table
