@@ -79,7 +79,7 @@ class ControllerIO: NSObject {
 	}
 	
 	func buttonState(value: Bool) -> UInt8 {
-		return value ? 0x41 : 0x40
+		return value ? 0x41 : 0x40;
 	}
 	
 	func readState() -> UInt8 {

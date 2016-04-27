@@ -150,6 +150,9 @@ class Memory: NSObject {
 				}
 			} else if(address == 0x4016) {
 				return self.controllerIO!.readState();
+			} else if(address == 0x4017) {
+				// TODO: Add second controller support
+				return 0x40;
 			} else if(self.mirrorPRGROM && address >= 0xC000) {
 				return self.memory[0x8000 + address % 0xC000];
 			}

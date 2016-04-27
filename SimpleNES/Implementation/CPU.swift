@@ -61,7 +61,7 @@ class CPU: NSObject {
 	/**
 	 True if the last cycle run by the CPU was even
 	*/
-	private var evenCycle = true;
+	private var evenCycle = false;
 	
 	/**
 	 True if page was crossed by last instruction
@@ -178,7 +178,9 @@ class CPU: NSObject {
 			cycleCount += 1;
 		}
 		
-		self.evenCycle = self.evenCycle && (cycleCount % 2 == 0);
+		if(cycleCount % 2 == 1) {
+			self.evenCycle = !self.evenCycle;
+		}
 		
 		return cycleCount;
 	}
@@ -196,7 +198,12 @@ class CPU: NSObject {
 			self.oamCycles += 1;
 			
 			// End the transfer
-			if((self.oamCycles > 513 && !self.oamExtraCycle) || (self.oamCycles > 514 && self.oamExtraCycle)) {
+//			if((self.oamCycles > 512 && !self.oamExtraCycle) || (self.oamCycles > 513 && self.oamExtraCycle)) {
+//				self.oamCycles = 0;
+//				self.oamTransfer = false;
+//			}
+			
+			if(self.oamCycles > 512) {
 				self.oamCycles = 0;
 				self.oamTransfer = false;
 			}
@@ -224,7 +231,7 @@ class CPU: NSObject {
 		
 //		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC() - 1, opcode));
 //		dispatch_async(loggingQueue, {
-//			self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: self.ppu.cycle, SL: self.ppu.scanline);
+			self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: self.ppu.cycle, SL: self.ppu.scanline);
 //		})
 		
 		switch opcode {
@@ -979,10 +986,9 @@ class CPU: NSObject {
 		self.oamCycles = 0;
 		
 		if(self.evenCycle) {
-			// Next cycle will not be even, so extra cycle
-			self.oamExtraCycle = true;
-		} else {
 			self.oamExtraCycle = false;
+		} else {
+			self.oamExtraCycle = true;
 		}
 	}
 	
