@@ -125,7 +125,7 @@ class Memory: NSObject {
 		self.ppu = nil;
 	}
 	
-	func readMemory(address: Int) -> UInt8 {
+	final func readMemory(address: Int) -> UInt8 {
 		var address = address;
 		if(self.type == MemoryType.CPU) {
 			if((address >= 0x2000) && (address < 0x4000)) {
@@ -188,11 +188,11 @@ class Memory: NSObject {
 		return self.memory[address];
 	}
 	
-	func readTwoBytesMemory(address: Int) -> UInt16 {
+	final func readTwoBytesMemory(address: Int) -> UInt16 {
 		return UInt16(self.readMemory(address + 1)) << 8 | UInt16(self.readMemory(address));
 	}
 	
-	func writeMemory(address: Int, data: UInt8) {
+	final func writeMemory(address: Int, data: UInt8) {
 		var address = address;
 		
 		if((self.type == MemoryType.CPU && (address > 0xFFFF))) {
@@ -247,7 +247,7 @@ class Memory: NSObject {
 		self.memory[address] = data;
 	}
 	
-    func writeTwoBytesMemory(address: Int, data: UInt16) {
+    final func writeTwoBytesMemory(address: Int, data: UInt16) {
         writeMemory(address, data: UInt8(data & 0xFF));
         writeMemory(address + 1, data: UInt8((data & 0xFF00) >> 8));
     }

@@ -302,10 +302,10 @@ class PPU: NSObject {
 		
 		self.shouldRender = false;
 		
-		self.scanline = 241;
+		self.scanline = 240;
 		self.pixelIndex = 0;
 		
-		self.cycle = 0;
+		self.cycle = 340;
 		
 		self.ppuDataReadBuffer = 0;
 		self.lastWrittenRegisterValue = 0;
@@ -328,17 +328,17 @@ class PPU: NSObject {
 		
 	}
 	
-	func setVBlank() {
+	final func setVBlank() {
 		setBit(7, value: true, pointer: &self.PPUSTATUS);
 		nmiChange();
 	}
 	
-	func clearVBlank() {
+	final func clearVBlank() {
 		setBit(7, value: false, pointer: &self.PPUSTATUS);
 		nmiChange();
 	}
 	
-	func nmiChange() {
+	final func nmiChange() {
 		let nmi = getBit(7, pointer: &self.PPUCTRL) && getBit(7, pointer: &self.PPUSTATUS);
 		
 		if(nmi && !self.nmiPrevious) {
@@ -348,7 +348,7 @@ class PPU: NSObject {
 		self.nmiPrevious = nmi;
 	}
 	
-	func step() -> Bool {
+	final func step() -> Bool {
 		if(self.nmiDelay > 0) {
 			self.nmiDelay -= 1;
 			if(self.nmiDelay == 0 && getBit(7, pointer: &self.PPUCTRL) && getBit(7, pointer: &self.PPUSTATUS)) {
@@ -379,7 +379,7 @@ class PPU: NSObject {
 			
 			// TODO: Handle glitchy increment on non-VBlank scanlines as referenced:
 			// http://wiki.nesdev.com/w/index.php/PPU_registers
-			if(self.writeOAMDATA) {
+			if(self.writeOAMDATA && self.scanline != 240) {
 				self.writeOAMDATA = false;
 				
 				self.oamMemory.writeMemory(Int(self.OAMADDR), data: self.OAMDATA);
@@ -558,64 +558,15 @@ class PPU: NSObject {
 					// If rendering cycle and rendering background bit is set
 					if(phaseIndex == 2) {
 						// Fetch Name Table
-						self.nameTable = self.ppuMemory.readMemory(0x2000 | (Int(self.currentVramAddress) & 0x0FFF));
+						fetchNameTable();
 					} else if(phaseIndex == 4) {
-						// Fetch Attribute Table
-						let currentVramAddress = Int(self.currentVramAddress);
-						self.attributeTable = self.ppuMemory.readMemory(0x23C0 | (currentVramAddress & 0x0C00) | ((currentVramAddress >> 4) & 0x38) | ((currentVramAddress >> 2) & 0x07));
+						fetchAttributeTable();
 					} else if(phaseIndex == 6) {
-						// Fetch lower Pattern Table byte
-						var basePatternTableAddress = 0x0000;
-						
-						if(getBit(4, pointer: &self.PPUCTRL)) {
-							basePatternTableAddress = 0x1000;
-						}
-						
-						let fineY = (Int(self.currentVramAddress) >> 12) & 7;
-						
-						self.patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(self.nameTable) << 4) + fineY);
+						fetchLowPatternTable();
 					} else if(phaseIndex == 0) {
-						// Fetch upper Pattern Table byte
-						var basePatternTableAddress = 0x0008;
+						fetchHighPatternTable();
 						
-						if(getBit(4, pointer: &self.PPUCTRL)) {
-							basePatternTableAddress = 0x1008;
-						}
-						
-						let fineY = (Int(self.currentVramAddress) >> 12) & 7;
-						
-						self.patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(self.nameTable) << 4) + fineY);
-						
-						// Draw pixels from tile
-						for k in 0 ..< 8 {
-							let lowBit = getBit(7 - k, pointer: &self.patternTableLow) ? 1 : 0;
-							let highBit = getBit(7 - k, pointer: &self.patternTableHigh) ? 1 : 0;
-							
-							let attributeShift = Int(((self.currentVramAddress >> 4) & 4) | (self.currentVramAddress & 2));
-							
-							let attributeBits = (Int(self.attributeTable) >> attributeShift) & 0x3;
-							
-							var patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
-							
-							if(patternValue & 0x3 == 0) {
-								patternValue = 0;
-							}
-							
-							let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
-							
-							var pixelXCoord = self.cycle - 8 + k - Int(self.fineXScroll);
-							
-							// TODO: Wraps around from other side of screen, which is not the desired action
-							// TODO: Add loading of the final column of tiles, to prevent this glitch
-							if(pixelXCoord < 0) {
-								pixelXCoord += 256;
-							}
-							
-							var color = colors[paletteIndex];
-							color.colorIndex = UInt8(patternValue);
-							
-							self.frame[self.scanline * 256 + pixelXCoord] = color;
-						}
+						drawTile();
 						
 						incrementX();
 					}
@@ -718,7 +669,77 @@ class PPU: NSObject {
 		return false;
 	}
 	
-	func incrementY() {
+	final func drawTile() {
+		// Draw pixels from tile
+		for k in 0 ..< 8 {
+			let lowBit = getBit(7 - k, pointer: &self.patternTableLow) ? 1 : 0;
+			let highBit = getBit(7 - k, pointer: &self.patternTableHigh) ? 1 : 0;
+			
+			let attributeShift = Int(((self.currentVramAddress >> 4) & 4) | (self.currentVramAddress & 2));
+			
+			let attributeBits = (Int(self.attributeTable) >> attributeShift) & 0x3;
+			
+			var patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
+			
+			if(patternValue & 0x3 == 0) {
+				patternValue = 0;
+			}
+			
+			let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
+			
+			var pixelXCoord = self.cycle - 8 + k - Int(self.fineXScroll);
+			
+			// TODO: Wraps around from other side of screen, which is not the desired action
+			// TODO: Add loading of the final column of tiles, to prevent this glitch
+			if(pixelXCoord < 0) {
+				pixelXCoord += 256;
+			}
+			
+			var color = colors[paletteIndex];
+			color.colorIndex = UInt8(patternValue);
+			
+			self.frame[self.scanline * 256 + pixelXCoord] = color;
+		}
+	}
+	
+	final func fetchNameTable() {
+		// Fetch Name Table
+		self.nameTable = self.ppuMemory.readMemory(0x2000 | (Int(self.currentVramAddress) & 0x0FFF));
+	}
+	
+	final func fetchAttributeTable() {
+		// Fetch Attribute Table
+		let currentVramAddress = Int(self.currentVramAddress);
+		self.attributeTable = self.ppuMemory.readMemory(0x23C0 | (currentVramAddress & 0x0C00) | ((currentVramAddress >> 4) & 0x38) | ((currentVramAddress >> 2) & 0x07));
+	}
+	
+	final func fetchLowPatternTable() {
+		// Fetch lower Pattern Table byte
+		var basePatternTableAddress = 0x0000;
+		
+		if(getBit(4, pointer: &self.PPUCTRL)) {
+			basePatternTableAddress = 0x1000;
+		}
+		
+		let fineY = (Int(self.currentVramAddress) >> 12) & 7;
+		
+		self.patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(self.nameTable) << 4) + fineY);
+	}
+	
+	final func fetchHighPatternTable() {
+		// Fetch upper Pattern Table byte
+		var basePatternTableAddress = 0x0008;
+		
+		if(getBit(4, pointer: &self.PPUCTRL)) {
+			basePatternTableAddress = 0x1008;
+		}
+		
+		let fineY = (Int(self.currentVramAddress) >> 12) & 7;
+		
+		self.patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(self.nameTable) << 4) + fineY);
+	}
+	
+	final func incrementY() {
 		// If fine Y < 7
 		if((self.currentVramAddress & 0x7000) != 0x7000) {
 			// Increment fine Y
@@ -747,7 +768,7 @@ class PPU: NSObject {
 
 	}
 	
-	func incrementX() {
+	final func incrementX() {
 		// If coarse X == 31
 		if((self.currentVramAddress & 0x001F) == 31) {
 			// Coarse X = 0
@@ -761,22 +782,22 @@ class PPU: NSObject {
 		}
 	}
 	
-	func copyY() {
+	final func copyY() {
 		self.currentVramAddress = (self.currentVramAddress & 0x841F) | (self.tempVramAddress & 0x7BE0);
 	}
 	
-	func copyX() {
+	final func copyX() {
 		self.currentVramAddress = (self.currentVramAddress & 0xFBE0) | (self.tempVramAddress & 0x041F);
 	}
 	
 	// MARK - Registers
 	
-	func setBit(index: Int, value: Bool, pointer: UnsafeMutablePointer<UInt8>) {
+	final func setBit(index: Int, value: Bool, pointer: UnsafeMutablePointer<UInt8>) {
 		let bit: UInt8 = value ? 0xFF : 0;
 		pointer.memory ^= (bit ^ pointer.memory) & (1 << UInt8(index));
 	}
 	
-	func getBit(index: Int, pointer: UnsafePointer<UInt8>) -> Bool {
+	final func getBit(index: Int, pointer: UnsafePointer<UInt8>) -> Bool {
 		return ((pointer.memory >> UInt8(index)) & 0x1) == 1;
 	}
 	
@@ -784,14 +805,14 @@ class PPU: NSObject {
 	 Bit level reverses the given byte
 	 From http://stackoverflow.com/a/2602885
 	*/
-	func reverseByte(value: UInt8) -> UInt8 {
+	final func reverseByte(value: UInt8) -> UInt8 {
 		var b = (value & 0xF0) >> 4 | (value & 0x0F) << 4;
 		b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
 		b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
 		return b;
 	}
 	
-	func cpuWrite(index: Int, data: UInt8) {
+	final func cpuWrite(index: Int, data: UInt8) {
 		switch (index) {
 			case 0:
 				self.PPUCTRL = data;
@@ -819,7 +840,7 @@ class PPU: NSObject {
 		self.lastWrittenRegisterSetCycle = 0;
 	}
 	
-	func readPPUSTATUS() -> UInt8 {
+	final func readPPUSTATUS() -> UInt8 {
 		let temp = (self.PPUSTATUS & 0xE0) | (self.lastWrittenRegisterValue & 0x1F);
 		
 		// Clear VBlank flag
@@ -832,12 +853,12 @@ class PPU: NSObject {
 		return temp;
 	}
 	
-	func readWriteOnlyRegister() -> UInt8 {
+	final func readWriteOnlyRegister() -> UInt8 {
 		// Reading any write only register should return last written value to a PPU register
 		return self.lastWrittenRegisterValue;
 	}
 	
-	func readOAMDATA() -> UInt8 {
+	final func readOAMDATA() -> UInt8 {
 		var value = self.oamMemory.readMemory(Int(self.OAMADDR));
 		
 		if(self.OAMADDR % 4 == 2) {
@@ -851,7 +872,7 @@ class PPU: NSObject {
 		return value;
 	}
 	
-	func readPPUDATA() -> UInt8 {
+	final func readPPUDATA() -> UInt8 {
 		var value = self.ppuMemory.readMemory(Int(self.currentVramAddress));
 		
 		if (self.currentVramAddress % 0x4000 < 0x3F00) {
@@ -876,7 +897,7 @@ class PPU: NSObject {
 		return value;
 	}
 	
-	func dmaCopy() {
+	final func dmaCopy() {
 		let address = Int((UInt16(self.OAMDMA) << 8) & 0xFF00);
 		
 		for i in 0 ..< 256 {
