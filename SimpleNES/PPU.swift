@@ -139,8 +139,10 @@ class PPU: NSObject {
 				// Second write
 				self.tempVramAddress = (self.tempVramAddress & 0xFF00) | UInt16(PPUADDR);
 				self.currentVramAddress = self.tempVramAddress;
+				self.currentPPUADDRAddress = (self.currentPPUADDRAddress & 0xFF00) | UInt16(PPUADDR);
 			} else {
 				self.tempVramAddress = (self.tempVramAddress & 0x80FF) | ((UInt16(PPUADDR) & 0x3F) << 8);
+				self.currentPPUADDRAddress = (self.currentPPUADDRAddress & 0x80FF) | ((UInt16(PPUADDR) & 0x3F) << 8);
 			}
 			
 			self.writeToggle = !self.writeToggle;
@@ -152,13 +154,15 @@ class PPU: NSObject {
 	*/
 	var PPUDATA: UInt8 {
 		didSet {
-			self.ppuMemory.writeMemory(Int(self.currentVramAddress), data: PPUDATA);
+			self.ppuMemory.writeMemory(Int(self.currentPPUADDRAddress), data: PPUDATA);
 			
 			// Increment VRAM address
 			if(getBit(2, pointer: &self.PPUCTRL)) {
 				self.currentVramAddress += 32;
+				self.currentPPUADDRAddress += 32;
 			} else {
 				self.currentVramAddress += 1;
+				self.currentPPUADDRAddress += 1;
 			}
 			
 			self.currentVramAddress = self.currentVramAddress & 0x7FFF;
@@ -248,6 +252,8 @@ class PPU: NSObject {
 	private var fineXScroll: UInt8;
 	private var writeToggle: Bool;
 	
+	private var currentPPUADDRAddress: UInt16;
+	
 	
 	// MARK: Stored Values Between Cycles -
 	private var nameTable: UInt8;
@@ -279,6 +285,8 @@ class PPU: NSObject {
 		self.tempVramAddress = 0;
 		self.fineXScroll = 0;
 		self.writeToggle = false;
+		
+		self.currentPPUADDRAddress = 0;
 		
 		self.PPUCTRL = 0;
 		self.PPUMASK = 0;
