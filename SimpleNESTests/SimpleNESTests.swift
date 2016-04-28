@@ -232,10 +232,8 @@ class SimpleNESTests: XCTestCase {
 	
 	// Sprite hit tests cannot be automated.
 	// Fails Screen Bottom #4
-	// Fails Timing Basics with black screen
-	// Fails Timing Order with black screen
-	// Fails Edge Timing with black screen
-	// Black screens possibly need implemented APU
+	// Fails Timing Basics #3
+	// Fails Timing Order #3
 	// Passes all others
 	
 	// MARK: - VBlank flag and NMI Testing

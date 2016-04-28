@@ -139,6 +139,7 @@ class PPU: NSObject {
 				// Second write
 				self.tempVramAddress = (self.tempVramAddress & 0xFF00) | UInt16(PPUADDR);
 				self.currentVramAddress = self.tempVramAddress;
+				// TODO: Fix hack
 				self.currentPPUADDRAddress = (self.currentPPUADDRAddress & 0xFF00) | UInt16(PPUADDR);
 			} else {
 				self.tempVramAddress = (self.tempVramAddress & 0x80FF) | ((UInt16(PPUADDR) & 0x3F) << 8);
