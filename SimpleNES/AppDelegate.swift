@@ -98,9 +98,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
     }
 	
 	@IBAction func dumpPPUMemory(sender: AnyObject) {
-		let logger = Logger(path: "/Users/adam/ppu.dump");
-//		logger.dumpMemory(self.ppu.ppuMemory.memory);
-		logger.endLogging();
+		self.ppu.dumpMemory();
 	}
 	
 	func render(screen: [RGB]) {

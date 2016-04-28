@@ -302,10 +302,10 @@ class PPU: NSObject {
 		
 		self.shouldRender = false;
 		
-		self.scanline = 240;
+		self.scanline = 241;
 		self.pixelIndex = 0;
 		
-		self.cycle = 340;
+		self.cycle = 0;
 		
 		self.ppuDataReadBuffer = 0;
 		self.lastWrittenRegisterValue = 0;
@@ -905,5 +905,9 @@ class PPU: NSObject {
 		}
 		
 		self.cpu!.startOAMTransfer();
+	}
+	
+	final func dumpMemory() {
+		self.ppuMemory.dumpMemory();
 	}
 }

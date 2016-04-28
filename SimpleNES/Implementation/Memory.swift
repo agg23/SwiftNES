@@ -251,4 +251,10 @@ class Memory: NSObject {
         writeMemory(address, data: UInt8(data & 0xFF));
         writeMemory(address + 1, data: UInt8((data & 0xFF00) >> 8));
     }
+	
+	final func dumpMemory() {
+		let logger = Logger(path: "/Users/adam/memory.dump");
+		logger.dumpMemory(self.memory);
+		logger.endLogging();
+	}
 }
