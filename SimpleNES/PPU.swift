@@ -228,6 +228,8 @@ class PPU: NSObject {
 	
 	private var nmiPrevious = false;
 	private var nmiDelay: Int = 0;
+	
+	private var suppressVBlank = false;
 		
 	var cpu: CPU?;
 	private let cpuMemory: Memory;
@@ -338,6 +340,11 @@ class PPU: NSObject {
 	}
 	
 	final func setVBlank() {
+		if(self.suppressVBlank) {
+			self.suppressVBlank = false;
+			return;
+		}
+		
 		setBit(7, value: true, pointer: &self.PPUSTATUS);
 		nmiChange();
 	}
@@ -858,6 +865,10 @@ class PPU: NSObject {
 		self.writeToggle = false;
 		
 		nmiChange();
+		
+		if(self.scanline == 241 && self.cycle == 1) {
+			self.suppressVBlank = true;
+		}
 		
 		return temp;
 	}

@@ -51,7 +51,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		let ppuMemory = Memory(memoryType: Memory.MemoryType.PPU);
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		fileIO.loadFile("/Users/adam/testROMs/unautomatable/sprite_hit_tests_2005.10.05/11.edge_timing.nes");
+		fileIO.loadFile("/Users/adam/testROMs/unautomatable/vbl_nmi_timing/5.nmi_suppression.nes");
 		
 		self.ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
 		
