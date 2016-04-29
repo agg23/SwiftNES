@@ -70,6 +70,9 @@ class CPU: NSObject {
 	*/
 	private var pageCrossed = false;
 	
+	private var dummyReadRequired = false;
+	private var dummyReadAddress = 0;
+	
 	/**
 	 True if CPU is current running an OAM transfer
 	*/
@@ -175,6 +178,7 @@ class CPU: NSObject {
 	*/
 	func step() -> Bool {
 		self.pageCrossed = false;
+		self.dummyReadRequired = false;
 		
 		if(self.oamTransfer) {
 			self.oamCycles += 1;
@@ -899,7 +903,13 @@ class CPU: NSObject {
 				
 				let originalAddress = address(lowByte, upper: highByte);
 				
-				let newAddress = (Int(originalAddress) + Int(index)) & 0xFFFF;
+				if(UInt16(lowByte) + UInt16(index) > 0xFF) {
+					self.dummyReadRequired = true;
+				}
+				
+				self.dummyReadAddress = ((originalAddress & 0xFF00) | (originalAddress + Int(index)) & 0xFF);
+				
+				let newAddress = (originalAddress + Int(index)) & 0xFFFF;
 				
 				self.pageCrossed = !checkPage(UInt16(newAddress), originalAddress: UInt16(originalAddress));
 				
@@ -926,7 +936,13 @@ class CPU: NSObject {
 				
 				let originalAddress = address(lowByte, upper: highByte);
 				
-				let newAddress = (Int(originalAddress) + Int(self.Y)) & 0xFFFF;
+				if(UInt16(lowByte) + UInt16(self.Y) > 0xFF) {
+					self.dummyReadRequired = true;
+				}
+				
+				self.dummyReadAddress = ((originalAddress & 0xFF00) | (originalAddress + Int(self.Y)) & 0xFF);
+				
+				let newAddress = (originalAddress + Int(self.Y)) & 0xFFFF;
 				
 				self.pageCrossed = !checkPage(UInt16(newAddress), originalAddress: UInt16(originalAddress));
 				
@@ -1222,8 +1238,9 @@ class CPU: NSObject {
 		// Ignore page cross
 		
 		if(mode == .AbsoluteIndexedX || mode == .AbsoluteIndexedY || mode == .IndirectY) {
-			readCycle(address);
+			readCycle(self.dummyReadAddress);
 		}
+		
 		writeCycle(address, data: self.A);
 	}
 	
@@ -1297,10 +1314,21 @@ class CPU: NSObject {
 	Internal handler for LDA, LDX, LDY
 	*/
 	func LOAD(mode: AddressingMode, register: UnsafeMutablePointer<UInt8>) {
-		register.memory = readFromMemoryUsingAddressingMode(mode);
-		
-		if(self.pageCrossed) {
+		if(mode == .Immediate) {
 			ppuStep();
+			register.memory = fetchPC();
+		} else {
+			let address = addressUsingAddressingMode(mode);
+			
+			if(self.pageCrossed) {
+				if(self.dummyReadRequired) {
+					readCycle(self.dummyReadAddress);
+				} else {
+					readCycle(address);
+				}
+			}
+			
+			register.memory = readCycle(address);
 		}
 		
 		// Set negative flag
@@ -1871,6 +1899,10 @@ class CPU: NSObject {
         } else {
             let address = addressUsingAddressingMode(mode);
 			
+			if(mode == .AbsoluteIndexedX) {
+				readCycle(self.dummyReadAddress);
+			}
+			
 			var value = readCycle(address);
 			
 			// Ignore page cross
@@ -1889,10 +1921,6 @@ class CPU: NSObject {
 			
 			// Set negative flag
 			setPBit(7, value: (value >> 7) & 0x1 == 1);
-			
-			if(mode == .AbsoluteIndexedX) {
-				readCycle(address);
-			}
 			
             writeCycle(address, data: value);
         }
@@ -1924,6 +1952,10 @@ class CPU: NSObject {
 			
 			var value = readCycle(address);
 			
+			if(mode == .AbsoluteIndexedX) {
+				readCycle(self.dummyReadAddress);
+			}
+			
 			// Ignore page cross
 			
 			ppuStep();
@@ -1941,10 +1973,6 @@ class CPU: NSObject {
 			// Set negative flag
 			setPBit(7, value: (value >> 7) & 0x1 == 1);
 			
-			if(mode == .AbsoluteIndexedX) {
-				readCycle(address);
-			}
-			
 			writeCycle(address, data: value);
 		}
 	}
@@ -1957,6 +1985,10 @@ class CPU: NSObject {
 		var value = readCycle(address);
 		
 		// Ignore page cross
+		
+		if(mode == .AbsoluteIndexedX || mode == .AbsoluteIndexedY || mode == .IndirectY) {
+			readCycle(self.dummyReadAddress);
+		}
 		
 		ppuStep();
 		
@@ -1975,10 +2007,6 @@ class CPU: NSObject {
 		// Set zero flag
 		setPBit(1, value: (self.A == 0));
 		
-		if(mode == .AbsoluteIndexedX || mode == .AbsoluteIndexedY || mode == .IndirectY) {
-			readCycle(address);
-		}
-		
 		writeCycle(address, data: value);
 	}
     
@@ -1990,6 +2018,10 @@ class CPU: NSObject {
         var value = readCycle(address);
 		
 		// Ignore page cross
+		
+		if(mode == .AbsoluteIndexedX || mode == .AbsoluteIndexedY || mode == .IndirectY) {
+			readCycle(self.dummyReadAddress);
+		}
 		
 		ppuStep();
         
@@ -2012,11 +2044,7 @@ class CPU: NSObject {
         setPBit(0, value: temp > 255);
         
         self.A = UInt8(temp & 0xFF);
-		
-		if(mode == .AbsoluteIndexedX || mode == .AbsoluteIndexedY || mode == .IndirectY) {
-			readCycle(address);
-		}
-        
+		        
         writeCycle(address, data: value);
     }
 	
