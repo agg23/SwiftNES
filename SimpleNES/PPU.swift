@@ -222,6 +222,8 @@ class PPU: NSObject {
 	
 	var cycle: Int;
 	
+	var frameReady = false;
+	
 	private var initFrame = true;
 	
 	private var evenFrame = false;
@@ -365,7 +367,7 @@ class PPU: NSObject {
 		self.nmiPrevious = nmi;
 	}
 	
-	final func step() -> Bool {
+	final func step() {
 		if(self.nmiDelay > 0) {
 			self.nmiDelay -= 1;
 			if(self.nmiDelay == 0 && getBit(7, pointer: &self.PPUCTRL) && getBit(7, pointer: &self.PPUSTATUS)) {
@@ -425,7 +427,7 @@ class PPU: NSObject {
 				
 				self.scanline = 0;
 				
-				return false;
+				return;
 			}
 			
 			if(self.cycle == 304 && self.shouldRender) {
@@ -677,13 +679,15 @@ class PPU: NSObject {
 				
 				self.evenFrame = !self.evenFrame;
 				
-				return true;
+				self.frameReady = true;
+				
+				return;
 			} else {
 				scanline += 1;
 			}
 		}
 		
-		return false;
+		return;
 	}
 	
 	final func drawTile() {

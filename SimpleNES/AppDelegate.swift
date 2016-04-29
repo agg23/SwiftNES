@@ -187,18 +187,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 			self.remainingCycles -= 1;
 		}
 		
-		var cpuCycles = self.cpu.step();
-		
-		while(cpuCycles != -1) {
-			for i in 0 ..< cpuCycles * 3 {
-				if(self.ppu.step()) {
-					self.render(self.ppu.frame);
-					self.remainingCycles = cpuCycles * 3 - i - 1;
-					return;
-				}
+		while(self.cpu.step()) {
+			if(self.ppu.frameReady) {
+				self.ppu.frameReady = false;
+				
+				self.render(self.ppu.frame);
+				return;
 			}
-			
-			cpuCycles = self.cpu.step();
 		}
 	}
 	
