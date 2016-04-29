@@ -52,6 +52,8 @@ class CPU: NSObject {
 	 The queued interrupt
 	*/
 	private var interrupt: Interrupt?;
+	
+	var interruptDelay = false;
 
 	private let mainMemory: Memory;
     private let ppu: PPU;
@@ -194,20 +196,25 @@ class CPU: NSObject {
 		}
 		
 		if(self.interrupt != nil) {
-			if(self.interrupt == Interrupt.IRQ) {
+			if(self.interruptDelay) {
+				// Delay interrupt by one instruction
+				self.interruptDelay = false;
+			} else if(self.interrupt == Interrupt.IRQ) {
 				if(!getPBit(2)) {
 					handleInterrupt();
+					
+					self.interrupt = nil;
 					
 					return true;
 				}
 			} else {
 				handleInterrupt();
 				
+				self.interrupt = nil;
+				
 				return true;
 			}
 		}
-		
-		self.interrupt = nil;
 		
 		let opcode = fetchPC();
 		
@@ -960,8 +967,9 @@ class CPU: NSObject {
 	/**
 	 Sets a interrupt to trigger upon the next clock cycle
 	*/
-	func queueInterrupt(interrupt: Interrupt) {
+	func queueInterrupt(interrupt: Interrupt?) {
 		self.interrupt = interrupt;
+		self.interruptDelay = false;
 	}
 	
 	/**
@@ -994,7 +1002,7 @@ class CPU: NSObject {
 		push(oldPCH);
 		push(oldPCL);
 		
-		push(self.P | pMask);
+		push(self.P | pMask); 
 		
 		// Set interrupt flag
 		setPBit(2, value: true);

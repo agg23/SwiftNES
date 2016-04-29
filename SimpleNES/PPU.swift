@@ -233,6 +233,8 @@ class PPU: NSObject {
 	
 	private var suppressNMI = false;
 	private var suppressVBlankFlag = false;
+	
+	private var cyclesSinceNMI = -1;
 		
 	var cpu: CPU?;
 	private let cpuMemory: Memory;
@@ -346,7 +348,7 @@ class PPU: NSObject {
 		if(!self.suppressVBlankFlag) {
 			setBit(7, value: true, pointer: &self.PPUSTATUS);
 		}
-		
+
 		self.suppressVBlankFlag = false;
 		
 		nmiChange();
@@ -361,7 +363,12 @@ class PPU: NSObject {
 		let nmi = getBit(7, pointer: &self.PPUCTRL) && getBit(7, pointer: &self.PPUSTATUS);
 		
 		if(nmi && !self.nmiPrevious) {
-			self.nmiDelay = 14;
+			if(self.scanline != 241 || self.cycle != 1) {
+				// Delay interrupt by one instruction
+				self.cpu!.interruptDelay = true;
+			}
+
+			self.nmiDelay = 2;
 		}
 		
 		self.nmiPrevious = nmi;
@@ -372,6 +379,15 @@ class PPU: NSObject {
 			self.nmiDelay -= 1;
 			if(self.nmiDelay == 0 && getBit(7, pointer: &self.PPUCTRL) && getBit(7, pointer: &self.PPUSTATUS)) {
 				self.cpu!.queueInterrupt(CPU.Interrupt.VBlank);
+				self.cyclesSinceNMI = 0;
+			}
+		}
+		
+		if(self.cyclesSinceNMI > 0) {
+			self.cyclesSinceNMI += 1;
+			
+			if(self.cyclesSinceNMI > 3) {
+				self.cyclesSinceNMI = -1;
 			}
 		}
 		
@@ -421,11 +437,9 @@ class PPU: NSObject {
 				
 				// Clear VBlank flag
 				clearVBlank();
-			} else if(!self.evenFrame && self.cycle == 339 && self.shouldRender) {
+			} else if(!self.evenFrame && self.cycle == 338 && self.shouldRender) {
 				// Skip tick on odd frame
-				self.cycle = 0;
-				
-				self.scanline = 0;
+				self.cycle = 340;
 				
 				return;
 			}
@@ -871,8 +885,12 @@ class PPU: NSObject {
 		
 		nmiChange();
 		
-		if(self.scanline == 241 && self.cycle == 1) {
-			self.suppressVBlankFlag = true;
+		if(self.scanline == 241) {
+			if(self.cycle == 1) {
+				self.suppressVBlankFlag = true;
+			} else if(self.cycle == 2 && self.cyclesSinceNMI != -1) {
+				self.cpu?.queueInterrupt(nil);
+			}
 		}
 		
 		return temp;
