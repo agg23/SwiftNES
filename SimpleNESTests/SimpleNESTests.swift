@@ -227,7 +227,7 @@ class SimpleNESTests: XCTestCase {
 	}
 	
 	func testVBLClearTime() {
-		XCTAssertEqual(3, 1);
+		XCTAssertEqual(2, 1);
 	}
 	
 	func testPaletteRAMConst() {
@@ -303,11 +303,11 @@ class SimpleNESTests: XCTestCase {
 	}
 	
 	func testNMISuppressionConst() {
-		XCTAssertEqual(6, 1);
+		XCTAssertEqual(4, 1);
 	}
 	
 	func testNMIDisableConst() {
-		XCTAssertEqual(4, 1);
+		XCTAssertEqual(3, 1);
 	}
 	
 	func testNMITimingConst() {
