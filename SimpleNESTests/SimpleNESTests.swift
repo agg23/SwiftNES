@@ -48,9 +48,7 @@ class SimpleNESTests: XCTestCase {
 		
 		var instructionCount = 0;
 		
-		var cpuCycles = cpu.step();
-		
-		while(cpuCycles != -1) {
+		while(cpu.step()) {
 			if(instructionCount > maxInstructions) {
 				XCTAssertGreaterThan(maxInstructions, instructionCount);
 				return;
@@ -70,16 +68,9 @@ class SimpleNESTests: XCTestCase {
 				return;
 			}
 			
-			for _ in 0 ..< cpuCycles * 3 {
-				ppu.step();
-			}
-			
 			instructionCount += 1;
-			
-			cpuCycles = cpu.step();
+
 		}
-		
-		XCTAssertNotEqual(cpuCycles, -1);
 	}
 	
 	// MARK: - CPU Instruction Testing

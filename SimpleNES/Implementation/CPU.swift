@@ -209,14 +209,14 @@ class CPU: NSObject {
 		
 		self.interrupt = nil;
 		
-		ppuStep();
-		
 		let opcode = fetchPC();
 		
 //		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC() - 1, opcode));
 //		dispatch_async(loggingQueue, {
 //			self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: self.ppu.cycle, SL: self.ppu.scanline);
 //		})
+		
+		ppuStep();
 		
 		switch opcode {
 			// LDA
@@ -841,7 +841,8 @@ class CPU: NSObject {
     func readFromMemoryUsingAddressingMode(mode: AddressingMode) -> UInt8 {
         switch mode {
 			case .Immediate:
-				return readCycle(Int(fetchPC()));
+				ppuStep();
+				return fetchPC();
 			default: break
         }
         
@@ -869,8 +870,10 @@ class CPU: NSObject {
 				return (Int(pc) + Int(index)) & 0xFF;
 				
 			case AddressingMode.Absolute:
-				let lowByte = readCycle(Int(fetchPC()));
-				let highByte = readCycle(Int(fetchPC()));
+				ppuStep();
+				let lowByte = fetchPC();
+				ppuStep();
+				let highByte = fetchPC();
 				
 				return address(lowByte, upper: highByte);
 				
@@ -1185,7 +1188,8 @@ class CPU: NSObject {
      Jump to SubRoutine
     */
     func JSR() {
-		let lowByte = readCycle(Int(fetchPC()));
+		ppuStep();
+		let lowByte = fetchPC();
 		
 		ppuStep();
 		
@@ -1194,7 +1198,8 @@ class CPU: NSObject {
         push(UInt8((temp >> 8) & 0xFF));
         push(UInt8(temp & 0xFF));
 		
-        self.PCH = readCycle(Int(fetchPC()));
+		ppuStep();
+        self.PCH = fetchPC();
         self.PCL = lowByte;
     }
 	
@@ -1208,6 +1213,9 @@ class CPU: NSObject {
 		
 		// Ignore page cross
 		
+		if(mode == .AbsoluteIndexedX || mode == .AbsoluteIndexedY || mode == .IndirectY) {
+			readCycle(address);
+		}
 		writeCycle(address, data: self.A);
 	}
 	
@@ -1240,6 +1248,10 @@ class CPU: NSObject {
 		let address = addressUsingAddressingMode(mode);
 		
 		// Ignore page cross
+		
+		if(mode == .AbsoluteIndexedX || mode == .AbsoluteIndexedY || mode == .IndirectY) {
+			readCycle(address);
+		}
 		
 		writeCycle(address, data: self.A & self.X);
 	}
@@ -1503,6 +1515,10 @@ class CPU: NSObject {
 		// Set zero flag
 		setPBit(1, value: ((value & 0xFF) == 0));
 		
+		if(mode == .AbsoluteIndexedX) {
+			readCycle(address);
+		}
+		
 		writeCycle(address, data: UInt8(value & 0xFF));
 	}
 	
@@ -1569,6 +1585,10 @@ class CPU: NSObject {
 		
 		self.A = UInt8(temp & 0xFF);
 		
+		if(mode == .AbsoluteIndexedX || mode == .AbsoluteIndexedY || mode == .IndirectY) {
+			readCycle(address);
+		}
+		
 		writeCycle(address, data: UInt8(value & 0xFF));
 	}
 	
@@ -1596,6 +1616,10 @@ class CPU: NSObject {
 		// Set carry flag
 		setPBit(0, value: (UInt8(self.A & 0xFF) >= UInt8(value & 0xFF)));
 		
+		if(mode == .AbsoluteIndexedX || mode == .AbsoluteIndexedY || mode == .IndirectY) {
+			readCycle(address);
+		}
+		
 		writeCycle(address, data: UInt8(value & 0xFF));
 	}
 	
@@ -1618,6 +1642,10 @@ class CPU: NSObject {
 		
 		// Set zero flag
 		setPBit(1, value: ((value & 0xFF) == 0));
+		
+		if(mode == .AbsoluteIndexedX) {
+			readCycle(address);
+		}
 		
 		writeCycle(address, data: UInt8(value & 0xFF));
 	}
@@ -1693,6 +1721,10 @@ class CPU: NSObject {
             
             // Set zero flag
             setPBit(1, value: (temp == 0));
+			
+			if(mode == .AbsoluteIndexedX) {
+				readCycle(address);
+			}
             
             writeCycle(address, data: temp);
         }
@@ -1721,6 +1753,10 @@ class CPU: NSObject {
 		
 		// Set zero flag
 		setPBit(1, value: (self.A == 0));
+		
+		if(mode == .AbsoluteIndexedX || mode == .AbsoluteIndexedY || mode == .IndirectY) {
+			readCycle(address);
+		}
 		
 		writeCycle(address, data: temp);
 	}
@@ -1762,6 +1798,10 @@ class CPU: NSObject {
             
             // Set zero flag
             setPBit(1, value: (temp == 0));
+			
+			if(mode == .AbsoluteIndexedX) {
+				readCycle(address);
+			}
             
             writeCycle(address, data: temp);
         }
@@ -1791,6 +1831,10 @@ class CPU: NSObject {
 		
 		// Set zero flag
 		setPBit(1, value: (self.A == 0));
+		
+		if(mode == .AbsoluteIndexedX || mode == .AbsoluteIndexedY || mode == .IndirectY) {
+			readCycle(address);
+		}
 		
 		writeCycle(address, data: temp);
 	}
@@ -1837,6 +1881,10 @@ class CPU: NSObject {
 			
 			// Set negative flag
 			setPBit(7, value: (value >> 7) & 0x1 == 1);
+			
+			if(mode == .AbsoluteIndexedX) {
+				readCycle(address);
+			}
 			
             writeCycle(address, data: value);
         }
@@ -1885,6 +1933,10 @@ class CPU: NSObject {
 			// Set negative flag
 			setPBit(7, value: (value >> 7) & 0x1 == 1);
 			
+			if(mode == .AbsoluteIndexedX) {
+				readCycle(address);
+			}
+			
 			writeCycle(address, data: value);
 		}
 	}
@@ -1914,6 +1966,10 @@ class CPU: NSObject {
 		
 		// Set zero flag
 		setPBit(1, value: (self.A == 0));
+		
+		if(mode == .AbsoluteIndexedX || mode == .AbsoluteIndexedY || mode == .IndirectY) {
+			readCycle(address);
+		}
 		
 		writeCycle(address, data: value);
 	}
@@ -1948,6 +2004,10 @@ class CPU: NSObject {
         setPBit(0, value: temp > 255);
         
         self.A = UInt8(temp & 0xFF);
+		
+		if(mode == .AbsoluteIndexedX || mode == .AbsoluteIndexedY || mode == .IndirectY) {
+			readCycle(address);
+		}
         
         writeCycle(address, data: value);
     }
@@ -2377,6 +2437,10 @@ class CPU: NSObject {
 	*/
 	func IGN(mode: AddressingMode) {
 		readFromMemoryUsingAddressingMode(mode);
+		
+		if(self.pageCrossed) {
+			ppuStep();
+		}
 	}
 	
 	/**
