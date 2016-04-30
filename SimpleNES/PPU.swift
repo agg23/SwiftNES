@@ -242,6 +242,7 @@ class PPU: NSObject {
 	private let oamMemory: Memory;
 	
 	private var secondaryOAM = [UInt8](count: 32, repeatedValue: 0);
+	private var spriteZeroWillBeInSecondaryOAM = false;
 	private var spriteZeroInSecondaryOAM = false;
 	
 	/**
@@ -436,8 +437,6 @@ class PPU: NSObject {
 				// Clear sprite 0 hit flag
 				setBit(6, value: false, pointer: &self.PPUSTATUS);
 				
-				self.spriteZeroInSecondaryOAM = false;
-				
 				// Clear VBlank flag
 				clearVBlank();
 			} else if(!self.evenFrame && self.cycle == 338 && self.shouldRender) {
@@ -470,7 +469,8 @@ class PPU: NSObject {
 					if(self.cycle % 2 == 0) {
 						self.secondaryOAM[self.cycle / 2 - 1] = 0xFF;
 					}
-				} else if(self.cycle <= 256) {
+					self.spriteZeroWillBeInSecondaryOAM = false;
+				} else {
 					if(self.oamStage == 0) {
 						if(self.cycle % 2 == 0) {
 							
@@ -483,10 +483,6 @@ class PPU: NSObject {
 								spriteHeight = 16;
 							}
 							
-							if(intOAMByte == 255) {
-								
-							}
-							
 							if(intOAMByte < 255 && intOAMByte <= intScanline && intOAMByte + spriteHeight > intScanline) {
 								
 								if(self.secondaryOAMIndex >= 32) {
@@ -495,15 +491,16 @@ class PPU: NSObject {
 										setBit(5, value: true, pointer: &self.PPUSTATUS);
 									}
 								} else {
-									if(self.secondaryOAMIndex == 0) {
-										self.spriteZeroInSecondaryOAM = true;
-									}
 									
 									// Sprite should be drawn on this line
 									self.secondaryOAM[self.secondaryOAMIndex] = self.oamByte;
 									self.secondaryOAM[self.secondaryOAMIndex + 1] = self.oamMemory.readMemory(4 * self.oamIndex + 1);
 									self.secondaryOAM[self.secondaryOAMIndex + 2] = self.oamMemory.readMemory(4 * self.oamIndex + 2);
 									self.secondaryOAM[self.secondaryOAMIndex + 3] = self.oamMemory.readMemory(4 * self.oamIndex + 3);
+									
+									if(self.oamIndex == 0) {
+										self.spriteZeroWillBeInSecondaryOAM = true;
+									}
 									
 									self.secondaryOAMIndex += 4;
 								}
@@ -537,67 +534,6 @@ class PPU: NSObject {
 					}
 				}
 				
-//				if(self.renderSprites) {
-//					// Render sprites
-//					if(self.cycle == 256) {
-//						// Handle sprites, in reverse order in order to properly overlap
-//						for j in 0 ..< 8 {
-//							var sprite = currentSpriteData[7 - j];
-//							let xCoord = Int(sprite.xCoord);
-//							
-//							if(xCoord >= 0xFF) {
-//								continue;
-//							}
-//							
-//							for x in 0 ..< 8 {
-//								let lowBit = getBit(7 - x, pointer: &sprite.patternTableLow) ? 1 : 0;
-//								let highBit = getBit(7 - x, pointer: &sprite.patternTableHigh) ? 1 : 0;
-//								
-//								let attributeBits = Int(sprite.attribute) & 0x3;
-//								
-//								let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
-//								
-//								let paletteIndex = Int(self.ppuMemory.readMemory(0x3F10 + patternValue));
-//								
-//								// First color each section of sprite palette is transparent
-//								if(patternValue & 0x3 == 0) {
-//									continue;
-//								}
-//								
-//								// TODO: X coordinate of sprites is off slightly
-//								
-//								let address = self.scanline * 256 + xCoord + x;
-//								
-//								if(address >= 256 * 240) {
-//									// TODO: Fix
-//									continue;
-//								}
-//								
-//								let backgroundPixel = self.frame[address];
-//								
-//								let backgroundTransparent = backgroundPixel.colorIndex & 0x3 == 0;
-//								
-//								if(self.spriteZeroInSecondaryOAM && j == 7 && self.renderBackground && !backgroundTransparent && paletteIndex & 0x3 != 0) {
-//									// Sprite 0 and Background is not transparent
-//									
-//									// If bits 1 or 2 in PPUMASK are clear and the x coordinate is between 0 and 7, don't hit
-//									// If x coordinate is 255 or greater, don't hit
-//									// If y coordinate is 239 or greater, don't hit
-//									if(!((!self.backgroundClipping || !self.spriteClipping) && xCoord + x < 8)
-//										&& xCoord + x < 255
-//										&& sprite.yCoord < 239) {
-//										setBit(6, value: true, pointer: &self.PPUSTATUS);
-//									}
-//								}
-//								
-//								if(!getBit(5, pointer: &sprite.attribute) || backgroundTransparent) {
-//									self.frame[address] = colors[paletteIndex];
-//								}
-//							}
-//						}
-//					}
-//				}
-				
 				if(self.renderBackground) {
 					// If rendering cycle and rendering background bit is set
 					if(phaseIndex == 2) {
@@ -609,20 +545,22 @@ class PPU: NSObject {
 						fetchLowPatternTable();
 					} else if(phaseIndex == 0) {
 						fetchHighPatternTable();
-						
-						drawTile();
-						
-						incrementX();
 					}
 				}
 				
-				if(self.renderSprites) {
-					renderSpritePixel(self.cycle - 1);
+				if(phaseIndex == 0) {
+					drawTile();
+					
+					if(self.renderBackground) {
+						incrementX();
+					}
 				}
 			} else if(self.cycle <= 320) {
 				if(self.cycle == 257) {
 					self.secondaryOAMIndex = 0;
 				}
+				
+				self.spriteZeroInSecondaryOAM = self.spriteZeroWillBeInSecondaryOAM;
 				
 				if(phaseIndex == 0 && self.secondaryOAMIndex < 32) {
 					let yCoord = self.secondaryOAM[secondaryOAMIndex];
@@ -726,12 +664,6 @@ class PPU: NSObject {
 			
 			let xOffset = currentXCoord - xCoord;
 			
-			if(xOffset >= 0 && xCoord != 0xFF) {
-				if(sprite.patternTableLow != 0) {
-					
-				}
-			}
-			
 			if(xOffset < 0 || xOffset > 7 || xCoord >= 0xFF) {
 				continue;
 			}
@@ -778,7 +710,6 @@ class PPU: NSObject {
 			
 			if(!getBit(5, pointer: &sprite.attribute) || backgroundTransparent) {
 				self.frame[address] = colors[paletteIndex];
-				print("Wrote to x:\(xOffset) y:\(self.scanline)");
 				return;
 			}
 		}
@@ -787,33 +718,39 @@ class PPU: NSObject {
 	final func drawTile() {
 		// Draw pixels from tile
 		for k in 0 ..< 8 {
-			let lowBit = getBit(7 - k, pointer: &self.patternTableLow) ? 1 : 0;
-			let highBit = getBit(7 - k, pointer: &self.patternTableHigh) ? 1 : 0;
-			
-			let attributeShift = Int(((self.currentVramAddress >> 4) & 4) | (self.currentVramAddress & 2));
-			
-			let attributeBits = (Int(self.attributeTable) >> attributeShift) & 0x3;
-			
-			var patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
-			
-			if(patternValue & 0x3 == 0) {
-				patternValue = 0;
-			}
-			
-			let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
-			
 			var pixelXCoord = self.cycle - 8 + k - Int(self.fineXScroll);
 			
-			// TODO: Wraps around from other side of screen, which is not the desired action
-			// TODO: Add loading of the final column of tiles, to prevent this glitch
-			if(pixelXCoord < 0) {
-				pixelXCoord += 256;
+			if(self.renderBackground) {
+				let lowBit = getBit(7 - k, pointer: &self.patternTableLow) ? 1 : 0;
+				let highBit = getBit(7 - k, pointer: &self.patternTableHigh) ? 1 : 0;
+				
+				let attributeShift = Int(((self.currentVramAddress >> 4) & 4) | (self.currentVramAddress & 2));
+				
+				let attributeBits = (Int(self.attributeTable) >> attributeShift) & 0x3;
+				
+				var patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
+				
+				if(patternValue & 0x3 == 0) {
+					patternValue = 0;
+				}
+				
+				let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
+				
+				// TODO: Wraps around from other side of screen, which is not the desired action
+				// TODO: Add loading of the final column of tiles, to prevent this glitch
+				if(pixelXCoord < 0) {
+					pixelXCoord += 256;
+				}
+				
+				var color = colors[paletteIndex];
+				color.colorIndex = UInt8(patternValue);
+				
+				self.frame[self.scanline * 256 + pixelXCoord] = color;
 			}
 			
-			var color = colors[paletteIndex];
-			color.colorIndex = UInt8(patternValue);
-			
-			self.frame[self.scanline * 256 + pixelXCoord] = color;
+			if(self.renderSprites) {
+				renderSpritePixel(pixelXCoord);
+			}
 		}
 	}
 	
