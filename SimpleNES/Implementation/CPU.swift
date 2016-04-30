@@ -78,6 +78,8 @@ class CPU: NSObject {
 	*/
 	private var oamTransfer = false;
 	
+	private var oamDMAAddress = 0;
+	
 	/**
 	 Stores the number of cycles in the current OAM transfer
 	*/
@@ -181,20 +183,23 @@ class CPU: NSObject {
 		self.dummyReadRequired = false;
 		
 		if(self.oamTransfer) {
-			self.oamCycles += 1;
+			ppuStep();
 			
-			// End the transfer
-//			if((self.oamCycles > 512 && !self.oamExtraCycle) || (self.oamCycles > 513 && self.oamExtraCycle)) {
-//				self.oamCycles = 0;
-//				self.oamTransfer = false;
-//			}
-			
-			if(self.oamCycles > 512) {
-				self.oamCycles = 0;
-				self.oamTransfer = false;
+			if(self.oamExtraCycle) {
+				ppuStep();
 			}
 			
-			ppuStep();
+			let startAddress = UInt16(self.ppu.OAMADDR);
+			
+			for i in 0 ..< 256 {
+				let data = self.readCycle(self.oamDMAAddress + i);
+				
+				ppuStep();
+				
+				self.ppu.oamMemory.writeMemory(Int((startAddress + UInt16(i)) & 0xFF), data: data);
+			}
+			
+			self.oamTransfer = false;
 			
 			return true;
 		}
@@ -1059,6 +1064,8 @@ class CPU: NSObject {
 		} else {
 			self.oamExtraCycle = true;
 		}
+		
+		self.oamDMAAddress = Int((UInt16(self.ppu.OAMDMA) << 8) & 0xFF00);
 	}
 	
     // MARK: - PC Operations

@@ -175,10 +175,7 @@ class PPU: NSObject {
 	*/
 	var OAMDMA: UInt8 {
 		didSet {
-			dmaCopy();
-			
-//			// Update residual lower bits in PPUSTATUS
-//			PPUSTATUS = (PPUSTATUS & 0xE0) | (OAMDMA & 0x1F);
+			self.cpu!.startOAMTransfer();
 		}
 	}
 	
@@ -239,7 +236,7 @@ class PPU: NSObject {
 	var cpu: CPU?;
 	private let cpuMemory: Memory;
 	private let ppuMemory: Memory;
-	private let oamMemory: Memory;
+	let oamMemory: Memory;
 	
 	private var secondaryOAM = [UInt8](count: 32, repeatedValue: 0);
 	private var spriteZeroWillBeInSecondaryOAM = false;
@@ -393,7 +390,7 @@ class PPU: NSObject {
 			}
 		}
 		
-		if(self.cycle > 256) {
+		if(self.cycle > 256 && self.scanline < 240) {
 			self.OAMADDR = 0;
 		}
 		
@@ -483,7 +480,7 @@ class PPU: NSObject {
 								spriteHeight = 16;
 							}
 							
-							if(intOAMByte < 255 && intOAMByte <= intScanline && intOAMByte + spriteHeight > intScanline) {
+							if(intOAMByte < 240 && intOAMByte <= intScanline && intOAMByte + spriteHeight > intScanline) {
 								
 								if(self.secondaryOAMIndex >= 32) {
 									if(self.renderSprites) {
@@ -941,7 +938,7 @@ class PPU: NSObject {
 			value = buffered;
 		} else {
 			self.ppuDataReadBuffer = self.ppuMemory.readMemory(Int(self.currentVramAddress) - 0x1000);
-			value = (self.ppuDataReadBuffer & 0x3F) | (self.lastWrittenRegisterValue & 0xC0);
+//			value = (self.ppuDataReadBuffer & 0x3F) | (self.lastWrittenRegisterValue & 0xC0);
 		}
 		
 		if(getBit(2, pointer: &self.PPUCTRL)) {
@@ -955,16 +952,6 @@ class PPU: NSObject {
 		self.lastWrittenRegisterDecayed = false;
 		
 		return value;
-	}
-	
-	final func dmaCopy() {
-		let address = Int((UInt16(self.OAMDMA) << 8) & 0xFF00);
-		
-		for i in 0 ..< 256 {
-			self.oamMemory.writeMemory(Int((UInt16(self.OAMADDR) + UInt16(i)) & 0xFF), data: self.cpuMemory.readMemory(address + i));
-		}
-		
-		self.cpu!.startOAMTransfer();
 	}
 	
 	final func dumpMemory() {
