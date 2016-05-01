@@ -265,7 +265,7 @@ class SimpleNESTests: XCTestCase {
 	}
 	
 	func testSpriteHitScreenBottomConst() {
-		XCTAssertEqual(4, 1);
+		XCTAssertEqual(1, 1);
 	}
 	
 	func testSpriteHitDoubleHeightConst() {

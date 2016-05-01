@@ -182,11 +182,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 			self.lastFrameUpdate = now;
 		}
 		
-		while(self.remainingCycles != 0) {
-			self.ppu.step();
-			self.remainingCycles -= 1;
-		}
-		
 		while(self.cpu.step()) {
 			if(self.ppu.frameReady) {
 				self.ppu.frameReady = false;

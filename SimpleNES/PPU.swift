@@ -108,7 +108,17 @@ class PPU: NSObject {
 	*/
 	var OAMDATA: UInt8 {
 		didSet {
-			self.oamMemory.writeMemory(Int(self.OAMADDR), data: OAMDATA);
+			var value = OAMDATA;
+			
+			if((self.renderBackground || self.renderSprites) && self.scanline > 239) {
+				value = 0xFF;
+			}
+			
+			if(self.OAMADDR % 4 == 2) {
+				value = value & 0xE3;
+			}
+			
+			self.oamMemory.writeMemory(Int(self.OAMADDR), data: value);
 			
 			self.OAMADDR = UInt8((Int(self.OAMADDR) + 1) & 0xFF);
 		}
@@ -401,6 +411,10 @@ class PPU: NSObject {
 			copyX();
 		}
 		
+		if(self.cycle == 0) {
+			self.OAMADDR = 0;
+		}
+		
 		if(self.scanline >= 240) {
 			// VBlank period
 			
@@ -414,17 +428,17 @@ class PPU: NSObject {
 			
 			// TODO: Handle glitchy increment on non-VBlank scanlines as referenced:
 			// http://wiki.nesdev.com/w/index.php/PPU_registers
-			if(self.writeOAMDATA && self.scanline != 240) {
-				self.writeOAMDATA = false;
-				
-				self.oamMemory.writeMemory(Int(self.OAMADDR), data: self.OAMDATA);
-				
-				if(getBit(2, pointer: &self.PPUCTRL)) {
-					self.OAMADDR = UInt8((Int(self.OAMADDR) + 32) & 0xFF);
-				} else {
-					self.OAMADDR = UInt8((Int(self.OAMADDR) + 1) & 0xFF);
-				}
-			}
+//			if(self.writeOAMDATA && self.scanline != 240) {
+//				self.writeOAMDATA = false;
+//				
+//				self.oamMemory.writeMemory(Int(self.OAMADDR), data: self.OAMDATA);
+//				
+//				if(getBit(2, pointer: &self.PPUCTRL)) {
+//					self.OAMADDR = UInt8((Int(self.OAMADDR) + 32) & 0xFF);
+//				} else {
+//					self.OAMADDR = UInt8((Int(self.OAMADDR) + 1) & 0xFF);
+//				}
+//			}
 		} else if(self.scanline == -1) {
 			// TODO: Update horizontal and vertical scroll counters
 			
@@ -470,7 +484,7 @@ class PPU: NSObject {
 					self.spriteZeroWillBeInSecondaryOAM = false;
 				} else {
 					if(self.oamStage == 0) {
-						if(self.cycle % 2 == 0) {
+						if(self.cycle % 2 == 0 && self.scanline != 239) {
 							
 							let intOAMByte = Int(self.oamByte);
 							let intScanline = Int(self.scanline);
