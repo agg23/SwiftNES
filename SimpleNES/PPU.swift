@@ -39,6 +39,14 @@ struct Sprite {
 	var yCoord: UInt8;
 }
 
+struct Tile {
+	var nameTable: UInt8;
+	var attributeTable: UInt8;
+	var patternTableLow: UInt8;
+	var patternTableHigh: UInt8;
+	var vramAddress: UInt16;
+}
+
 func makeRGBArray(array: [UInt32]) -> [RGB] {
 	var rgbArray = [RGB](count: array.count, repeatedValue: RGB(value: 0));
 	
@@ -279,6 +287,7 @@ class PPU: NSObject {
 	private var patternTableLow: UInt8;
 	private var patternTableHigh: UInt8;
 	
+	private var currentTileData = [Tile](count: 34, repeatedValue: Tile(nameTable: 0, attributeTable: 0, patternTableLow: 0, patternTableHigh: 0, vramAddress: 0));
 	private var currentSpriteData = [Sprite](count: 8, repeatedValue: Sprite(patternTableLow: 0xFF, patternTableHigh: 0xFF, attribute: 0, xCoord: 0, yCoord: 0));
 	
 	private var oamByte: UInt8;
@@ -548,6 +557,12 @@ class PPU: NSObject {
 				
 				if(self.renderBackground) {
 					// If rendering cycle and rendering background bit is set
+					let xCoord = (self.cycle - 1 + Int(self.fineXScroll));
+					
+					let tile = self.currentTileData[xCoord / 8];
+					
+					renderBackgroundPixel(tile, tileXCoord: (xCoord / 8) * 8, pixelOffset: xCoord % 8);
+					
 					if(phaseIndex == 2) {
 						// Fetch Name Table
 						fetchNameTable();
@@ -557,15 +572,17 @@ class PPU: NSObject {
 						fetchLowPatternTable();
 					} else if(phaseIndex == 0) {
 						fetchHighPatternTable();
+						
+						self.currentTileData[(self.cycle - 1) / 8 + 2] = Tile(nameTable: self.nameTable, attributeTable: self.attributeTable,
+						                                                patternTableLow: self.patternTableLow, patternTableHigh: self.patternTableHigh,
+						                                                vramAddress: self.currentVramAddress);
+						
+						incrementX();
 					}
 				}
 				
-				if(phaseIndex == 0) {
-					drawTile();
-					
-					if(self.renderBackground) {
-						incrementX();
-					}
+				if(self.renderSprites) {
+					renderSpritePixel(self.cycle - 1);
 				}
 			} else if(self.cycle <= 320) {
 				if(self.cycle == 257) {
@@ -632,7 +649,27 @@ class PPU: NSObject {
 					self.secondaryOAMIndex += 4;
 				}
 			} else if(self.cycle <= 336) {
-				// TODO: Fetch tile data for first two tiles on next scanline
+				if(phaseIndex == 2) {
+					// Fetch Name Table
+					fetchNameTable();
+				} else if(phaseIndex == 4) {
+					fetchAttributeTable();
+				} else if(phaseIndex == 6) {
+					fetchLowPatternTable();
+				} else if(phaseIndex == 0) {
+					fetchHighPatternTable();
+					
+					let tile = Tile(nameTable: self.nameTable, attributeTable: self.attributeTable, patternTableLow: self.patternTableLow,
+					                patternTableHigh: self.patternTableHigh, vramAddress: self.currentVramAddress);
+					
+					if(self.cycle == 328) {
+						self.currentTileData[0] = tile;
+					} else {
+						self.currentTileData[1] = tile;
+					}
+					
+					incrementX();
+				}
 			} else {
 				// TODO: Fetch garbage Name Table byte
 			}
@@ -727,43 +764,40 @@ class PPU: NSObject {
 		}
 	}
 	
-	final func drawTile() {
+	final func renderBackgroundPixel(tile: Tile, tileXCoord: Int, pixelOffset: Int) {
 		// Draw pixels from tile
-		for k in 0 ..< 8 {
-			var pixelXCoord = self.cycle - 8 + k - Int(self.fineXScroll);
-			
-			if(self.renderBackground) {
-				let lowBit = getBit(7 - k, pointer: &self.patternTableLow) ? 1 : 0;
-				let highBit = getBit(7 - k, pointer: &self.patternTableHigh) ? 1 : 0;
-				
-				let attributeShift = Int(((self.currentVramAddress >> 4) & 4) | (self.currentVramAddress & 2));
-				
-				let attributeBits = (Int(self.attributeTable) >> attributeShift) & 0x3;
-				
-				var patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
-				
-				if(patternValue & 0x3 == 0) {
-					patternValue = 0;
-				}
-				
-				let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
-				
-				// TODO: Wraps around from other side of screen, which is not the desired action
-				// TODO: Add loading of the final column of tiles, to prevent this glitch
-				if(pixelXCoord < 0) {
-					pixelXCoord += 256;
-				}
-				
-				var color = colors[paletteIndex];
-				color.colorIndex = UInt8(patternValue);
-				
-				self.frame[self.scanline * 256 + pixelXCoord] = color;
-			}
-			
-			if(self.renderSprites) {
-				renderSpritePixel(pixelXCoord);
-			}
+		var patternTableLow = tile.patternTableLow;
+		var patternTableHigh = tile.patternTableHigh;
+		
+		if(tileXCoord == 0 && pixelOffset == 0) {
+		
 		}
+		
+		var pixelXCoord = tileXCoord + pixelOffset - Int(self.fineXScroll);
+		
+		let lowBit = getBit(7 - pixelOffset, pointer: &patternTableLow) ? 1 : 0;
+		let highBit = getBit(7 - pixelOffset, pointer: &patternTableHigh) ? 1 : 0;
+		
+		let attributeShift = Int(((tile.vramAddress >> 4) & 4) | (tile.vramAddress & 2));
+		
+		let attributeBits = (Int(tile.attributeTable) >> attributeShift) & 0x3;
+		
+		var patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
+		
+		if(patternValue & 0x3 == 0) {
+			patternValue = 0;
+		}
+		
+		let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
+		
+		if(pixelXCoord < 0) {
+			pixelXCoord += 256;
+		}
+		
+		var color = colors[paletteIndex];
+		color.colorIndex = UInt8(patternValue);
+		
+		self.frame[self.scanline * 256 + pixelXCoord] = color;
 	}
 	
 	final func fetchNameTable() {
