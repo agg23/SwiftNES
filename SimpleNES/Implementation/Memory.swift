@@ -155,6 +155,8 @@ class Memory: NSObject {
 				return 0x40;
 			} else if(self.mirrorPRGROM && address >= 0xC000) {
 				return self.memory[0x8000 + address % 0xC000];
+			} else if(address < 0x2000) {
+				address = address % 0x800;
 			}
 		} else if(self.type == MemoryType.PPU) {
 			address = address % 0x4000;
@@ -214,6 +216,8 @@ class Memory: NSObject {
 				}
 			} else if(self.mirrorPRGROM && address >= 0xC000) {
 				self.memory[0x8000 + address % 0xC000] = data;
+			} else if(address < 0x2000) {
+				address = address % 0x800;
 			}
 		} else if(self.type == MemoryType.PPU) {
 			address = address % 0x4000;
