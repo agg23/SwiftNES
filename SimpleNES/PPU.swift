@@ -108,7 +108,9 @@ class PPU: NSObject {
 	*/
 	var OAMDATA: UInt8 {
 		didSet {
-			self.writeOAMDATA = true;
+			self.oamMemory.writeMemory(Int(self.OAMADDR), data: OAMDATA);
+			
+			self.OAMADDR = UInt8((Int(self.OAMADDR) + 1) & 0xFF);
 		}
 	}
 	
@@ -140,10 +142,9 @@ class PPU: NSObject {
 				self.tempVramAddress = (self.tempVramAddress & 0xFF00) | UInt16(PPUADDR);
 				self.currentVramAddress = self.tempVramAddress;
 				// TODO: Fix hack
-				self.currentPPUADDRAddress = (self.currentPPUADDRAddress & 0xFF00) | UInt16(PPUADDR);
+				self.currentPPUADDRAddress = self.tempVramAddress;
 			} else {
 				self.tempVramAddress = (self.tempVramAddress & 0x80FF) | ((UInt16(PPUADDR) & 0x3F) << 8);
-				self.currentPPUADDRAddress = (self.currentPPUADDRAddress & 0x80FF) | ((UInt16(PPUADDR) & 0x3F) << 8);
 			}
 			
 			self.writeToggle = !self.writeToggle;
@@ -930,21 +931,22 @@ class PPU: NSObject {
 	}
 	
 	final func readPPUDATA() -> UInt8 {
-		var value = self.ppuMemory.readMemory(Int(self.currentVramAddress));
+		// TODO: Switch back to currentVramAddress
+		var value = self.ppuMemory.readMemory(Int(self.currentPPUADDRAddress));
 		
-		if (self.currentVramAddress % 0x4000 < 0x3F00) {
+		if (self.currentPPUADDRAddress % 0x4000 < 0x3F00) {
 			let buffered = self.ppuDataReadBuffer;
 			self.ppuDataReadBuffer = value;
 			value = buffered;
 		} else {
-			self.ppuDataReadBuffer = self.ppuMemory.readMemory(Int(self.currentVramAddress) - 0x1000);
+			self.ppuDataReadBuffer = self.ppuMemory.readMemory(Int(self.currentPPUADDRAddress) - 0x1000);
 //			value = (self.ppuDataReadBuffer & 0x3F) | (self.lastWrittenRegisterValue & 0xC0);
 		}
 		
 		if(getBit(2, pointer: &self.PPUCTRL)) {
-			self.currentVramAddress += 32;
+			self.currentPPUADDRAddress += 32;
 		} else {
-			self.currentVramAddress += 1;
+			self.currentPPUADDRAddress += 1;
 		}
 		
 		// Update decay register
