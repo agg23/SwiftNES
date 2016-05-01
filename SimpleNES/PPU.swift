@@ -744,8 +744,9 @@ class PPU: NSObject {
 			
 			let backgroundTransparent = backgroundPixel.colorIndex & 0x3 == 0;
 			
-			if(self.spriteZeroInSecondaryOAM && i == 0 && self.renderBackground && !backgroundTransparent && paletteIndex & 0x3 != 0) {
+			if(self.spriteZeroInSecondaryOAM && i == 0 && self.renderBackground && !backgroundTransparent) {
 				// Sprite 0 and Background is not transparent
+				
 				
 				// If bits 1 or 2 in PPUMASK are clear and the x coordinate is between 0 and 7, don't hit
 				// If x coordinate is 255 or greater, don't hit
@@ -754,6 +755,7 @@ class PPU: NSObject {
 					&& xCoord + xOffset < 255
 					&& sprite.yCoord < 239) {
 					setBit(6, value: true, pointer: &self.PPUSTATUS);
+					self.spriteZeroInSecondaryOAM = false;
 				}
 			}
 			

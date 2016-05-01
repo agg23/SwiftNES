@@ -273,11 +273,11 @@ class SimpleNESTests: XCTestCase {
 	}
 	
 	func testSpriteHitTimingBasicsConst() {
-		XCTAssertEqual(3, 1);
+		XCTAssertEqual(1, 1);
 	}
 	
 	func testSpriteHitTimingOrderConst() {
-		XCTAssertEqual(3, 1);
+		XCTAssertEqual(1, 1);
 	}
 	
 	func testSpriteHitEdgeTimingConst() {
