@@ -76,6 +76,13 @@ class PPU: NSObject {
 	*/
 	var PPUCTRL: UInt8 {
 		didSet {
+			self.vramIncrement = (PPUCTRL & 0x4) == 0x4;
+			self.spritePatternTableAddress = (PPUCTRL & 0x8) == 0x8;
+			self.backgroundPatternTableAddress = (PPUCTRL & 0x10) == 0x10;
+			self.spriteSize = (PPUCTRL & 0x20) == 0x20;
+			self.ppuMasterSlave = (PPUCTRL & 0x40) == 0x40;
+			self.generateNMI = (PPUCTRL & 0x80) == 0x80;
+			
 			// Update tempVramAddress
 			self.tempVramAddress = (self.tempVramAddress & 0xF3FF) | ((UInt16(PPUCTRL) & 0x03) << 10);
 			
@@ -99,7 +106,7 @@ class PPU: NSObject {
 			
 			self.shouldRender = (self.renderBackground || self.renderSprites);
 		}
-	};
+	}
 
 	/**
 	 PPU Status Register
@@ -177,7 +184,7 @@ class PPU: NSObject {
 			self.ppuMemory.writeMemory(Int(self.currentPPUADDRAddress), data: PPUDATA);
 			
 			// Increment VRAM address
-			if(getBit(2, pointer: &self.PPUCTRL)) {
+			if(self.vramIncrement) {
 				self.currentVramAddress += 32;
 				self.currentPPUADDRAddress += 32;
 			} else {
@@ -201,6 +208,16 @@ class PPU: NSObject {
 	// MARK: - Register Bits
 	
 	/*
+		PPUCTRL Bits
+	*/
+	private var vramIncrement: Bool;
+	private var spritePatternTableAddress: Bool;
+	private var backgroundPatternTableAddress: Bool;
+	private var spriteSize: Bool;
+	private var ppuMasterSlave: Bool;
+	private var generateNMI: Bool;
+	
+	/*
 		PPUMASK Bits
 	*/
 	private var greyscale: Bool;
@@ -211,6 +228,13 @@ class PPU: NSObject {
 	private var emphasizeRed: Bool;
 	private var emphasizeGreen: Bool;
 	private var emphasizeBlue: Bool;
+	
+	/*
+		PPUSTATUS Bits
+	*/
+	private var spriteOverflow: Bool;
+	private var sprite0Hit: Bool;
+	private var vblank: Bool;
 	
 	// MARK: - Other Variables
 	
@@ -326,6 +350,13 @@ class PPU: NSObject {
 		self.PPUDATA = 0;
 		self.OAMDMA = 0;
 		
+		self.vramIncrement = false;
+		self.spritePatternTableAddress = false;
+		self.backgroundPatternTableAddress = false;
+		self.spriteSize = false;
+		self.ppuMasterSlave = false;
+		self.generateNMI = false;
+		
 		self.greyscale = false;
 		self.backgroundClipping = false;
 		self.spriteClipping = false;
@@ -334,6 +365,10 @@ class PPU: NSObject {
 		self.emphasizeRed = false;
 		self.emphasizeGreen = false;
 		self.emphasizeBlue = false;
+		
+		self.spriteOverflow = false;
+		self.sprite0Hit = false;
+		self.vblank = false;
 		
 		self.shouldRender = false;
 		
@@ -365,7 +400,7 @@ class PPU: NSObject {
 	
 	final func setVBlank() {
 		if(!self.suppressVBlankFlag) {
-			setBit(7, value: true, pointer: &self.PPUSTATUS);
+			self.vblank = true;
 		}
 
 		self.suppressVBlankFlag = false;
@@ -374,12 +409,12 @@ class PPU: NSObject {
 	}
 	
 	final func clearVBlank() {
-		setBit(7, value: false, pointer: &self.PPUSTATUS);
+		self.vblank = false;
 		nmiChange();
 	}
 	
 	final func nmiChange() {
-		let nmi = getBit(7, pointer: &self.PPUCTRL) && getBit(7, pointer: &self.PPUSTATUS);
+		let nmi = self.generateNMI && self.vblank;
 		
 		if(nmi && !self.nmiPrevious) {
 			if(self.scanline != 241 || self.cycle != 1) {
@@ -396,7 +431,7 @@ class PPU: NSObject {
 	final func step() {
 		if(self.nmiDelay > 0) {
 			self.nmiDelay -= 1;
-			if(self.nmiDelay == 0 && getBit(7, pointer: &self.PPUCTRL) && getBit(7, pointer: &self.PPUSTATUS)) {
+			if(self.nmiDelay == 0 && self.generateNMI && self.vblank) {
 				self.cpu!.queueInterrupt(CPU.Interrupt.VBlank);
 				self.cyclesSinceNMI = 0;
 			}
@@ -453,10 +488,10 @@ class PPU: NSObject {
 			
 			if(self.cycle == 1) {
 				// Clear sprite overflow flag
-				setBit(5, value: false, pointer: &self.PPUSTATUS);
+				self.spriteOverflow = false;
 				
 				// Clear sprite 0 hit flag
-				setBit(6, value: false, pointer: &self.PPUSTATUS);
+				self.sprite0Hit = false;
 				
 				// Clear VBlank flag
 				clearVBlank();
@@ -500,7 +535,7 @@ class PPU: NSObject {
 							
 							var spriteHeight = 8;
 							
-							if(getBit(5, pointer: &self.PPUCTRL)) {
+							if(self.spriteSize) {
 								spriteHeight = 16;
 							}
 							
@@ -509,7 +544,7 @@ class PPU: NSObject {
 								if(self.secondaryOAMIndex >= 32) {
 									if(self.renderSprites) {
 										// TODO: Handle overflow
-										setBit(5, value: true, pointer: &self.PPUSTATUS);
+										self.spriteOverflow = true;
 									}
 								} else {
 									
@@ -603,7 +638,7 @@ class PPU: NSObject {
 					
 					let verticalFlip = getBit(7, pointer: &attributes);
 					
-					if(getBit(5, pointer: &self.PPUCTRL)) {
+					if(self.spriteSize) {
 						// 8x16
 						if(tileNumber & 0x1 == 1) {
 							basePatternTableAddress = 0x1000;
@@ -625,7 +660,7 @@ class PPU: NSObject {
 						}
 					} else {
 						// 8x8
-						if(getBit(3, pointer: &self.PPUCTRL)) {
+						if(self.spritePatternTableAddress) {
 							basePatternTableAddress = 0x1000;
 						}
 						
@@ -754,7 +789,7 @@ class PPU: NSObject {
 				if(!((!self.backgroundClipping || !self.spriteClipping) && xCoord + xOffset < 8)
 					&& xCoord + xOffset < 255
 					&& sprite.yCoord < 239) {
-					setBit(6, value: true, pointer: &self.PPUSTATUS);
+					self.sprite0Hit = true;
 					self.spriteZeroInSecondaryOAM = false;
 				}
 			}
@@ -817,7 +852,7 @@ class PPU: NSObject {
 		// Fetch lower Pattern Table byte
 		var basePatternTableAddress = 0x0000;
 		
-		if(getBit(4, pointer: &self.PPUCTRL)) {
+		if(self.backgroundPatternTableAddress) {
 			basePatternTableAddress = 0x1000;
 		}
 		
@@ -830,7 +865,7 @@ class PPU: NSObject {
 		// Fetch upper Pattern Table byte
 		var basePatternTableAddress = 0x0008;
 		
-		if(getBit(4, pointer: &self.PPUCTRL)) {
+		if(self.backgroundPatternTableAddress) {
 			basePatternTableAddress = 0x1008;
 		}
 		
@@ -941,10 +976,14 @@ class PPU: NSObject {
 	}
 	
 	final func readPPUSTATUS() -> UInt8 {
-		let temp = (self.PPUSTATUS & 0xE0) | (self.lastWrittenRegisterValue & 0x1F);
+		var temp = (self.lastWrittenRegisterValue & 0x1F);
+		
+		temp |= self.spriteOverflow ? 0x20 : 0;
+		temp |= self.sprite0Hit ? 0x40: 0;
+		temp |= self.vblank ? 0x80: 0;
 		
 		// Clear VBlank flag
-		setBit(7, value: false, pointer: &self.PPUSTATUS);
+		self.vblank = false;
 		
 		self.writeToggle = false;
 		
@@ -993,7 +1032,7 @@ class PPU: NSObject {
 //			value = (self.ppuDataReadBuffer & 0x3F) | (self.lastWrittenRegisterValue & 0xC0);
 		}
 		
-		if(getBit(2, pointer: &self.PPUCTRL)) {
+		if(self.vramIncrement) {
 			self.currentPPUADDRAddress += 32;
 		} else {
 			self.currentPPUADDRAddress += 1;
