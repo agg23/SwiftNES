@@ -671,27 +671,24 @@
         <window title="SimpleNES" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" animationBehavior="default" id="QvC-M9-y7g" customClass="DisplayWindow" customModule="SimpleNES" customModuleProvider="target">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="335" y="390" width="480" height="360"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
+            <rect key="contentRect" x="335" y="390" width="256" height="240"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="877"/>
             <view key="contentView" id="EiT-Mj-1SZ">
-                <rect key="frame" x="0.0" y="0.0" width="480" height="360"/>
+                <rect key="frame" x="0.0" y="0.0" width="256" height="240"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9nn-4f-Txs">
-                        <rect key="frame" x="161" y="13" width="159" height="32"/>
-                        <buttonCell key="cell" type="push" title="Dump PPU Memory" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="2SR-Ki-2AU">
-                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="system"/>
-                        </buttonCell>
-                        <connections>
-                            <action selector="dumpPPUMemory:" target="Voe-Tx-rLC" id="n5e-EV-IuY"/>
-                        </connections>
-                    </button>
-                    <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6HS-0n-2gX" customClass="MTKView">
-                        <rect key="frame" x="112" y="60" width="256" height="240"/>
+                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="6HS-0n-2gX" customClass="MTKView">
+                        <rect key="frame" x="0.0" y="0.0" width="256" height="240"/>
                     </customView>
                 </subviews>
+                <constraints>
+                    <constraint firstAttribute="bottom" secondItem="6HS-0n-2gX" secondAttribute="bottom" id="08O-T5-ZYC"/>
+                    <constraint firstItem="6HS-0n-2gX" firstAttribute="top" secondItem="EiT-Mj-1SZ" secondAttribute="top" id="d2m-GO-jhm"/>
+                    <constraint firstAttribute="trailing" secondItem="6HS-0n-2gX" secondAttribute="trailing" id="jKY-Ri-wej"/>
+                    <constraint firstItem="6HS-0n-2gX" firstAttribute="leading" secondItem="EiT-Mj-1SZ" secondAttribute="leading" id="pnp-cy-pkg"/>
+                </constraints>
             </view>
+            <point key="canvasLocation" x="464" y="309"/>
         </window>
     </objects>
 </document>

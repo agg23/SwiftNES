@@ -41,6 +41,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	
 	private var remainingCycles = 0;
 	
+	private let scalingFactor:CGFloat = 2.0;
+	
 	override init() {
 		self.logger = Logger(path: "/Users/adam/nes.log");
 		
@@ -62,11 +64,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		self.cpu.reset();
 	}
+	
+	func windowSetup() {
+		var rect = self.window.frameRectForContentRect(NSMakeRect(0, 0, 256 * self.scalingFactor, 240 * self.scalingFactor));
+		
+		rect.origin = self.window.frame.origin;
+		
+		self.window.setFrame(rect, display: false);
+		
+		let windowSize = NSMakeSize(256 * self.scalingFactor, 240 * self.scalingFactor);
+		
+		self.window.contentMinSize = windowSize;
+		self.window.contentMaxSize = windowSize;
+	}
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         // Insert code here to initialize your application
 		
-		self.sizingRect = self.window.convertRectToBacking(NSMakeRect(0, 0, 256, 240));
+		windowSetup();
+		
+		self.sizingRect = self.window.convertRectToBacking(NSMakeRect(0, 0, 256 * self.scalingFactor, 240 * self.scalingFactor));
 		
 		let width = Int(self.sizingRect!.width);
 		let height = Int(self.sizingRect!.height);
