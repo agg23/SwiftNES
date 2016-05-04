@@ -9,7 +9,7 @@
 import Foundation
 import Carbon
 
-class ControllerIO: NSObject {
+final class ControllerIO: NSObject {
 	var controllerState: Int = -1;
 	var strobeHigh: Bool {
 		didSet {

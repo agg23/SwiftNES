@@ -8,7 +8,7 @@
 
 import Foundation
 
-class CPU: NSObject {
+final class CPU: NSObject {
 
 	// MARK: Registers
 
@@ -196,7 +196,7 @@ class CPU: NSObject {
 				
 				ppuStep();
 				
-				self.ppu.oamMemory.writeMemory(Int((startAddress + UInt16(i)) & 0xFF), data: data);
+				self.ppu.writeDMA(Int((startAddress + UInt16(i)) & 0xFF), data: data);
 			}
 			
 			self.oamTransfer = false;
@@ -821,19 +821,19 @@ class CPU: NSObject {
 		return true;
 	}
 	
-	final func readCycle(address: Int) -> UInt8 {
+	func readCycle(address: Int) -> UInt8 {
 		ppuStep();
 		
 		return self.mainMemory.readMemory(address);
 	}
 	
-	final func writeCycle(address: Int, data: UInt8) {
+	func writeCycle(address: Int, data: UInt8) {
 		ppuStep();
 		
 		self.mainMemory.writeMemory(address, data: data);
 	}
 	
-	final func ppuStep() {
+	func ppuStep() {
 		self.evenCycle = !self.evenCycle;
 		
 		for _ in 0 ..< 3 {

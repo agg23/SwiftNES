@@ -9,7 +9,7 @@
 import Foundation
 import Cocoa
 
-class FileIO: NSObject {
+final class FileIO: NSObject {
 	
 	let mainMemory: Memory;
 	let ppuMemory: Memory;

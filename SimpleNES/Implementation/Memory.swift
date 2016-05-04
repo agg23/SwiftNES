@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Memory: NSObject {
+final class Memory: NSObject {
 	/* Main Memory
 	-- $10000 --
 	 PRG-ROM Upper Bank

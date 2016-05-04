@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class DisplayWindow: NSWindow {
+final class DisplayWindow: NSWindow {
 	var controllerIO: ControllerIO?;
 	
 	override func keyDown(theEvent: NSEvent) {

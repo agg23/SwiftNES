@@ -10,7 +10,7 @@ import Cocoa
 import MetalKit
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 
     @IBOutlet weak var window: DisplayWindow!
 	

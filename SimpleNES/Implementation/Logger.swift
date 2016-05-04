@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Logger: NSObject {
+final class Logger: NSObject {
 	
 	let path: String;
 	var fileHandle: NSFileHandle?;
