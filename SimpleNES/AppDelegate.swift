@@ -118,7 +118,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.ppu.dumpMemory();
 	}
 	
-	func render(screen: [RGB]) {
+	func render(inout screen: [RGB]) {
 		let width = 256;
 		let height = 240;
 		
@@ -203,7 +203,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 			if(self.ppu.frameReady) {
 				self.ppu.frameReady = false;
 				
-				self.render(self.ppu.frame);
+				self.render(&self.ppu.frame);
 				return;
 			}
 		}

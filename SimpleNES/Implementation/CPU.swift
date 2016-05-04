@@ -883,7 +883,7 @@ class CPU: NSObject {
 				
 				ppuStep();
 				
-				return (Int(pc) + Int(index)) & 0xFF;
+				return Int(pc &+ index);
 				
 			case AddressingMode.Absolute:
 				ppuStep();
@@ -926,18 +926,18 @@ class CPU: NSObject {
 				
 				ppuStep();
 				
-				let lowByte = readCycle(Int(UInt16(immediate) + UInt16(self.X)) & 0xFF);
+				let lowByte = readCycle(Int(immediate &+ self.X) & 0xFF);
 				
-				let highByte = readCycle(Int(UInt16(immediate) + UInt16(self.X) + 1) & 0xFF);
+				let highByte = readCycle(Int(immediate &+ self.X &+ 1) & 0xFF);
 				
 				return address(lowByte, upper: highByte);
 				
 			case AddressingMode.IndirectY:
 				ppuStep();
-				let immediate = fetchPC();
+				let immediate = Int(fetchPC());
 				
-				let lowByte = readCycle(Int(immediate));
-				let highByte = readCycle((Int(immediate) + 1) & 0xFF);
+				let lowByte = readCycle(immediate);
+				let highByte = readCycle((immediate + 1) & 0xFF);
 				
 				let originalAddress = address(lowByte, upper: highByte);
 				
@@ -945,9 +945,11 @@ class CPU: NSObject {
 					self.dummyReadRequired = true;
 				}
 				
-				self.dummyReadAddress = ((originalAddress & 0xFF00) | (originalAddress + Int(self.Y)) & 0xFF);
+				let intY = Int(self.Y);
 				
-				let newAddress = (originalAddress + Int(self.Y)) & 0xFFFF;
+				self.dummyReadAddress = ((originalAddress & 0xFF00) | (originalAddress + intY) & 0xFF);
+				
+				let newAddress = (originalAddress + intY) & 0xFFFF;
 				
 				self.pageCrossed = !checkPage(UInt16(newAddress), originalAddress: UInt16(originalAddress));
 				
@@ -1079,11 +1081,11 @@ class CPU: NSObject {
     }
     
     func incrementPC() {
-        setPC(UInt16((Int(getPC()) + 1) & 0xFFFF));
+        setPC(getPC() &+ 1);
     }
     
     func decrementPC() {
-		setPC(UInt16((Int(getPC()) - 1) & 0xFFFF));
+		setPC(getPC() &- 1);
     }
     
     func fetchPC() -> UInt8 {
@@ -1098,11 +1100,11 @@ class CPU: NSObject {
     func push(byte: UInt8) {
         writeCycle(0x100 + Int(self.SP), data: byte);
         
-        self.SP = UInt8((Int(self.SP) - 1) & 0xFF);
+        self.SP = self.SP &- 1;
     }
     
     func pop() -> UInt8 {
-		self.SP = UInt8((Int(self.SP) + 1) & 0xFF);
+		self.SP = self.SP &+ 1;
 		
         return readCycle(0x100 + Int(self.SP));
     }
@@ -1456,7 +1458,7 @@ class CPU: NSObject {
 				
                 self.PCL = readCycle(Int(lowerByte | higherByte));
 				// Add 1 only to lower byte due to CPU bug
-                self.PCH = readCycle(Int(((UInt16(lowerByte) + 1) & 0xFF) | higherByte));
+                self.PCH = readCycle(Int(((lowerByte &+ 1) & 0xFF) | higherByte));
             default:
                 print("Invalid AddressingMode on JMP");
         }
@@ -1571,7 +1573,7 @@ class CPU: NSObject {
 	func INX() -> Int {
 		ppuStep();
 		
-		self.X = UInt8((Int(self.X) + 1) & 0xFF);
+		self.X = self.X &+ 1;
 		
 		// Set negative flag
 		setPBit(7, value: (self.X >> 7) == 1);
@@ -1588,7 +1590,7 @@ class CPU: NSObject {
 	func INY() -> Int {
 		ppuStep();
 		
-		self.Y = UInt8((Int(self.Y) + 1) & 0xFF);
+		self.Y = self.Y &+ 1;
 		
 		// Set negative flag
 		setPBit(7, value: (self.Y >> 7) == 1);
@@ -2289,7 +2291,7 @@ class CPU: NSObject {
 		
 		if(!getPBit(0)) {
 			ppuStep();
-			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
 			
 			if(!checkPage(newPC)) {
 				ppuStep();
@@ -2308,7 +2310,7 @@ class CPU: NSObject {
 		
 		if(getPBit(0)) {
 			ppuStep();
-			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
 			
 			if(!checkPage(newPC)) {
 				ppuStep();
@@ -2327,7 +2329,7 @@ class CPU: NSObject {
 		
 		if(getPBit(1)) {
 			ppuStep();
-			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
 			
 			if(!checkPage(newPC)) {
 				ppuStep();
@@ -2346,7 +2348,7 @@ class CPU: NSObject {
 		
 		if(getPBit(7)) {
 			ppuStep();
-			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
 			
 			if(!checkPage(newPC)) {
 				ppuStep();
@@ -2365,7 +2367,7 @@ class CPU: NSObject {
 		
 		if(!getPBit(1)) {
 			ppuStep();
-			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
 			
 			if(!checkPage(newPC)) {
 				ppuStep();
@@ -2384,7 +2386,7 @@ class CPU: NSObject {
 		
 		if(!getPBit(7)) {
 			ppuStep();
-			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
 			
 			if(!checkPage(newPC)) {
 				ppuStep();
@@ -2403,7 +2405,7 @@ class CPU: NSObject {
 		
 		if(!getPBit(6)) {
 			ppuStep();
-			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
 			
 			if(!checkPage(newPC)) {
 				ppuStep();
@@ -2422,7 +2424,7 @@ class CPU: NSObject {
 		
 		if(getPBit(6)) {
 			ppuStep();
-			let newPC = UInt16((Int(getPC()) + (Int(relative) ^ 0x80) - 0x80) & 0xFFFF);
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
 			
 			if(!checkPage(newPC)) {
 				ppuStep();

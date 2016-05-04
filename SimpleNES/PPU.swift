@@ -321,6 +321,8 @@ class PPU: NSObject {
 	private var oamIndexOverflow = 0;
 	private var secondaryOAMIndex = 0;
 	
+	private let blankPixel = RGB(value: 0);
+	
 	// MARK: Methods -
 	
 	init(cpuMemory: Memory, ppuMemory: Memory) {
@@ -389,9 +391,7 @@ class PPU: NSObject {
 		
 		self.oamByte = 0;
 		
-		let pixel = RGB(value: 0);
-		
-		self.frame = [RGB](count:256 * 240, repeatedValue:pixel);
+		self.frame = [RGB](count:256 * 240, repeatedValue:self.blankPixel);
 	}
 	
 	func reset() {
@@ -590,13 +590,15 @@ class PPU: NSObject {
 					}
 				}
 				
+				let pixel: RGB;
+				
 				if(self.renderBackground) {
 					// If rendering cycle and rendering background bit is set
 					let xCoord = (self.cycle - 1 + Int(self.fineXScroll));
 					
 					let tile = self.currentTileData[xCoord / 8];
 					
-					renderBackgroundPixel(tile, tileXCoord: (xCoord / 8) * 8, pixelOffset: xCoord % 8);
+					pixel = renderBackgroundPixel(tile, tileXCoord: (xCoord / 8) * 8, pixelOffset: xCoord % 8);
 					
 					if(phaseIndex == 2) {
 						// Fetch Name Table
@@ -614,10 +616,12 @@ class PPU: NSObject {
 						
 						incrementX();
 					}
+				} else {
+					pixel = self.blankPixel;
 				}
 				
 				if(self.renderSprites) {
-					renderSpritePixel(self.cycle - 1);
+					renderSpritePixel(self.cycle - 1, backgroundPixel: pixel);
 				}
 			} else if(self.cycle <= 320) {
 				if(self.cycle == 257) {
@@ -741,7 +745,7 @@ class PPU: NSObject {
 		return;
 	}
 	
-	final func renderSpritePixel(currentXCoord: Int) {
+	final func renderSpritePixel(currentXCoord: Int, backgroundPixel: RGB) {
 		for i in 0 ..< 8 {
 			var sprite = currentSpriteData[i];
 			let xCoord = Int(sprite.xCoord);
@@ -775,8 +779,6 @@ class PPU: NSObject {
 				continue;
 			}
 			
-			let backgroundPixel = self.frame[address];
-			
 			let backgroundTransparent = backgroundPixel.colorIndex & 0x3 == 0;
 			
 			if(self.spriteZeroInSecondaryOAM && i == 0 && self.renderBackground && !backgroundTransparent) {
@@ -801,14 +803,10 @@ class PPU: NSObject {
 		}
 	}
 	
-	final func renderBackgroundPixel(tile: Tile, tileXCoord: Int, pixelOffset: Int) {
+	final func renderBackgroundPixel(tile: Tile, tileXCoord: Int, pixelOffset: Int) -> RGB {
 		// Draw pixels from tile
 		var patternTableLow = tile.patternTableLow;
 		var patternTableHigh = tile.patternTableHigh;
-		
-		if(tileXCoord == 0 && pixelOffset == 0) {
-		
-		}
 		
 		var pixelXCoord = tileXCoord + pixelOffset - Int(self.fineXScroll);
 		
@@ -835,6 +833,8 @@ class PPU: NSObject {
 		color.colorIndex = UInt8(patternValue);
 		
 		self.frame[self.scanline * 256 + pixelXCoord] = color;
+		
+		return color;
 	}
 	
 	final func fetchNameTable() {
