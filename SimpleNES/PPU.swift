@@ -788,7 +788,7 @@ final class PPU: NSObject {
 			}
 			
 			if(!getBit(5, pointer: &sprite.attribute) || backgroundTransparent) {
-				self.frame[address] = colors[paletteIndex];
+				self.frame[256 * 240 - (self.scanline * 256) + xCoord + xOffset] = colors[paletteIndex];
 				return;
 			}
 		}
@@ -823,7 +823,8 @@ final class PPU: NSObject {
 		var color = colors[paletteIndex];
 		color.colorIndex = UInt8(patternValue);
 		
-		self.frame[self.scanline * 256 + pixelXCoord] = color;
+		// TODO: Do frame scaling here, instead of at render time
+		self.frame[256 * 240 - (self.scanline * 256) + pixelXCoord] = color;
 		
 		return color;
 	}

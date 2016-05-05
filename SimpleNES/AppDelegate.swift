@@ -143,9 +143,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		let flippedContext = CGBitmapContextCreateWithData(nil, finalWidth, finalHeight, bitsPerComponent, bytesPerRowFinal, colorSpace, bitmapInfo, nil, nil);
 		
-		CGContextTranslateCTM(flippedContext, 0, CGFloat(finalHeight));
-		CGContextScaleCTM(flippedContext, 1.0, -1.0);
-		
 		CGContextSetInterpolationQuality(flippedContext, CGInterpolationQuality.None);
 		
 		let bounds = CGRect(x: 0, y: 0, width: Int(finalWidth), height: Int(finalHeight));
