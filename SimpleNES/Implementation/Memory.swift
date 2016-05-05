@@ -190,6 +190,16 @@ final class Memory: NSObject {
 		return self.memory[address];
 	}
 	
+	func readPaletteMemory(address: Int) -> UInt8 {
+		var address = address % 0x20;
+		
+		if(address >= 0x10 && address < 0x20 && address & 0x3 == 0) {
+			address -= 0x10;
+		}
+		
+		return self.memory[0x3F00 + address];
+	}
+	
 	final func readTwoBytesMemory(address: Int) -> UInt16 {
 		return UInt16(self.readMemory(address + 1)) << 8 | UInt16(self.readMemory(address));
 	}

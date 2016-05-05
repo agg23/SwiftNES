@@ -552,65 +552,7 @@ final class PPU: NSObject {
 				self.spriteZeroWillBeInSecondaryOAM = false;
 			} else {
 				if(self.oamStage == 0) {
-					if(self.cycle % 2 == 0 && self.scanline != 239) {
-						
-						let intOAMByte = Int(self.oamByte);
-						let intScanline = Int(self.scanline);
-						
-						var spriteHeight = 8;
-						
-						if(self.spriteSize) {
-							spriteHeight = 16;
-						}
-						
-						if(intOAMByte < 240 && intOAMByte <= intScanline && intOAMByte + spriteHeight > intScanline) {
-							
-							if(self.secondaryOAMIndex >= 32) {
-								if(self.renderSprites) {
-									// TODO: Handle overflow
-									self.spriteOverflow = true;
-								}
-							} else {
-								
-								// Sprite should be drawn on this line
-								self.secondaryOAM[self.secondaryOAMIndex] = self.oamByte;
-								self.secondaryOAM[self.secondaryOAMIndex + 1] = self.oamMemory[4 * self.oamIndex + 1];
-								self.secondaryOAM[self.secondaryOAMIndex + 2] = self.oamMemory[4 * self.oamIndex + 2];
-								self.secondaryOAM[self.secondaryOAMIndex + 3] = self.oamMemory[4 * self.oamIndex + 3];
-								
-								if(self.oamIndex == 0) {
-									self.spriteZeroWillBeInSecondaryOAM = true;
-								}
-								
-								self.secondaryOAMIndex += 4;
-							}
-						} else if(self.secondaryOAMIndex >= 32) {
-							self.oamIndexOverflow += 1;
-							
-							if(self.oamIndexOverflow >= 4) {
-								self.oamIndexOverflow = 0;
-							}
-						}
-						
-						self.oamIndex += 1;
-						
-						if(self.oamIndex >= 64) {
-							self.oamIndex = 0;
-							self.oamStage = 1;
-							
-							while(self.secondaryOAMIndex < 32) {
-								self.secondaryOAM[self.secondaryOAMIndex] = 0xFF;
-								self.secondaryOAM[self.secondaryOAMIndex + 1] = 0xFF;
-								self.secondaryOAM[self.secondaryOAMIndex + 2] = 0xFF;
-								self.secondaryOAM[self.secondaryOAMIndex + 3] = 0xFF;
-								
-								self.secondaryOAMIndex += 4;
-							}
-						}
-						
-					} else {
-						self.oamByte = self.oamMemory[4 * self.oamIndex + self.oamIndexOverflow];
-					}
+					fetchSprite();
 				}
 			}
 			
@@ -634,9 +576,10 @@ final class PPU: NSObject {
 				} else if(phaseIndex == 0) {
 					fetchHighPatternTable();
 					
-					self.currentTileData[(self.cycle - 1) / 8 + 2] = Tile(nameTable: self.nameTable, attributeTable: self.attributeTable,
-					                                                      patternTableLow: self.patternTableLow, patternTableHigh: self.patternTableHigh,
-					                                                      vramAddress: self.currentVramAddress);
+					self.currentTileData[(self.cycle - 1) / 8 + 2] =
+						Tile(nameTable: self.nameTable, attributeTable: self.attributeTable,
+						     patternTableLow: self.patternTableLow, patternTableHigh: self.patternTableHigh,
+						     vramAddress: self.currentVramAddress);
 					
 					incrementX();
 				}
@@ -655,61 +598,7 @@ final class PPU: NSObject {
 			self.spriteZeroInSecondaryOAM = self.spriteZeroWillBeInSecondaryOAM;
 			
 			if(phaseIndex == 0 && self.secondaryOAMIndex < 32) {
-				let yCoord = self.secondaryOAM[secondaryOAMIndex];
-				var tileNumber = self.secondaryOAM[secondaryOAMIndex + 1];
-				var attributes = self.secondaryOAM[secondaryOAMIndex + 2];
-				let xCoord = self.secondaryOAM[secondaryOAMIndex + 3];
-				
-				var yShift = self.scanline - Int(yCoord);
-				
-				var basePatternTableAddress = 0x0000;
-				
-				let verticalFlip = getBit(7, pointer: &attributes);
-				
-				if(self.spriteSize) {
-					// 8x16
-					if(tileNumber & 0x1 == 1) {
-						basePatternTableAddress = 0x1000;
-						tileNumber = tileNumber - 1;
-					}
-					
-					if(yShift > 7) {
-						// Flip sprite vertically
-						if(verticalFlip) {
-							yShift = 15 - yShift;
-						} else {
-							tileNumber += 1;
-							yShift -= 8;
-						}
-						
-					} else if(verticalFlip) {
-						tileNumber += 1;
-						yShift = 7 - yShift;
-					}
-				} else {
-					// 8x8
-					if(self.spritePatternTableAddress) {
-						basePatternTableAddress = 0x1000;
-					}
-					
-					// Flip sprite vertically
-					if(verticalFlip) {
-						yShift = 7 - yShift;
-					}
-				}
-				
-				var patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(tileNumber) << 4) + yShift);
-				var patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(tileNumber) << 4) + yShift + 8);
-				
-				// Flip sprite horizontally
-				if(getBit(6, pointer: &attributes)) {
-					patternTableLow = reverseByte(patternTableLow);
-					patternTableHigh = reverseByte(patternTableHigh);
-				}
-				
-				currentSpriteData[self.secondaryOAMIndex / 4] = Sprite(patternTableLow: patternTableLow, patternTableHigh: patternTableHigh, attribute: attributes, xCoord: xCoord, yCoord: yCoord);
-				
-				self.secondaryOAMIndex += 4;
+				spriteCopy();
 			}
 		} else if(self.cycle <= 336) {
 			if(phaseIndex == 2) {
@@ -756,7 +645,7 @@ final class PPU: NSObject {
 			
 			let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
 			
-			let paletteIndex = Int(self.ppuMemory.readMemory(0x3F10 + patternValue));
+			let paletteIndex = Int(self.ppuMemory.readPaletteMemory(0x10 + patternValue));
 			
 			// First color each section of sprite palette is transparent
 			if(patternValue & 0x3 == 0) {
@@ -777,7 +666,6 @@ final class PPU: NSObject {
 			if(self.spriteZeroInSecondaryOAM && i == 0 && self.renderBackground && !backgroundTransparent) {
 				// Sprite 0 and Background is not transparent
 				
-				
 				// If bits 1 or 2 in PPUMASK are clear and the x coordinate is between 0 and 7, don't hit
 				// If x coordinate is 255 or greater, don't hit
 				// If y coordinate is 239 or greater, don't hit
@@ -790,7 +678,6 @@ final class PPU: NSObject {
 			}
 			
 			if(!getBit(5, pointer: &sprite.attribute) || backgroundTransparent) {
-//				self.frame[256 * 240 - (self.scanline * 256) + xCoord + xOffset] = colors[paletteIndex];
 				writePixel(xCoord + xOffset, y: self.scanline, color: colors[paletteIndex]);
 				return;
 			}
@@ -798,14 +685,23 @@ final class PPU: NSObject {
 	}
 	
 	func renderBackgroundPixel(tile: Tile, tileXCoord: Int, pixelOffset: Int) -> RGB {
+		let uPixelOffset = UInt8(pixelOffset);
+		
 		// Draw pixels from tile
-		var patternTableLow = tile.patternTableLow;
-		var patternTableHigh = tile.patternTableHigh;
+		let patternTableLow = tile.patternTableLow;
+		let patternTableHigh = tile.patternTableHigh;
 		
 		var pixelXCoord = tileXCoord + pixelOffset - Int(self.fineXScroll);
 		
-		let lowBit = getBit(7 - pixelOffset, pointer: &patternTableLow) ? 1 : 0;
-		let highBit = getBit(7 - pixelOffset, pointer: &patternTableHigh) ? 1 : 0;
+		if(pixelXCoord < 0) {
+			pixelXCoord += 256;
+		}
+		
+//		let lowBit = getBit(7 - pixelOffset, pointer: &patternTableLow) ? 1 : 0;
+//		let highBit = getBit(7 - pixelOffset, pointer: &patternTableHigh) ? 1 : 0;
+		
+		let lowBit = Int((patternTableLow >> (7 - uPixelOffset)) & 0x1);
+		let highBit = Int((patternTableHigh >> (7 - uPixelOffset)) & 0x1);
 		
 		let attributeShift = Int(((tile.vramAddress >> 4) & 4) | (tile.vramAddress & 2));
 		
@@ -817,11 +713,7 @@ final class PPU: NSObject {
 			patternValue = 0;
 		}
 		
-		let paletteIndex = Int(self.ppuMemory.readMemory(0x3F00 + patternValue));
-		
-		if(pixelXCoord < 0) {
-			pixelXCoord += 256;
-		}
+		let paletteIndex = Int(self.ppuMemory.readPaletteMemory(patternValue));
 		
 		var color = colors[paletteIndex];
 		color.colorIndex = UInt8(patternValue);
@@ -877,6 +769,126 @@ final class PPU: NSObject {
 		let fineY = (Int(self.currentVramAddress) >> 12) & 7;
 		
 		self.patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(self.nameTable) << 4) + fineY);
+	}
+	
+	func fetchSprite() {
+		if(self.cycle % 2 == 0 && self.scanline != 239) {
+			
+			let intOAMByte = Int(self.oamByte);
+			let intScanline = Int(self.scanline);
+			
+			var spriteHeight = 8;
+			
+			if(self.spriteSize) {
+				spriteHeight = 16;
+			}
+			
+			if(intOAMByte < 240 && intOAMByte <= intScanline && intOAMByte + spriteHeight > intScanline) {
+				
+				if(self.secondaryOAMIndex >= 32) {
+					if(self.renderSprites) {
+						// TODO: Handle overflow
+						self.spriteOverflow = true;
+					}
+				} else {
+					
+					// Sprite should be drawn on this line
+					self.secondaryOAM[self.secondaryOAMIndex] = self.oamByte;
+					self.secondaryOAM[self.secondaryOAMIndex + 1] = self.oamMemory[4 * self.oamIndex + 1];
+					self.secondaryOAM[self.secondaryOAMIndex + 2] = self.oamMemory[4 * self.oamIndex + 2];
+					self.secondaryOAM[self.secondaryOAMIndex + 3] = self.oamMemory[4 * self.oamIndex + 3];
+					
+					if(self.oamIndex == 0) {
+						self.spriteZeroWillBeInSecondaryOAM = true;
+					}
+					
+					self.secondaryOAMIndex += 4;
+				}
+			} else if(self.secondaryOAMIndex >= 32) {
+				self.oamIndexOverflow += 1;
+				
+				if(self.oamIndexOverflow >= 4) {
+					self.oamIndexOverflow = 0;
+				}
+			}
+			
+			self.oamIndex += 1;
+			
+			if(self.oamIndex >= 64) {
+				self.oamIndex = 0;
+				self.oamStage = 1;
+				
+				while(self.secondaryOAMIndex < 32) {
+					self.secondaryOAM[self.secondaryOAMIndex] = 0xFF;
+					self.secondaryOAM[self.secondaryOAMIndex + 1] = 0xFF;
+					self.secondaryOAM[self.secondaryOAMIndex + 2] = 0xFF;
+					self.secondaryOAM[self.secondaryOAMIndex + 3] = 0xFF;
+					
+					self.secondaryOAMIndex += 4;
+				}
+			}
+			
+		} else {
+			self.oamByte = self.oamMemory[4 * self.oamIndex + self.oamIndexOverflow];
+		}
+	}
+	
+	func spriteCopy() {
+		let yCoord = self.secondaryOAM[secondaryOAMIndex];
+		var tileNumber = self.secondaryOAM[secondaryOAMIndex + 1];
+		var attributes = self.secondaryOAM[secondaryOAMIndex + 2];
+		let xCoord = self.secondaryOAM[secondaryOAMIndex + 3];
+		
+		var yShift = self.scanline - Int(yCoord);
+		
+		var basePatternTableAddress = 0x0000;
+		
+		let verticalFlip = getBit(7, pointer: &attributes);
+		
+		if(self.spriteSize) {
+			// 8x16
+			if(tileNumber & 0x1 == 1) {
+				basePatternTableAddress = 0x1000;
+				tileNumber = tileNumber - 1;
+			}
+			
+			if(yShift > 7) {
+				// Flip sprite vertically
+				if(verticalFlip) {
+					yShift = 15 - yShift;
+				} else {
+					tileNumber += 1;
+					yShift -= 8;
+				}
+				
+			} else if(verticalFlip) {
+				tileNumber += 1;
+				yShift = 7 - yShift;
+			}
+		} else {
+			// 8x8
+			if(self.spritePatternTableAddress) {
+				basePatternTableAddress = 0x1000;
+			}
+			
+			// Flip sprite vertically
+			if(verticalFlip) {
+				yShift = 7 - yShift;
+			}
+		}
+		
+		var patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(tileNumber) << 4) + yShift);
+		var patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(tileNumber) << 4) + yShift + 8);
+		
+		// Flip sprite horizontally
+		if(getBit(6, pointer: &attributes)) {
+			patternTableLow = reverseByte(patternTableLow);
+			patternTableHigh = reverseByte(patternTableHigh);
+		}
+		
+		currentSpriteData[self.secondaryOAMIndex / 4] = Sprite(patternTableLow: patternTableLow, patternTableHigh: patternTableHigh, attribute: attributes, xCoord: xCoord, yCoord: yCoord);
+		
+		self.secondaryOAMIndex += 4;
 	}
 	
 	func incrementY() {
