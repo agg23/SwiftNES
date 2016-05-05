@@ -99,6 +99,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.metalView.preferredFramesPerSecond = 60;
 		self.metalView.delegate = self;
 		
+		self.metalView.drawableSize = CGSizeMake(self.metalView.frame.size.width, self.metalView.frame.size.height);
+		
 		self.commandQueue = self.device!.newCommandQueue();
 		
 		self.texture = self.device!.newTextureWithDescriptor(self.textureDescriptor!);

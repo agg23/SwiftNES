@@ -837,11 +837,9 @@ final class PPU: NSObject {
 		
 		for i in 0 ..< self.pixelSize {
 			for k in 0 ..< self.pixelSize {
-				self.frame[offset - (y + k) * 256 * self.pixelSize + x + i] = color;
+				self.frame[offset - (y * self.pixelSize + k) * 256 * self.pixelSize + x * self.pixelSize + i] = color;
 			}
-		}
-		
-//		self.frame[256 * 240 * self.pixelSize * self.pixelSize - y * 256 + x] = color;
+		}		
 	}
 	
 	func fetchNameTable() {
