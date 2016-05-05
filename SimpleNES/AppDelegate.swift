@@ -119,8 +119,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 	
 	func render(inout screen: [RGB]) {
-		let width = 256;
-		let height = 240;
+		let width = 256 * 2;
+		let height = 240 * 2;
 		
 		let finalWidth = Int(self.sizingRect!.width);
 		let finalHeight = Int(self.sizingRect!.height);
@@ -141,17 +141,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		let image = CGBitmapContextCreateImage(imageContext);
 		
-		let flippedContext = CGBitmapContextCreateWithData(nil, finalWidth, finalHeight, bitsPerComponent, bytesPerRowFinal, colorSpace, bitmapInfo, nil, nil);
+//		let flippedContext = CGBitmapContextCreateWithData(nil, finalWidth, finalHeight, bitsPerComponent, bytesPerRowFinal, colorSpace, bitmapInfo, nil, nil);
+//		
+//		CGContextSetInterpolationQuality(flippedContext, CGInterpolationQuality.None);
+//		
+//		let bounds = CGRect(x: 0, y: 0, width: Int(finalWidth), height: Int(finalHeight));
+//		
+//		CGContextDrawImage(flippedContext, bounds, image);
+//		
+//		let finalImage = CGBitmapContextCreateImage(flippedContext);
 		
-		CGContextSetInterpolationQuality(flippedContext, CGInterpolationQuality.None);
-		
-		let bounds = CGRect(x: 0, y: 0, width: Int(finalWidth), height: Int(finalHeight));
-		
-		CGContextDrawImage(flippedContext, bounds, image);
-		
-		let finalImage = CGBitmapContextCreateImage(flippedContext);
-		
-		self.texture = try! self.textureLoader?.newTextureWithCGImage(finalImage!, options: nil);
+		self.texture = try! self.textureLoader?.newTextureWithCGImage(image!, options: nil);
 		
 		let commandBuffer = commandQueue.commandBuffer()
 		

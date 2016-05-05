@@ -256,6 +256,8 @@ final class PPU: NSObject {
 	*/
 	private var pixelIndex: Int;
 	
+	private var pixelSize: Int = 2;
+	
 	/**
 	 Stores the current frame data to be drawn to the screen
 	*/
@@ -392,7 +394,7 @@ final class PPU: NSObject {
 		
 		self.oamByte = 0;
 		
-		self.frame = [RGB](count:256 * 240, repeatedValue:self.blankPixel);
+		self.frame = [RGB](count:256 * 240 * self.pixelSize * self.pixelSize, repeatedValue:self.blankPixel);
 	}
 	
 	func reset() {
@@ -788,7 +790,8 @@ final class PPU: NSObject {
 			}
 			
 			if(!getBit(5, pointer: &sprite.attribute) || backgroundTransparent) {
-				self.frame[256 * 240 - (self.scanline * 256) + xCoord + xOffset] = colors[paletteIndex];
+//				self.frame[256 * 240 - (self.scanline * 256) + xCoord + xOffset] = colors[paletteIndex];
+				writePixel(xCoord + xOffset, y: self.scanline, color: colors[paletteIndex]);
 				return;
 			}
 		}
@@ -824,9 +827,21 @@ final class PPU: NSObject {
 		color.colorIndex = UInt8(patternValue);
 		
 		// TODO: Do frame scaling here, instead of at render time
-		self.frame[256 * 240 - (self.scanline * 256) + pixelXCoord] = color;
+		writePixel(pixelXCoord, y: self.scanline, color: color);
 		
 		return color;
+	}
+	
+	func writePixel(x: Int, y: Int, color: RGB) {
+		let offset = 256 * 240 * self.pixelSize * self.pixelSize;
+		
+		for i in 0 ..< self.pixelSize {
+			for k in 0 ..< self.pixelSize {
+				self.frame[offset - (y + k) * 256 * self.pixelSize + x + i] = color;
+			}
+		}
+		
+//		self.frame[256 * 240 * self.pixelSize * self.pixelSize - y * 256 + x] = color;
 	}
 	
 	func fetchNameTable() {
