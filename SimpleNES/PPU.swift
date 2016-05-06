@@ -687,7 +687,7 @@ final class PPU: NSObject {
 	func writePixel(x: Int, y: Int, color: UInt32) {
 		for i in 0 ..< self.pixelSize {
 			for k in 0 ..< self.pixelSize {
-				self.frame[self.totalPixelCount - (y * self.pixelSize + k) * 256 * self.pixelSize + x * self.pixelSize + i] = color;
+				self.frame[self.totalPixelCount - self.pixelSize * 256 - (y * self.pixelSize + k) * 256 * self.pixelSize + x * self.pixelSize + i] = color;
 			}
 		}		
 	}

@@ -57,6 +57,7 @@ final class CPU: NSObject {
 
 	private let mainMemory: Memory;
     private let ppu: PPU;
+	private let apu: APU;
 	
 	private let logger: Logger;
 	
@@ -136,7 +137,7 @@ final class CPU: NSObject {
 	/**
 	 Initializes the CPU
 	*/
-	init(mainMemory: Memory, ppu: PPU, logger: Logger) {
+	init(mainMemory: Memory, ppu: PPU, apu: APU, logger: Logger) {
 		self.PCL = 0;
 		self.PCH = 0;
 
@@ -150,6 +151,7 @@ final class CPU: NSObject {
 		
 		self.mainMemory = mainMemory;
         self.ppu = ppu;
+		self.apu = apu;
 		self.logger = logger;
     }
     
@@ -229,7 +231,7 @@ final class CPU: NSObject {
 		
 //		print(String(format: "PC: 0x%2x. Executing 0x%2x", getPC() - 1, opcode));
 //		dispatch_async(loggingQueue, {
-//			self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: self.ppu.cycle, SL: self.ppu.scanline);
+//			self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: 0, SL: 0);
 //		})
 		
 		ppuStep();
@@ -835,6 +837,8 @@ final class CPU: NSObject {
 	
 	func ppuStep() {
 		self.evenCycle = !self.evenCycle;
+		
+		self.apu.step();
 		
 		for _ in 0 ..< 3 {
 			self.ppu.step();

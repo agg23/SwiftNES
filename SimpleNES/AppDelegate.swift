@@ -34,6 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	private let controllerIO: ControllerIO;
 	private var cpu: CPU;
 	private var ppu: PPU;
+	private var apu: APU;
 	private let logger: Logger;
 	
 	private var frameCount = 0;
@@ -55,11 +56,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
 		fileIO.loadFile("/Users/adam/testROMs/games/smb.nes");
 		
+		self.apu = APU();
+		
 		self.ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
 		
 		mainMemory.ppu = self.ppu;
+		mainMemory.apu = self.apu;
 		
-		self.cpu = CPU(mainMemory: mainMemory, ppu: self.ppu, logger: logger);
+		self.cpu = CPU(mainMemory: mainMemory, ppu: self.ppu, apu: self.apu, logger: logger);
 		self.ppu.cpu = self.cpu;
 		
 		self.cpu.reset();

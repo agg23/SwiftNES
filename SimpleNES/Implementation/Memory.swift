@@ -96,6 +96,7 @@ final class Memory: NSObject {
 	var nametableMirroring: NametableMirroringType = .OneScreen;
 	
 	var ppu: PPU?;
+	var apu: APU?;
 	var controllerIO: ControllerIO?;
 	
 	/**
@@ -155,6 +156,8 @@ final class Memory: NSObject {
 			} else if(address == 0x4017) {
 				// TODO: Add second controller support
 				return 0x40;
+			} else if(address > 0x3FFF && address < 0x4018) {
+				return (self.apu?.cpuRead(address))!;
 			} else if(self.mirrorPRGROM && address >= 0xC000) {
 				return self.memory[0x8000 + address % 0xC000];
 			}
@@ -212,16 +215,23 @@ final class Memory: NSObject {
 				address = address % 0x800;
 			} else if(address < 0x4000) {
 				self.ppu?.cpuWrite(address % 8, data: data);
+				return;
 			} else if(address == 0x4014) {
 				self.ppu?.OAMDMA = data;
+				return;
 			} else if(address == 0x4016) {
 				if(data & 0x1 == 1) {
 					self.controllerIO?.strobeHigh = true;
 				} else {
 					self.controllerIO?.strobeHigh = false;
 				}
+				
+				return;
+			} else if(address > 0x3FFF && address < 0x4018) {
+				self.apu?.cpuWrite(address, data: data);
+				return;
 			} else if(self.mirrorPRGROM && address >= 0xC000) {
-				self.memory[0x8000 + address % 0xC000] = data;
+				address = 0x8000 + address % 0xC000;
 			}
 		} else if(self.type == MemoryType.PPU) {
 			address = address % 0x4000;

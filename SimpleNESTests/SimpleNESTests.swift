@@ -37,9 +37,12 @@ class SimpleNESTests: XCTestCase {
 		
 		let ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
 		
-		mainMemory.ppu = ppu;
+		let apu = APU();
 		
-		let cpu = CPU(mainMemory: mainMemory, ppu: ppu, logger: logger);
+		mainMemory.ppu = ppu;
+		mainMemory.apu = apu;
+		
+		let cpu = CPU(mainMemory: mainMemory, ppu: ppu, apu: apu, logger: logger);
 		ppu.cpu = cpu;
 		
 		cpu.reset();
@@ -354,5 +357,41 @@ class SimpleNESTests: XCTestCase {
 	
 	func testEvenOddFrameTiming() {
 		romTest(defaultPath + "ppu_vbl_nmi/rom_singles/10-even_odd_timing.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	// MARK: - APU Testing
+	
+	// blargg's Basic APU Tests
+	
+	func testLengthCounters() {
+		romTest(defaultPath + "apu_test/rom_singles/1-len_ctr.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testLengthTableEntries() {
+		romTest(defaultPath + "apu_test/rom_singles/2-len_table.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testAPUIRQFlag() {
+		romTest(defaultPath + "apu_test/rom_singles/3-irq_flag.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testAPUClockJitter() {
+		romTest(defaultPath + "apu_test/rom_singles/4-jitter.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testLengthCounterTiming() {
+		romTest(defaultPath + "apu_test/rom_singles/5-len_timing.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testIRQFlagTiming() {
+		romTest(defaultPath + "apu_test/rom_singles/6-irq_flag_timing.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testDMCBasics() {
+		romTest(defaultPath + "apu_test/rom_singles/7-dmc_basics.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testDMCRates() {
+		romTest(defaultPath + "apu_test/rom_singles/8-dmc_rates.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
 }

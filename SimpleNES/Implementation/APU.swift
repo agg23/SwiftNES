@@ -13,26 +13,40 @@ final class APU {
 	// MARK: - Class declarations
 	
 	private class APURegister {
+		private let lengthTable: [UInt8] = [0x0A, 0xFE, 0x14, 0x02, 0x28, 0x04, 0x50, 0x06, 0xA0, 0x08, 0x3C,
+		                                    0x0A, 0x0E, 0x0C, 0x1A, 0x0E, 0x0C, 0x10, 0x18, 0x12, 0x30, 0x14,
+		                                    0x60, 0x16, 0xC0, 0x18, 0x48, 0x1A, 0x10, 0x1C, 0x20, 0x1E];
+		
 		// Register 4
 		var lengthCounter: UInt8 {
 			didSet {
-				self.wavelengthHigh = lengthCounter & 0x3;
-				self.lengthCounterLoad = (lengthCounter >> 3) & 0x1F;
+				self.wavelength = (self.wavelength & 0xF) | (UInt16(lengthCounter & 0x3) << 8);
+				self.lengthCounterLoad = self.lengthTable[Int((lengthCounter >> 3) & 0x1F)];
 			}
 		}
 		// 3 bits
-		var wavelengthHigh: UInt8;
+		var wavelength: UInt16;
 		// 5 bits
 		var lengthCounterLoad: UInt8;
 		
+		var lengthCounterDisable: Bool;
+		
+		var timer: UInt16;
+		
 		init() {
 			self.lengthCounter = 0;
-			self.wavelengthHigh = 0;
+			self.wavelength = 0;
 			self.lengthCounterLoad = 0;
+			
+			self.timer = 0;
+			
+			self.lengthCounterDisable = true;
 		}
 		
 		func stepLength() {
-			
+			if(!self.lengthCounterDisable && self.lengthCounterLoad > 0) {
+				self.lengthCounterLoad -= 1;
+			}
 		}
 	}
 	
@@ -50,7 +64,6 @@ final class APU {
 		// 4 bits
 		var volume: UInt8;
 		var envelopeDisable: Bool;
-		var lengthCounterDisable: Bool;
 		// 2 bits
 		var dutyCycleType: UInt8;
 		
@@ -71,13 +84,16 @@ final class APU {
 		var sweepEnable: Bool;
 		
 		// Register 3
-		var wavelengthLow: UInt8;
+		var wavelengthLow: UInt8 {
+			didSet {
+				self.wavelength = (self.wavelength & 0x30) | UInt16(wavelengthLow);
+			}
+		}
 		
 		override init() {
 			self.control = 0;
 			self.volume = 0;
 			self.envelopeDisable = false;
-			self.lengthCounterDisable = false;
 			self.dutyCycleType = 0;
 			
 			self.sweep = 0;
@@ -104,28 +120,82 @@ final class APU {
 		var control: UInt8 {
 			didSet {
 				self.linearCounterLoad = control & 0x7F;
-				self.lengthCounterClockDisable = control & 0x80 == 0x80;
+				self.linearCounter = self.linearCounterLoad;
+				self.lengthCounterDisable = control & 0x80 == 0x80;
 			}
 		}
 		// 7 bits
 		var linearCounterLoad: UInt8;
-		var lengthCounterClockDisable: Bool;
 		
 		// Register 2 not used
 		
 		// Register 3
-		var wavelengthLow: UInt8;
+		var wavelengthLow: UInt8 {
+			didSet {
+				self.wavelength = (self.wavelength & 0x30) | UInt16(wavelengthLow);
+			}
+		}
+		
+		override var lengthCounter: UInt8 {
+			didSet {
+				self.wavelength = (self.wavelength & 0xF) | (UInt16(lengthCounter & 0x3) << 8);
+				self.lengthCounterLoad = self.lengthTable[Int((lengthCounter >> 3) & 0x1F)];
+				self.linearHalt = true;
+			}
+		}
+		
+		var linearCounter: UInt8;
+		var linearHalt: Bool;
+		
+		var triangleGenerator: UInt8;
+		var triangleIncreasing: Bool;
 		
 		override init() {
 			self.control = 0;
 			self.linearCounterLoad = 0;
-			self.lengthCounterClockDisable = false;
 			
 			self.wavelengthLow = 0;
+			
+			self.linearCounter = 0;
+			self.linearHalt = false;
+			
+			self.triangleGenerator = 0;
+			self.triangleIncreasing = true;
 		}
 		
 		func stepLinear() {
+			if(self.linearHalt) {
+				self.linearCounter = self.linearCounterLoad;
+			} else if(self.linearCounter != 0) {
+				self.linearCounter -= 1;
+			}
 			
+			if(!self.lengthCounterDisable) {
+				self.linearHalt = false;
+			}
+		}
+		
+		func stepTriangleGenerator() {
+			if(self.triangleGenerator == 0) {
+				self.triangleIncreasing = true;
+			} else if(self.triangleGenerator == 0xF) {
+				self.triangleIncreasing = false;
+			}
+			
+			if(self.triangleIncreasing) {
+				self.triangleGenerator += 1;
+			} else {
+				self.triangleGenerator -= 1;
+			}
+		}
+		
+		func stepTimer() {
+			if(self.timer == 0) {
+				self.timer = self.wavelength;
+				stepTriangleGenerator();
+			} else {
+				self.timer += 1;
+			}
 		}
 	}
 	
@@ -142,7 +212,6 @@ final class APU {
 		// 4 bits
 		var volume: UInt8;
 		var envelopeDisable: Bool;
-		var lengthCounterDisable: Bool;
 		var dutyCycleType: UInt8;
 		
 		// Register 2 unused
@@ -165,7 +234,6 @@ final class APU {
 			self.control = 0;
 			self.volume = 0;
 			self.envelopeDisable = false;
-			self.lengthCounterDisable = false;
 			self.dutyCycleType = 0;
 			
 			self.period = 0;
@@ -213,18 +281,28 @@ final class APU {
 		}
 	}
 	
-	private var transferPPU: UInt8 {
-		didSet {
-			// TODO: Handle 256 byte copy to $2004
-		}
-	}
-	
 	private var control: UInt8 {
 		didSet {
 			self.square1Enable = control & 0x1 == 0x1;
 			self.square2Enable = control & 0x2 == 0x2;
 			self.triangleEnable = control & 0x4 == 0x4;
 			self.noiseEnable = control & 0x8 == 0x8;
+			
+			if(!self.square1Enable) {
+				self.square1.lengthCounterLoad = 0;
+			}
+			
+			if(!self.square2Enable) {
+				self.square2.lengthCounterLoad = 0;
+			}
+			
+			if(!self.triangleEnable) {
+				self.triangle.lengthCounterLoad = 0;
+			}
+			
+			if(!self.noiseEnable) {
+				self.noise.lengthCounterLoad = 0;
+			}
 			
 			// TODO: Handle disabling DMC playback if bit 4 is clear
 		}
@@ -243,6 +321,7 @@ final class APU {
 			
 			if(self.framerateSwitch) {
 				self.frameCount = 0;
+				stepFrame();
 			} else {
 				self.frameCount = 4;
 			}
@@ -279,8 +358,6 @@ final class APU {
 		
 		self.dmcLength = 0;
 		
-		self.transferPPU = 0;
-		
 		self.control = 0;
 		self.square1Enable = false;
 		self.square2Enable = false;
@@ -303,10 +380,16 @@ final class APU {
 	// MARK: - APU Functions
 	
 	func step() {
-		
+		// 1789773 / 239.9963124
+		if(self.cycle > 7457) {
+			self.cycle = 0;
+			stepFrame();
+		} else {
+			self.cycle += 1;
+		}
 	}
 	
-	func stepFrame() {
+	private func stepFrame() {
 		if(self.framerateSwitch) {
 			self.frameCount = (self.frameCount + 1) % 5;
 		} else {
@@ -330,7 +413,7 @@ final class APU {
 		}
 	}
 	
-	func stepEnvelope() {
+	private func stepEnvelope() {
 		// Increment envelope (Square and Noise)
 		self.square1.stepEnvelope();
 		self.square2.stepEnvelope();
@@ -338,13 +421,13 @@ final class APU {
 		self.noise.stepEnvelope();
 	}
 	
-	func stepSweep() {
+	private func stepSweep() {
 		// Increment frequency sweep (Square)
 		self.square1.stepSweep();
 		self.square2.stepSweep();
 	}
 	
-	func stepLength() {
+	private func stepLength() {
 		// Increment length counters (all)
 		self.square1.stepLength();
 		self.square2.stepLength();
@@ -363,7 +446,9 @@ final class APU {
 			case 0x4002:
 				self.square1.wavelengthLow = data;
 			case 0x4003:
-				self.square1.lengthCounter = data;
+				if(self.square1Enable) {
+					self.square1.lengthCounter = data;
+				}
 			case 0x4004:
 				self.square2.control = data;
 			case 0x4005:
@@ -371,7 +456,9 @@ final class APU {
 			case 0x4006:
 				self.square2.wavelengthLow = data;
 			case 0x4007:
-				self.square2.lengthCounter = data;
+				if(self.square2Enable) {
+					self.square2.lengthCounter = data;
+				}
 			case 0x4008:
 				self.triangle.control = data;
 			case 0x4009:
@@ -379,7 +466,9 @@ final class APU {
 			case 0x400A:
 				self.triangle.wavelengthLow = data;
 			case 0x400B:
-				self.triangle.lengthCounter = data;
+				if(self.triangleEnable) {
+					self.triangle.lengthCounter = data;
+				}
 			case 0x400C:
 				self.noise.control = data;
 			case 0x400D:
@@ -387,7 +476,9 @@ final class APU {
 			case 0x400E:
 				self.noise.period = data;
 			case 0x400F:
-				self.noise.lengthCounter = data;
+				if(self.noiseEnable) {
+					self.noise.lengthCounter = data;
+				}
 			case 0x4010:
 				self.dmcControl = data;
 			case 0x4011:
@@ -396,9 +487,7 @@ final class APU {
 				self.dmcAddressLoad = data;
 			case 0x4013:
 				self.dmcLength = data;
-			case 0x4014:
-				self.transferPPU = data;
-			case 0x4015:
+ 			case 0x4015:
 				self.control = data;
 			case 0x4017:
 				self.timerControl = data;
@@ -409,9 +498,18 @@ final class APU {
 	
 	func cpuRead(address: Int) -> UInt8 {
 		if(address == 0x4015) {
-			// TODO: Handle 4015 read
+			var temp: UInt8 = (self.square1.lengthCounterLoad == 0 || !self.square1Enable) ? 0 : 1;
+			temp |= (self.square2.lengthCounterLoad == 0 || !self.square2Enable) ? 0 : 0x2;
+			temp |= (self.triangle.lengthCounterLoad == 0 || !self.triangleEnable) ? 0 : 0x4;
+			temp |= (self.noise.lengthCounterLoad == 0 || !self.noiseEnable) ? 0 : 0x8;
+			
+			// TODO: Return DMC length counter status
+			// TODO: Return frame IRQ status
+			// TODO: Return DMC IRQ status
+			
+			return temp;
 		} else {
-			print("Invalid read at \(address)");
+//			print(String(format: "Invalid read at %x", address));
 		}
 		
 		return 0;
