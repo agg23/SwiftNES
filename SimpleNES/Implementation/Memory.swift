@@ -128,7 +128,9 @@ final class Memory: NSObject {
 	final func readMemory(address: Int) -> UInt8 {
 		var address = address;
 		if(self.type == MemoryType.CPU) {
-			if((address >= 0x2000) && (address < 0x4000)) {
+			if(address < 0x2000) {
+				address = address % 0x800;
+			} else if(address < 0x4000) {
 				switch (address % 8) {
 					case 0:
 						return (self.ppu?.readWriteOnlyRegister())!;
@@ -155,8 +157,6 @@ final class Memory: NSObject {
 				return 0x40;
 			} else if(self.mirrorPRGROM && address >= 0xC000) {
 				return self.memory[0x8000 + address % 0xC000];
-			} else if(address < 0x2000) {
-				address = address % 0x800;
 			}
 		} else if(self.type == MemoryType.PPU) {
 			address = address % 0x4000;
@@ -178,12 +178,6 @@ final class Memory: NSObject {
 				}
 			} else if((address > 0x2FFF) && (address < 0x3F00)) {
 				address -= 0x1000;
-			} else if(address >= 0x3F10) {
-				address = 0x3F00 + address % 0x20;
-				
-				if((address >= 0x3F10) && (address < 0x3F20) && (address & 0x3 == 0)) {
-					address -= 0x10;
-				}
 			}
 		}
 		
@@ -214,7 +208,9 @@ final class Memory: NSObject {
 		}
 		
 		if(self.type == MemoryType.CPU) {
-			if((address >= 0x2000) && (address < 0x4000)) {
+			if(address < 0x2000) {
+				address = address % 0x800;
+			} else if(address < 0x4000) {
 				self.ppu?.cpuWrite(address % 8, data: data);
 			} else if(address == 0x4014) {
 				self.ppu?.OAMDMA = data;
@@ -226,8 +222,6 @@ final class Memory: NSObject {
 				}
 			} else if(self.mirrorPRGROM && address >= 0xC000) {
 				self.memory[0x8000 + address % 0xC000] = data;
-			} else if(address < 0x2000) {
-				address = address % 0x800;
 			}
 		} else if(self.type == MemoryType.PPU) {
 			address = address % 0x4000;

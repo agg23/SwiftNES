@@ -120,21 +120,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.ppu.dumpMemory();
 	}
 	
-	func render(inout screen: [RGB]) {
+	func render(inout screen: [UInt32]) {
 		let width = 256 * 2;
 		let height = 240 * 2;
-		
-		let finalWidth = Int(self.sizingRect!.width);
-		let finalHeight = Int(self.sizingRect!.height);
 		
 		let bitsPerComponent = 8;
 		
 		let bytesPerPixel = 4;
 		let bytesPerRow = width * bytesPerPixel;
-		let bytesPerRowFinal = finalWidth * bytesPerPixel;
 		let colorSpace = CGColorSpaceCreateDeviceRGB();
 		
-		let pixels = UnsafeMutableBufferPointer<RGB>(start: UnsafeMutablePointer<RGB>(screen), count: screen.count);
+		let pixels = UnsafeMutableBufferPointer<UInt32>(start: UnsafeMutablePointer<UInt32>(screen), count: screen.count);
 		
 		var bitmapInfo: UInt32 = CGBitmapInfo.ByteOrder32Little.rawValue;
 		bitmapInfo |= CGImageAlphaInfo.NoneSkipFirst.rawValue;
@@ -142,16 +138,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		let imageContext = CGBitmapContextCreateWithData(pixels.baseAddress, width, height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo, nil, nil);
 		
 		let image = CGBitmapContextCreateImage(imageContext);
-		
-//		let flippedContext = CGBitmapContextCreateWithData(nil, finalWidth, finalHeight, bitsPerComponent, bytesPerRowFinal, colorSpace, bitmapInfo, nil, nil);
-//		
-//		CGContextSetInterpolationQuality(flippedContext, CGInterpolationQuality.None);
-//		
-//		let bounds = CGRect(x: 0, y: 0, width: Int(finalWidth), height: Int(finalHeight));
-//		
-//		CGContextDrawImage(flippedContext, bounds, image);
-//		
-//		let finalImage = CGBitmapContextCreateImage(flippedContext);
 		
 		self.texture = try! self.textureLoader?.newTextureWithCGImage(image!, options: nil);
 		

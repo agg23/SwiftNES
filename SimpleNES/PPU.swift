@@ -8,29 +8,6 @@
 
 import Foundation
 
-struct RGB {
-	var value: UInt32
-	/**
-	 Stores the NES color index (ignored when drawing)
-	*/
-	var colorIndex: UInt8 {
-		get { return UInt8((value >> 24) & 0xFF) }
-		set { value = (UInt32(newValue) << 24) | (value & 0x00FFFFFF) }
-	}
-	var r: UInt8 {
-		get { return UInt8((value >> 16) & 0xFF) }
-		set { value = (UInt32(newValue) << 16) | (value & 0xFF00FFFF) }
-	}
-	var g: UInt8 {
-		get { return UInt8((value >> 8) & 0xFF) }
-		set { value = (UInt32(newValue) << 8) | (value & 0xFFFF00FF) }
-	}
-	var b: UInt8 {
-		get { return UInt8(value & 0xFF) }
-		set { value = UInt32(newValue) | (value & 0xFFFFFF00) }
-	}
-}
-
 struct Sprite {
 	var patternTableLow: UInt8;
 	var patternTableHigh: UInt8;
@@ -47,17 +24,7 @@ struct Tile {
 	var vramAddress: UInt16;
 }
 
-func makeRGBArray(array: [UInt32]) -> [RGB] {
-	var rgbArray = [RGB](count: array.count, repeatedValue: RGB(value: 0));
-	
-	for i in 0 ..< array.count {
-		rgbArray[i] = RGB(value: array[i]);
-	}
-	
-	return rgbArray;
-}
-
-private let rawColors: [UInt32] = [0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940084, 0xA80020, 0xA81000,
+private let colors: [UInt32] = [0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940084, 0xA80020, 0xA81000,
 				0x881400, 0x503000, 0x007800, 0x006800, 0x005800, 0x004058, 0x000000,
 				0x000000, 0x000000, 0xBCBCBC, 0x0078F8, 0x0058F8, 0x6844FC, 0xD800CC,
 				0xE40058, 0xF83800, 0xE45C10, 0xAC7C00, 0x00B800, 0x00A800, 0x00A844,
@@ -67,8 +34,6 @@ private let rawColors: [UInt32] = [0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940
 				0xA4E4FC, 0xB8B8F8, 0xD8B8F8, 0xF8B8F8, 0xF8A4C0, 0xF0D0B0, 0xFCE0A8,
 				0xF8D878, 0xD8F878, 0xB8F8B8, 0xB8F8D8, 0x00FCFC, 0xF8D8F8, 0x000000,
 				0x000000];
-
-private let colors = makeRGBArray(rawColors);
 
 final class PPU: NSObject {
 	/**
@@ -257,11 +222,12 @@ final class PPU: NSObject {
 	private var pixelIndex: Int;
 	
 	private var pixelSize: Int = 2;
+	private var totalPixelCount = 256 * 240 * 2 * 2;
 	
 	/**
 	 Stores the current frame data to be drawn to the screen
 	*/
-	var frame: [RGB];
+	var frame: [UInt32];
 	
 	private var cycle: Int;
 	
@@ -323,8 +289,6 @@ final class PPU: NSObject {
 	private var oamIndex = 0;
 	private var oamIndexOverflow = 0;
 	private var secondaryOAMIndex = 0;
-	
-	private let blankPixel = RGB(value: 0);
 	
 	// MARK: Methods -
 	
@@ -394,7 +358,7 @@ final class PPU: NSObject {
 		
 		self.oamByte = 0;
 		
-		self.frame = [RGB](count:256 * 240 * self.pixelSize * self.pixelSize, repeatedValue:self.blankPixel);
+		self.frame = [UInt32](count:self.totalPixelCount, repeatedValue:0);
 	}
 	
 	func reset() {
@@ -556,7 +520,7 @@ final class PPU: NSObject {
 				}
 			}
 			
-			let pixel: RGB;
+			let backgroundPixelIsTransparent: Bool;
 			
 			if(self.renderBackground) {
 				// If rendering cycle and rendering background bit is set
@@ -564,7 +528,7 @@ final class PPU: NSObject {
 				
 				let tile = self.currentTileData[xCoord / 8];
 				
-				pixel = renderBackgroundPixel(tile, tileXCoord: (xCoord / 8) * 8, pixelOffset: xCoord % 8);
+				backgroundPixelIsTransparent = renderBackgroundPixel(tile, tileXCoord: (xCoord / 8) * 8, pixelOffset: xCoord % 8);
 				
 				if(phaseIndex == 2) {
 					// Fetch Name Table
@@ -584,11 +548,11 @@ final class PPU: NSObject {
 					incrementX();
 				}
 			} else {
-				pixel = self.blankPixel;
+				backgroundPixelIsTransparent = false;
 			}
 			
 			if(self.renderSprites) {
-				renderSpritePixel(self.cycle - 1, backgroundPixel: pixel);
+				renderSpritePixel(self.cycle - 1, backgroundPixelTransparent: backgroundPixelIsTransparent);
 			}
 		} else if(self.cycle <= 320) {
 			if(self.cycle == 257) {
@@ -627,7 +591,7 @@ final class PPU: NSObject {
 		}
 	}
 	
-	func renderSpritePixel(currentXCoord: Int, backgroundPixel: RGB) {
+	func renderSpritePixel(currentXCoord: Int, backgroundPixelTransparent: Bool) {
 		for i in 0 ..< 8 {
 			var sprite = currentSpriteData[i];
 			let xCoord = Int(sprite.xCoord);
@@ -661,9 +625,7 @@ final class PPU: NSObject {
 				continue;
 			}
 			
-			let backgroundTransparent = backgroundPixel.colorIndex & 0x3 == 0;
-			
-			if(self.spriteZeroInSecondaryOAM && i == 0 && self.renderBackground && !backgroundTransparent) {
+			if(self.spriteZeroInSecondaryOAM && i == 0 && self.renderBackground && !backgroundPixelTransparent) {
 				// Sprite 0 and Background is not transparent
 				
 				// If bits 1 or 2 in PPUMASK are clear and the x coordinate is between 0 and 7, don't hit
@@ -677,14 +639,14 @@ final class PPU: NSObject {
 				}
 			}
 			
-			if(!getBit(5, pointer: &sprite.attribute) || backgroundTransparent) {
+			if(!getBit(5, pointer: &sprite.attribute) || backgroundPixelTransparent) {
 				writePixel(xCoord + xOffset, y: self.scanline, color: colors[paletteIndex]);
 				return;
 			}
 		}
 	}
 	
-	func renderBackgroundPixel(tile: Tile, tileXCoord: Int, pixelOffset: Int) -> RGB {
+	func renderBackgroundPixel(tile: Tile, tileXCoord: Int, pixelOffset: Int) -> Bool {
 		let uPixelOffset = UInt8(pixelOffset);
 		
 		// Draw pixels from tile
@@ -715,21 +677,17 @@ final class PPU: NSObject {
 		
 		let paletteIndex = Int(self.ppuMemory.readPaletteMemory(patternValue));
 		
-		var color = colors[paletteIndex];
-		color.colorIndex = UInt8(patternValue);
+		let color = colors[paletteIndex];
 		
-		// TODO: Do frame scaling here, instead of at render time
 		writePixel(pixelXCoord, y: self.scanline, color: color);
 		
-		return color;
+		return patternValue == 0;
 	}
 	
-	func writePixel(x: Int, y: Int, color: RGB) {
-		let offset = 256 * 240 * self.pixelSize * self.pixelSize;
-		
+	func writePixel(x: Int, y: Int, color: UInt32) {
 		for i in 0 ..< self.pixelSize {
 			for k in 0 ..< self.pixelSize {
-				self.frame[offset - (y * self.pixelSize + k) * 256 * self.pixelSize + x * self.pixelSize + i] = color;
+				self.frame[self.totalPixelCount - (y * self.pixelSize + k) * 256 * self.pixelSize + x * self.pixelSize + i] = color;
 			}
 		}		
 	}
