@@ -381,7 +381,7 @@ final class APU {
 	
 	func step() {
 		// 1789773 / 239.9963124
-		if(self.cycle > 7457) {
+		if(self.cycle > 7458) {
 			self.cycle = 0;
 			stepFrame();
 		} else {
