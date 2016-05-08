@@ -43,6 +43,7 @@ class SimpleNESTests: XCTestCase {
 		mainMemory.apu = apu;
 		
 		let cpu = CPU(mainMemory: mainMemory, ppu: ppu, apu: apu, logger: logger);
+		apu.cpu = cpu;
 		ppu.cpu = cpu;
 		
 		cpu.reset();

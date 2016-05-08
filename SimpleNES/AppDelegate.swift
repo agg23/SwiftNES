@@ -64,6 +64,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		mainMemory.apu = self.apu;
 		
 		self.cpu = CPU(mainMemory: mainMemory, ppu: self.ppu, apu: self.apu, logger: logger);
+		self.apu.cpu = self.cpu;
 		self.ppu.cpu = self.cpu;
 		
 		self.cpu.reset();

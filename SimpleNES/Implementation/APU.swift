@@ -317,13 +317,20 @@ final class APU {
 	private var timerControl: UInt8 {
 		didSet {
 			self.disableIRQ = timerControl & 0x40 == 0x40;
+			
+			if(self.disableIRQ) {
+				self.frameIRQ = false;
+			}
+			
 			self.framerateSwitch = timerControl & 0x80 == 0x80;
 			
+			self.frameCount = 0;
+			
 			if(self.framerateSwitch) {
-				self.frameCount = 0;
-				stepFrame();
+				self.cyclesToNextFrame = 0;
+				stepLength();
 			} else {
-				self.frameCount = 4;
+				self.cyclesToNextFrame = 7459;
 			}
 		}
 	}
@@ -342,8 +349,14 @@ final class APU {
 	private let triangle: Triangle;
 	private let noise: Noise;
 	
+	private var frameIRQ: Bool;
+	private var irqDelay: Int;
+	
 	private var cycle: Int;
+	private var cyclesToNextFrame: Int;
 	private var frameCount: Int;
+	
+	var cpu: CPU?;
 	
 	init() {
 		self.dmcControl = 0;
@@ -373,43 +386,90 @@ final class APU {
 		self.triangle = Triangle();
 		self.noise = Noise();
 		
+		self.frameIRQ = false;
+		self.irqDelay = -1;
+		
 		self.cycle = 0;
-		self.frameCount = 4;
+		self.cyclesToNextFrame = 7459;
+		self.frameCount = 0;
 	}
 	
 	// MARK: - APU Functions
 	
 	func step() {
 		// 1789773 / 239.9963124
-		if(self.cycle > 7458) {
+		if(self.cycle >= self.cyclesToNextFrame) {
 			self.cycle = 0;
 			stepFrame();
 		} else {
 			self.cycle += 1;
+		}
+		
+		if(self.irqDelay > -1) {
+			self.irqDelay -= 1;
+			
+			if(self.irqDelay == 0) {
+				self.cpu!.queueInterrupt(CPU.Interrupt.IRQ);
+				self.irqDelay = -1;
+			}
 		}
 	}
 	
 	private func stepFrame() {
 		if(self.framerateSwitch) {
 			self.frameCount = (self.frameCount + 1) % 5;
+			
+			switch self.frameCount {
+				case 0, 2:
+					stepSweep();
+					stepLength();
+					self.cyclesToNextFrame = 7458;
+				case 1:
+					self.cyclesToNextFrame = 7456;
+				case 3:
+					self.cyclesToNextFrame = 7458;
+				case 4:
+					self.cyclesToNextFrame = 7452;
+				default:
+					break;
+			}
+			
+			if(self.frameCount != 4) {
+				stepEnvelope();
+			}
 		} else {
-			self.frameCount = (self.frameCount + 1) % 4;
-		}
-		
-		switch(self.frameCount) {
-			case 0, 2:
-				stepEnvelope();
-			case 1, 3:
-				stepEnvelope();
-				
-				stepSweep();
-				
-				stepLength();
-				break;
-			case 4:
-				break;
-			default:
-				break;
+			self.frameCount = (self.frameCount + 1) % 6;
+			
+			switch self.frameCount {
+				case 0:
+					self.cyclesToNextFrame = 7456;
+				case 1:
+					stepSweep();
+					stepLength();
+					self.cyclesToNextFrame = 7458;
+				case 2:
+					self.cyclesToNextFrame = 7458;
+				case 3:
+					setFrameIRQFlag();
+					irqChanged();
+					self.cyclesToNextFrame = 0;
+				case 4:
+					setFrameIRQFlag();
+					
+					stepSweep();
+					stepLength();
+					
+					irqChanged();
+					self.cyclesToNextFrame = 0;
+				case 5:
+					setFrameIRQFlag();
+					irqChanged();
+					self.cyclesToNextFrame = 7458;
+				default:
+					break;
+			}
+			
+			stepEnvelope();
 		}
 	}
 	
@@ -433,6 +493,18 @@ final class APU {
 		self.square2.stepLength();
 		self.triangle.stepLength();
 		self.noise.stepLength();
+	}
+	
+	private func setFrameIRQFlag() {
+		if(!self.disableIRQ) {
+			self.frameIRQ = true;
+		}
+	}
+	
+	private func irqChanged() {
+		if(!self.disableIRQ && self.frameIRQ) {
+			self.irqDelay = 2;
+		}
 	}
 	
 	// MARK: - APU Register Access
@@ -504,7 +576,8 @@ final class APU {
 			temp |= (self.noise.lengthCounterLoad == 0 || !self.noiseEnable) ? 0 : 0x8;
 			
 			// TODO: Return DMC length counter status
-			// TODO: Return frame IRQ status
+			temp |= self.frameIRQ ? 0x40 : 0;
+			self.frameIRQ = false;
 			// TODO: Return DMC IRQ status
 			
 			return temp;
