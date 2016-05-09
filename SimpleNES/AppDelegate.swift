@@ -31,8 +31,8 @@ func outputCallback(data: UnsafeMutablePointer<Void>, inAudioQueue: AudioQueueRe
 	var outputIndex = apu.outputIndex;
 	
 	if(outputIndex == 0) {
-		outputIndex = 2048;
-		for i in 0 ..< 2048 {
+		outputIndex = 1000;
+		for i in 0 ..< 1000 {
 			array[i] = 0;
 		}
 	} else {
@@ -206,8 +206,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		AudioQueueNewOutput(&self.dataFormat, outputCallback, UnsafeMutablePointer<Void>(bridge(self.apu)), CFRunLoopGetCurrent(), kCFRunLoopCommonModes, 0, &self.queue);
 		
 		AudioQueueAllocateBuffer(self.queue, self.bufferByteSize, &self.buffer);
-		
-		self.buffer.memory.mAudioDataByteSize = self.bufferByteSize;
 		
 		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu)), inAudioQueue: self.queue, inBuffer: self.buffer);
 	}
