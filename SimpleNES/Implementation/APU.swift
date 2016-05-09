@@ -23,7 +23,7 @@ final class APU {
 		// Register 4
 		var lengthCounter: UInt8 {
 			didSet {
-				self.wavelength = (self.wavelength & 0xF) | (UInt16(lengthCounter & 0x3) << 8);
+				self.wavelength = (self.wavelength & 0xFF) | (UInt16(lengthCounter & 0x7) << 8);
 				self.lengthCounterLoad = lengthTable[Int((lengthCounter >> 3) & 0x1F)];
 			}
 		}
@@ -58,7 +58,6 @@ final class APU {
 		// Register 1
 		var control: UInt8 {
 			didSet {
-				self.volume = control & 0xF;
 				self.envelopeDisable = control & 0x10 == 0x10;
 				self.lengthCounterDisable = control & 0x20 == 0x20;
 				self.dutyCycleType = (control >> 6) & 0x3;
@@ -96,14 +95,14 @@ final class APU {
 		// Register 3
 		var wavelengthLow: UInt8 {
 			didSet {
-				self.wavelength = (self.wavelength & 0x30) | UInt16(wavelengthLow);
+				self.wavelength = (self.wavelength & 0xFF00) | UInt16(wavelengthLow);
 			}
 		}
 		
 		// Register 4
 		override var lengthCounter: UInt8 {
 			didSet {
-				self.wavelength = (self.wavelength & 0xF) | (UInt16(lengthCounter & 0x3) << 8);
+				self.wavelength = (self.wavelength & 0xFF) | (UInt16(lengthCounter & 0x7) << 8);
 				self.lengthCounterLoad = lengthTable[Int((lengthCounter >> 3) & 0x1F)];
 				self.dutyIndex = 0;
 				self.envelopeShouldUpdate = true;
@@ -115,6 +114,7 @@ final class APU {
 		var sweepShouldUpdate: Bool;
 		var sweepValue: UInt8;
 		var timerValue: UInt16;
+		var targetWavelength: UInt16;
 		
 		var dutyIndex: Int;
 		
@@ -147,6 +147,7 @@ final class APU {
 			self.sweepShouldUpdate = false;
 			self.sweepValue = 0;
 			self.timerValue = 0;
+			self.targetWavelength = 0;
 			
 			self.dutyIndex = 0;
 			
@@ -182,13 +183,17 @@ final class APU {
 			let delta = self.wavelength >> UInt16(self.sweepShift);
 			
 			if(self.decreaseWavelength) {
-				self.wavelength -= delta;
+				self.targetWavelength = self.wavelength - delta;
 				
-				if(self.channel2) {
-					self.wavelength -= 1;
+				if(!self.channel2) {
+					self.targetWavelength += 1;
 				}
 			} else {
-				self.wavelength += delta;
+				self.targetWavelength = self.wavelength + delta;
+			}
+			
+			if(self.sweepEnable && self.sweepShift != 0 && self.wavelength > 7 && self.targetWavelength < 0x800) {
+				self.wavelength = self.targetWavelength;
 			}
 		}
 		
@@ -220,7 +225,7 @@ final class APU {
 		}
 		
 		func output() -> UInt8 {
-			if(self.lengthCounterLoad == 0 || dutyTable[Int(self.dutyCycleType)][self.dutyIndex] == 0 || self.wavelength < 8 || self.wavelength > 0x7FF) {
+			if(self.lengthCounterLoad == 0 || dutyTable[Int(self.dutyCycleType)][self.dutyIndex] == 0 || self.wavelength < 8 || self.targetWavelength > 0x7FF) {
 				return 0;
 			}
 			
@@ -250,13 +255,13 @@ final class APU {
 		// Register 3
 		var wavelengthLow: UInt8 {
 			didSet {
-				self.wavelength = (self.wavelength & 0x30) | UInt16(wavelengthLow);
+				self.wavelength = (self.wavelength & 0xFF00) | UInt16(wavelengthLow);
 			}
 		}
 		
 		override var lengthCounter: UInt8 {
 			didSet {
-				self.wavelength = (self.wavelength & 0xF) | (UInt16(lengthCounter & 0x3) << 8);
+				self.wavelength = (self.wavelength & 0xFF) | (UInt16(lengthCounter & 0x7) << 8);
 				self.lengthCounterLoad = lengthTable[Int((lengthCounter >> 3) & 0x1F)];
 				self.linearHalt = true;
 			}
@@ -669,16 +674,16 @@ final class APU {
 			triangle = Double(self.triangle.output()) / 8227;
 		}
 		
-		var square_out = 95.88/(8128/(square1 + square2) + 100);
+		var square_out: Double = 0;
 		
-		if(square1 + square2 == 0) {
-			square_out = 0;
+		if(square1 + square2 != 0) {
+			square_out = 95.88/(8128/(square1 + square2) + 100);
 		}
 		
-		var tnd_out = 159.79/(1/(triangle + 0 + 0) + 100);
+		var tnd_out: Double = 0;
 		
-		if(triangle == 0) {
-			tnd_out = 0;
+		if(triangle != 0) {
+			tnd_out = 159.79/(1/(triangle + 0 + 0) + 100);
 		}
 		
 		return square_out + tnd_out;
