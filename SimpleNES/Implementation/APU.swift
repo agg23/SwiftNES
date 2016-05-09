@@ -450,16 +450,11 @@ final class APU {
 			
 			self.framerateSwitch = timerControl & 0x80 == 0x80;
 			
-			self.frameCount = 5;
-			
-//			if(self.framerateSwitch) {
-//				self.cyclesToNextFrame = 0;
-//				stepLength();
-//			} else {
-//				self.cyclesToNextFrame = 7458;
-//			}
-			
-			self.cycle = 0;
+			if(self.evenCycle) {
+				self.cycle = 0;
+			} else {
+				self.cycle = -1;
+			}
 		}
 	}
 	
@@ -481,13 +476,13 @@ final class APU {
 	private var irqDelay: Int;
 	
 	private var cycle: Int;
-	private var cyclesToNextFrame: Int;
-	private var frameCount: Int;
 	
 	private var sampleCount: Int;
 	
 	var output: [Int16];
 	var outputIndex: Int;
+	
+	private var evenCycle: Bool;
 	
 	var cpu: CPU?;
 	
@@ -523,26 +518,19 @@ final class APU {
 		self.irqDelay = -1;
 		
 		self.cycle = 0;
-		self.cyclesToNextFrame = 7458;
-		self.frameCount = 5;
 		
 		self.sampleCount = 0;
 		
 		self.output = [Int16](count: 2048, repeatedValue: 0);
 		self.outputIndex = 0;
+		
+		self.evenCycle = true;
 	}
 	
 	// MARK: - APU Functions
 	
 	func step() {
-		// 1789773 / 239.9963124
 		stepTimer();
-//		if(self.cycle >= self.cyclesToNextFrame) {
-//			self.cycle = 0;
-//			stepFrame();
-//		} else {
-//			self.cycle += 1;
-//		}
 		
 		stepFrame();
 		
@@ -561,31 +549,12 @@ final class APU {
 				self.irqDelay = -1;
 			}
 		}
+		
+		self.evenCycle = !self.evenCycle;
 	}
 	
 	private func stepFrame() {
 		if(self.framerateSwitch) {
-//			self.frameCount = (self.frameCount + 1) % 5;
-//			
-//			switch self.frameCount {
-//				case 0, 2:
-//					stepSweep();
-//					stepLength();
-//					self.cyclesToNextFrame = 7457;
-//				case 1:
-//					self.cyclesToNextFrame = 7455;
-//				case 3:
-//					self.cyclesToNextFrame = 7455;
-//				case 4:
-//					self.cyclesToNextFrame = 7453;
-//				default:
-//					break;
-//			}
-//			
-//			if(self.frameCount != 4) {
-//				stepEnvelope();
-//			}
-			
 			switch self.cycle {
 				case 1:
 					stepSweep();
@@ -610,37 +579,6 @@ final class APU {
 			}
 			
 		} else {
-//			self.frameCount = (self.frameCount + 1) % 6;
-//			
-//			switch self.frameCount {
-//				case 0:
-//					self.cyclesToNextFrame = 7455;
-//				case 1:
-//					stepSweep();
-//					stepLength();
-//					self.cyclesToNextFrame = 7457;
-//				case 2:
-//					self.cyclesToNextFrame = 7456;
-//				case 3:
-//					setFrameIRQFlag();
-//					irqChanged();
-//					self.cyclesToNextFrame = 0;
-//				case 4:
-//					setFrameIRQFlag();
-//					
-//					stepSweep();
-//					stepLength();
-//					
-//					irqChanged();
-//					self.cyclesToNextFrame = 0;
-//				case 5:
-//					setFrameIRQFlag();
-//					irqChanged();
-//					self.cyclesToNextFrame = 7458;
-//				default:
-//					break;
-//			}
-			
 			switch self.cycle {
 				case 7459:
 					stepEnvelope();
