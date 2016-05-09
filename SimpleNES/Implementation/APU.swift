@@ -113,7 +113,6 @@ final class APU {
 		
 		var sweepShouldUpdate: Bool;
 		var sweepValue: UInt8;
-		var timerValue: UInt16;
 		var targetWavelength: UInt16;
 		
 		var dutyIndex: Int;
@@ -146,7 +145,6 @@ final class APU {
 			
 			self.sweepShouldUpdate = false;
 			self.sweepValue = 0;
-			self.timerValue = 0;
 			self.targetWavelength = 0;
 			
 			self.dutyIndex = 0;
@@ -198,11 +196,11 @@ final class APU {
 		}
 		
 		func stepTimer() {
-			if(self.timerValue == 0) {
-				self.timerValue = self.wavelength;
+			if(self.timer == 0) {
+				self.timer = self.wavelength;
 				self.dutyIndex = (self.dutyIndex + 1) % 8;
 			} else {
-				self.timerValue -= 1;
+				self.timer -= 1;
 			}
 		}
 		
@@ -263,6 +261,7 @@ final class APU {
 			didSet {
 				self.wavelength = (self.wavelength & 0xFF) | (UInt16(lengthCounter & 0x7) << 8);
 				self.lengthCounterLoad = lengthTable[Int((lengthCounter >> 3) & 0x1F)];
+				self.timer = self.wavelength;
 				self.linearHalt = true;
 			}
 		}
@@ -289,7 +288,7 @@ final class APU {
 		func stepLinear() {
 			if(self.linearHalt) {
 				self.linearCounter = self.linearCounterLoad;
-			} else if(self.linearCounter != 0) {
+			} else if(self.linearCounter > 0) {
 				self.linearCounter -= 1;
 			}
 			
@@ -315,18 +314,24 @@ final class APU {
 		func stepTimer() {
 			if(self.timer == 0) {
 				self.timer = self.wavelength;
-				stepTriangleGenerator();
+				if(self.lengthCounterLoad > 0 && self.linearCounter > 0) {
+					stepTriangleGenerator();
+				}
 			} else {
 				self.timer -= 1;
 			}
 		}
 		
-		func output() -> UInt8 {
-			if(self.lengthCounter == 0 || self.linearCounterLoad == 0) {
+		func output() -> Double {
+			if(self.lengthCounterLoad == 0 || self.linearCounter == 0) {
 				return 0;
 			}
 			
-			return self.triangleGenerator;
+			if(self.wavelength == 0 || self.wavelength == 1) {
+				return 7.5;
+			}
+			
+			return Double(self.triangleGenerator);
 		}
 	}
 	
@@ -535,7 +540,13 @@ final class APU {
 	// MARK: - APU Functions
 	
 	func step() {
-		stepTimer();
+		if(self.evenCycle) {
+			// Square timers only tick every other cycle
+			self.square1.stepTimer();
+			self.square2.stepTimer();
+		}
+		
+		self.triangle.stepTimer();
 		
 		stepFrame();
 		
@@ -617,12 +628,6 @@ final class APU {
 		self.cycle += 1;
 	}
 	
-	private func stepTimer() {
-		self.square1.stepTimer();
-		self.square2.stepTimer();
-		self.triangle.stepTimer();
-	}
-	
 	private func stepEnvelope() {
 		// Increment envelope (Square and Noise)
 		self.square1.stepEnvelope();
@@ -671,7 +676,7 @@ final class APU {
 		}
 		
 		if(self.triangleEnable) {
-			triangle = Double(self.triangle.output()) / 8227;
+			triangle = self.triangle.output() / 8227;
 		}
 		
 		var square_out: Double = 0;
