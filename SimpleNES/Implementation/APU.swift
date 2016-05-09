@@ -8,20 +8,23 @@
 
 import Foundation
 
+let lengthTable: [UInt8] = [0x0A, 0xFE, 0x14, 0x02, 0x28, 0x04, 0x50, 0x06, 0xA0, 0x08, 0x3C,
+								0x0A, 0x0E, 0x0C, 0x1A, 0x0E, 0x0C, 0x10, 0x18, 0x12, 0x30, 0x14,
+								0x60, 0x16, 0xC0, 0x18, 0x48, 0x1A, 0x10, 0x1C, 0x20, 0x1E];
+
+let dutyTable: [[UInt8]] = [[0, 1, 0, 0, 0, 0, 0, 0], [0, 1, 1, 0, 0, 0, 0, 0], [0, 1, 1, 1, 1, 0, 0, 0], [1, 0, 0, 1, 1, 1, 1, 1]];
+
 final class APU {
 	
 	// MARK: - Class declarations
 	
 	private class APURegister {
-		private let lengthTable: [UInt8] = [0x0A, 0xFE, 0x14, 0x02, 0x28, 0x04, 0x50, 0x06, 0xA0, 0x08, 0x3C,
-		                                    0x0A, 0x0E, 0x0C, 0x1A, 0x0E, 0x0C, 0x10, 0x18, 0x12, 0x30, 0x14,
-		                                    0x60, 0x16, 0xC0, 0x18, 0x48, 0x1A, 0x10, 0x1C, 0x20, 0x1E];
 		
 		// Register 4
 		var lengthCounter: UInt8 {
 			didSet {
 				self.wavelength = (self.wavelength & 0xF) | (UInt16(lengthCounter & 0x3) << 8);
-				self.lengthCounterLoad = self.lengthTable[Int((lengthCounter >> 3) & 0x1F)];
+				self.lengthCounterLoad = lengthTable[Int((lengthCounter >> 3) & 0x1F)];
 			}
 		}
 		// 3 bits
@@ -59,6 +62,11 @@ final class APU {
 				self.envelopeDisable = control & 0x10 == 0x10;
 				self.lengthCounterDisable = control & 0x20 == 0x20;
 				self.dutyCycleType = (control >> 6) & 0x3;
+				
+				self.envelopePeriod = control & 0xF;
+				self.constantVolume = self.envelopePeriod;
+				
+				self.envelopeShouldUpdate = true;
 			}
 		}
 		// 4 bits
@@ -70,14 +78,16 @@ final class APU {
 		// Register 2
 		var sweep: UInt8 {
 			didSet {
-				self.rightShiftAmount = sweep & 0x7;
+				self.sweepShift = sweep & 0x7;
 				self.decreaseWavelength = sweep & 0x8 == 0x8;
 				self.sweepUpdateRate = (sweep >> 4) & 0x7;
 				self.sweepEnable = sweep & 0x80 == 0x80;
+				
+				self.sweepShouldUpdate = true;
 			}
 		}
 		// 3 bits
-		var rightShiftAmount: UInt8;
+		var sweepShift: UInt8;
 		var decreaseWavelength: Bool;
 		// 3 bits
 		var sweepUpdateRate: UInt8;
@@ -90,27 +100,135 @@ final class APU {
 			}
 		}
 		
-		override init() {
+		// Register 4
+		override var lengthCounter: UInt8 {
+			didSet {
+				self.wavelength = (self.wavelength & 0xF) | (UInt16(lengthCounter & 0x3) << 8);
+				self.lengthCounterLoad = lengthTable[Int((lengthCounter >> 3) & 0x1F)];
+				self.dutyIndex = 0;
+				self.envelopeShouldUpdate = true;
+			}
+		}
+		
+		private var channel2: Bool;
+		
+		var sweepShouldUpdate: Bool;
+		var sweepValue: UInt8;
+		var timerValue: UInt16;
+		
+		var dutyIndex: Int;
+		
+		var envelopeShouldUpdate: Bool;
+		var envelopePeriod: UInt8;
+		var envelopeVolume: UInt8;
+		var constantVolume: UInt8;
+		var envelopeValue: UInt8;
+		
+		override convenience init() {
+			self.init(isChannel2: false);
+		}
+		
+		init(isChannel2: Bool) {
 			self.control = 0;
 			self.volume = 0;
 			self.envelopeDisable = false;
 			self.dutyCycleType = 0;
 			
 			self.sweep = 0;
-			self.rightShiftAmount = 0;
+			self.sweepShift = 0;
 			self.decreaseWavelength = false;
 			self.sweepUpdateRate = 0;
 			self.sweepEnable = false;
 			
 			self.wavelengthLow = 0;
+			
+			self.channel2 = isChannel2;
+			
+			self.sweepShouldUpdate = false;
+			self.sweepValue = 0;
+			self.timerValue = 0;
+			
+			self.dutyIndex = 0;
+			
+			self.envelopeShouldUpdate = false;
+			self.envelopePeriod = 0;
+			self.envelopeVolume = 0;
+			self.constantVolume = 0;
+			self.envelopeValue = 0;
+			
+			super.init();
 		}
 		
 		func stepSweep() {
+			if(self.sweepShouldUpdate) {
+				if(self.sweepEnable && self.sweepValue == 0) {
+					sweepUpdate();
+				}
+				
+				self.sweepValue = self.sweepUpdateRate;
+				self.sweepShouldUpdate = false;
+			} else if(self.sweepValue > 0) {
+				self.sweepValue -= 1;
+			} else {
+				if(self.sweepEnable) {
+					sweepUpdate();
+				}
+				
+				self.sweepValue = self.sweepUpdateRate;
+			}
+		}
+		
+		private func sweepUpdate() {
+			let delta = self.wavelength >> UInt16(self.sweepShift);
 			
+			if(self.decreaseWavelength) {
+				self.wavelength -= delta;
+				
+				if(self.channel2) {
+					self.wavelength -= 1;
+				}
+			} else {
+				self.wavelength += delta;
+			}
+		}
+		
+		func stepTimer() {
+			if(self.timerValue == 0) {
+				self.timerValue = self.wavelength;
+				self.dutyIndex = (self.dutyIndex + 1) % 8;
+			} else {
+				self.timerValue -= 1;
+			}
 		}
 		
 		func stepEnvelope() {
+			if(self.envelopeShouldUpdate) {
+				self.envelopeVolume = 0xF;
+				self.envelopeValue = self.envelopePeriod;
+				self.envelopeShouldUpdate = false;
+			} else if(self.envelopeValue > 0) {
+				self.envelopeValue -= 1;
+			} else {
+				if(self.envelopeVolume > 0) {
+					self.envelopeVolume -= 1;
+				} else if(self.lengthCounterDisable) {
+					self.envelopeVolume = 0xF;
+				}
+				
+				self.envelopeValue = self.envelopePeriod;
+			}
+		}
+		
+		func output() -> UInt8 {
+			if(self.lengthCounterLoad == 0 || dutyTable[Int(self.dutyCycleType)][self.dutyIndex] == 0 || self.wavelength < 8 || self.wavelength > 0x7FF) {
+				return 0;
+			}
 			
+			if(!self.envelopeDisable) {
+				return self.envelopeVolume;
+			}
+			
+			return self.constantVolume;
 		}
 	}
 	
@@ -139,7 +257,7 @@ final class APU {
 		override var lengthCounter: UInt8 {
 			didSet {
 				self.wavelength = (self.wavelength & 0xF) | (UInt16(lengthCounter & 0x3) << 8);
-				self.lengthCounterLoad = self.lengthTable[Int((lengthCounter >> 3) & 0x1F)];
+				self.lengthCounterLoad = lengthTable[Int((lengthCounter >> 3) & 0x1F)];
 				self.linearHalt = true;
 			}
 		}
@@ -395,7 +513,7 @@ final class APU {
 		self.framerateSwitch = false;
 		
 		self.square1 = Square();
-		self.square2 = Square();
+		self.square2 = Square(isChannel2: true);
 		self.triangle = Triangle();
 		self.noise = Noise();
 		
@@ -500,6 +618,8 @@ final class APU {
 	}
 	
 	private func stepTimer() {
+		self.square1.stepTimer();
+		self.square2.stepTimer();
 		self.triangle.stepTimer();
 	}
 	
@@ -537,24 +657,47 @@ final class APU {
 		}
 	}
 	
-	func outputValue() -> UInt8 {
-		if(self.triangleEnable) {
-			return self.triangle.output();
+	func outputValue() -> Double {
+		var square1: Double = 0;
+		var square2: Double = 0;
+		var triangle: Double = 0;
+		
+		if(self.square1Enable) {
+			square1 = Double(self.square1.output());
 		}
 		
-		return 0;
+		if(self.square2Enable) {
+			square2 = Double(self.square2.output());
+		}
+		
+		if(self.triangleEnable) {
+			triangle = Double(self.triangle.output()) / 8227;
+		}
+		
+		var square_out = 95.88/(8128/(square1 + square2) + 100);
+		
+		if(square1 + square2 == 0) {
+			square_out = 0;
+		}
+		
+		var tnd_out = 159.79/(1/(triangle + 0 + 0) + 100);
+		
+		if(triangle == 0) {
+			tnd_out = 0;
+		}
+		
+		return square_out + tnd_out;
 	}
 	
 	func loadOutput() {
-		let float_sample = Double(outputValue()) / 15.0;
-		
-		let int_sample = Int16(float_sample * 32767);
+		let int_sample = Int16(outputValue() * 32767);
 		
 		self.output[self.outputIndex] = int_sample;
 		
 		self.outputIndex += 1;
 		
 		if(self.outputIndex > 2047) {
+			print("wrap");
 			self.outputIndex = 0;
 		}
 	}

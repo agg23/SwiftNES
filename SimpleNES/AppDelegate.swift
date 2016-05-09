@@ -28,10 +28,24 @@ func outputCallback(data: UnsafeMutablePointer<Void>, inAudioQueue: AudioQueueRe
 	let array = UnsafeMutablePointer<Int16>(inBuffer.memory.mAudioData);
 	
 	let output = apu.output;
+	var outputIndex = apu.outputIndex;
 	
-	for i in 0 ..< 2048 {
-		array[i] = output[i];
+	if(outputIndex == 0) {
+		outputIndex = 2048;
+		for i in 0 ..< 2048 {
+			array[i] = 0;
+		}
+	} else {
+		for i in 0 ..< outputIndex {
+			array[i] = output[i];
+		}
 	}
+	
+	print(apu.outputIndex);
+	
+	apu.outputIndex = 0;
+	
+	inBuffer.memory.mAudioDataByteSize = UInt32(outputIndex) * 2;
 	
 	AudioQueueEnqueueBuffer(inAudioQueue, inBuffer, 0, nil);
 }
