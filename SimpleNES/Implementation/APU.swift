@@ -452,12 +452,14 @@ final class APU {
 			
 			self.frameCount = 5;
 			
-			if(self.framerateSwitch) {
-				self.cyclesToNextFrame = 0;
-				stepLength();
-			} else {
-				self.cyclesToNextFrame = 7458;
-			}
+//			if(self.framerateSwitch) {
+//				self.cyclesToNextFrame = 0;
+//				stepLength();
+//			} else {
+//				self.cyclesToNextFrame = 7458;
+//			}
+			
+			self.cycle = 0;
 		}
 	}
 	
@@ -535,12 +537,14 @@ final class APU {
 	func step() {
 		// 1789773 / 239.9963124
 		stepTimer();
-		if(self.cycle >= self.cyclesToNextFrame) {
-			self.cycle = 0;
-			stepFrame();
-		} else {
-			self.cycle += 1;
-		}
+//		if(self.cycle >= self.cyclesToNextFrame) {
+//			self.cycle = 0;
+//			stepFrame();
+//		} else {
+//			self.cycle += 1;
+//		}
+		
+		stepFrame();
 		
 		if(self.sampleCount > 39) {
 			self.sampleCount = 0;
@@ -561,60 +565,113 @@ final class APU {
 	
 	private func stepFrame() {
 		if(self.framerateSwitch) {
-			self.frameCount = (self.frameCount + 1) % 5;
+//			self.frameCount = (self.frameCount + 1) % 5;
+//			
+//			switch self.frameCount {
+//				case 0, 2:
+//					stepSweep();
+//					stepLength();
+//					self.cyclesToNextFrame = 7457;
+//				case 1:
+//					self.cyclesToNextFrame = 7455;
+//				case 3:
+//					self.cyclesToNextFrame = 7455;
+//				case 4:
+//					self.cyclesToNextFrame = 7453;
+//				default:
+//					break;
+//			}
+//			
+//			if(self.frameCount != 4) {
+//				stepEnvelope();
+//			}
 			
-			switch self.frameCount {
-				case 0, 2:
+			switch self.cycle {
+				case 1:
 					stepSweep();
 					stepLength();
-					self.cyclesToNextFrame = 7458;
-				case 1:
-					self.cyclesToNextFrame = 7456;
-				case 3:
-					self.cyclesToNextFrame = 7458;
-				case 4:
-					self.cyclesToNextFrame = 7452;
+					
+					stepEnvelope();
+				case 7459:
+					stepEnvelope();
+				case 14915:
+					stepSweep();
+					stepLength();
+					
+					stepEnvelope();
+				case 22373:
+					stepEnvelope();
+				// Step 4 (29829) does nothing
+				case 37282:
+					// 1 less than 1
+					self.cycle = 0;
 				default:
 					break;
 			}
 			
-			if(self.frameCount != 4) {
-				stepEnvelope();
-			}
 		} else {
-			self.frameCount = (self.frameCount + 1) % 6;
+//			self.frameCount = (self.frameCount + 1) % 6;
+//			
+//			switch self.frameCount {
+//				case 0:
+//					self.cyclesToNextFrame = 7455;
+//				case 1:
+//					stepSweep();
+//					stepLength();
+//					self.cyclesToNextFrame = 7457;
+//				case 2:
+//					self.cyclesToNextFrame = 7456;
+//				case 3:
+//					setFrameIRQFlag();
+//					irqChanged();
+//					self.cyclesToNextFrame = 0;
+//				case 4:
+//					setFrameIRQFlag();
+//					
+//					stepSweep();
+//					stepLength();
+//					
+//					irqChanged();
+//					self.cyclesToNextFrame = 0;
+//				case 5:
+//					setFrameIRQFlag();
+//					irqChanged();
+//					self.cyclesToNextFrame = 7458;
+//				default:
+//					break;
+//			}
 			
-			switch self.frameCount {
-				case 0:
-					self.cyclesToNextFrame = 7455;
-				case 1:
-					stepSweep();
-					stepLength();
-					self.cyclesToNextFrame = 7457;
-				case 2:
-					self.cyclesToNextFrame = 7456;
-				case 3:
-					setFrameIRQFlag();
-					irqChanged();
-					self.cyclesToNextFrame = 0;
-				case 4:
-					setFrameIRQFlag();
-					
+			switch self.cycle {
+				case 7459:
+					stepEnvelope();
+				case 14915:
 					stepSweep();
 					stepLength();
 					
-					irqChanged();
-					self.cyclesToNextFrame = 0;
-				case 5:
+					stepEnvelope();
+				case 22373:
+					stepEnvelope();
+				case 29830:
 					setFrameIRQFlag();
+				case 29831:
+					setFrameIRQFlag();
+					stepSweep();
+					stepLength();
+					
+					stepEnvelope();
+					
 					irqChanged();
-					self.cyclesToNextFrame = 7458;
+				case 29832:
+					setFrameIRQFlag();
+				case 37288:
+					// One less than 7458
+					self.cycle = 7458;
 				default:
 					break;
 			}
-			
-			stepEnvelope();
 		}
+		
+		self.cycle += 1;
 	}
 	
 	private func stepTimer() {

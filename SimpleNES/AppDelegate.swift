@@ -88,6 +88,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	var dataFormat: AudioStreamBasicDescription;
 	var queue: AudioQueueRef;
 	var buffer: AudioQueueBufferRef;
+	var buffer2: AudioQueueBufferRef;
 	var bufferByteSize: UInt32;
 	var numPacketsToRead: UInt32;
 	var packetsToPlay: Int64;
@@ -96,6 +97,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.dataFormat = AudioStreamBasicDescription(mSampleRate: 0, mFormatID: 0, mFormatFlags: 0, mBytesPerPacket: 0, mFramesPerPacket: 0, mBytesPerFrame: 0, mChannelsPerFrame: 0, mBitsPerChannel: 0, mReserved: 0);
 		self.queue = nil;
 		self.buffer = nil;
+		self.buffer2 = nil;
 		self.bufferByteSize = 4096;
 		self.numPacketsToRead = 0;
 		self.packetsToPlay = 1;
@@ -206,8 +208,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		AudioQueueNewOutput(&self.dataFormat, outputCallback, UnsafeMutablePointer<Void>(bridge(self.apu)), CFRunLoopGetCurrent(), kCFRunLoopCommonModes, 0, &self.queue);
 		
 		AudioQueueAllocateBuffer(self.queue, self.bufferByteSize, &self.buffer);
+		AudioQueueAllocateBuffer(self.queue, self.bufferByteSize, &self.buffer2);
 		
 		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu)), inAudioQueue: self.queue, inBuffer: self.buffer);
+		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu)), inAudioQueue: self.queue, inBuffer: self.buffer2);
 	}
 	
 	// MARK: - Graphics
