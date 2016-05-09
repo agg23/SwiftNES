@@ -194,8 +194,16 @@ final class APU {
 				self.timer = self.wavelength;
 				stepTriangleGenerator();
 			} else {
-				self.timer += 1;
+				self.timer -= 1;
 			}
+		}
+		
+		func output() -> UInt8 {
+			if(self.lengthCounter == 0 || self.linearCounterLoad == 0) {
+				return 0;
+			}
+			
+			return self.triangleGenerator;
 		}
 	}
 	
@@ -324,13 +332,13 @@ final class APU {
 			
 			self.framerateSwitch = timerControl & 0x80 == 0x80;
 			
-			self.frameCount = 0;
+			self.frameCount = 5;
 			
 			if(self.framerateSwitch) {
 				self.cyclesToNextFrame = 0;
 				stepLength();
 			} else {
-				self.cyclesToNextFrame = 7459;
+				self.cyclesToNextFrame = 7458;
 			}
 		}
 	}
@@ -355,6 +363,11 @@ final class APU {
 	private var cycle: Int;
 	private var cyclesToNextFrame: Int;
 	private var frameCount: Int;
+	
+	private var sampleCount: Int;
+	
+	var output: [Int16];
+	var outputIndex: Int;
 	
 	var cpu: CPU?;
 	
@@ -390,19 +403,32 @@ final class APU {
 		self.irqDelay = -1;
 		
 		self.cycle = 0;
-		self.cyclesToNextFrame = 7459;
-		self.frameCount = 0;
+		self.cyclesToNextFrame = 7458;
+		self.frameCount = 5;
+		
+		self.sampleCount = 0;
+		
+		self.output = [Int16](count: 2048, repeatedValue: 0);
+		self.outputIndex = 0;
 	}
 	
 	// MARK: - APU Functions
 	
 	func step() {
 		// 1789773 / 239.9963124
+		stepTimer();
 		if(self.cycle >= self.cyclesToNextFrame) {
 			self.cycle = 0;
 			stepFrame();
 		} else {
 			self.cycle += 1;
+		}
+		
+		if(self.sampleCount > 39) {
+			self.sampleCount = 0;
+			loadOutput();
+		} else {
+			self.sampleCount += 1;
 		}
 		
 		if(self.irqDelay > -1) {
@@ -442,13 +468,13 @@ final class APU {
 			
 			switch self.frameCount {
 				case 0:
-					self.cyclesToNextFrame = 7456;
+					self.cyclesToNextFrame = 7455;
 				case 1:
 					stepSweep();
 					stepLength();
-					self.cyclesToNextFrame = 7458;
+					self.cyclesToNextFrame = 7457;
 				case 2:
-					self.cyclesToNextFrame = 7458;
+					self.cyclesToNextFrame = 7456;
 				case 3:
 					setFrameIRQFlag();
 					irqChanged();
@@ -471,6 +497,10 @@ final class APU {
 			
 			stepEnvelope();
 		}
+	}
+	
+	private func stepTimer() {
+		self.triangle.stepTimer();
 	}
 	
 	private func stepEnvelope() {
@@ -504,6 +534,28 @@ final class APU {
 	private func irqChanged() {
 		if(!self.disableIRQ && self.frameIRQ) {
 			self.irqDelay = 2;
+		}
+	}
+	
+	func outputValue() -> UInt8 {
+		if(self.triangleEnable) {
+			return self.triangle.output();
+		}
+		
+		return 0;
+	}
+	
+	func loadOutput() {
+		let float_sample = Double(outputValue()) / 15.0;
+		
+		let int_sample = Int16(float_sample * 32767);
+		
+		self.output[self.outputIndex] = int_sample;
+		
+		self.outputIndex += 1;
+		
+		if(self.outputIndex > 2047) {
+			self.outputIndex = 0;
 		}
 	}
 	

@@ -8,6 +8,33 @@
 
 import Cocoa
 import MetalKit
+import AudioToolbox
+
+func bridge<T : AnyObject>(obj : T) -> UnsafePointer<Void> {
+	return UnsafePointer(Unmanaged.passUnretained(obj).toOpaque())
+	// return unsafeAddressOf(obj) // ***
+}
+
+func bridge<T : AnyObject>(ptr : UnsafePointer<Void>) -> T {
+	return Unmanaged<T>.fromOpaque(COpaquePointer(ptr)).takeUnretainedValue()
+	// return unsafeBitCast(ptr, T.self) // ***
+}
+
+var count = 0;
+
+func outputCallback(data: UnsafeMutablePointer<Void>, inAudioQueue: AudioQueueRef, inBuffer: AudioQueueBufferRef) {
+	let apu: APU = bridge(UnsafePointer<Void>(data));
+	
+	let array = UnsafeMutablePointer<Int16>(inBuffer.memory.mAudioData);
+	
+	let output = apu.output;
+	
+	for i in 0 ..< 2048 {
+		array[i] = output[i];
+	}
+	
+	AudioQueueEnqueueBuffer(inAudioQueue, inBuffer, 0, nil);
+}
 
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
@@ -44,7 +71,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	
 	private let scalingFactor:CGFloat = 2.0;
 	
+	var dataFormat: AudioStreamBasicDescription;
+	var queue: AudioQueueRef;
+	var buffer: AudioQueueBufferRef;
+	var bufferByteSize: UInt32;
+	var numPacketsToRead: UInt32;
+	var packetsToPlay: Int64;
+	
 	override init() {
+		self.dataFormat = AudioStreamBasicDescription(mSampleRate: 0, mFormatID: 0, mFormatFlags: 0, mBytesPerPacket: 0, mFramesPerPacket: 0, mBytesPerFrame: 0, mChannelsPerFrame: 0, mBitsPerChannel: 0, mReserved: 0);
+		self.queue = nil;
+		self.buffer = nil;
+		self.bufferByteSize = 4096;
+		self.numPacketsToRead = 0;
+		self.packetsToPlay = 1;
+		
 		self.logger = Logger(path: "/Users/adam/nes.log");
 		
 		self.controllerIO = ControllerIO();
@@ -86,6 +127,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         // Insert code here to initialize your application
 		
+		initializeAudio();
+		
+		AudioQueueStart(queue, nil);
+		
 		windowSetup();
 		
 		self.sizingRect = self.window.convertRectToBacking(NSMakeRect(0, 0, 256 * self.scalingFactor, 240 * self.scalingFactor));
@@ -124,6 +169,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	@IBAction func dumpPPUMemory(sender: AnyObject) {
 		self.ppu.dumpMemory();
 	}
+	
+	// MARK: - Audio
+	
+	func initializeAudio() {
+		dataFormat.mSampleRate = 44100.0;
+		dataFormat.mFormatID = kAudioFormatLinearPCM;
+		
+		// Sort out endianness
+		if (NSHostByteOrder() == NS_BigEndian) {
+			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsBigEndian | kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
+		} else {
+			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
+		}
+		
+		dataFormat.mFramesPerPacket = 1;
+		dataFormat.mBytesPerFrame = 2;
+		dataFormat.mBytesPerPacket = dataFormat.mBytesPerFrame * dataFormat.mFramesPerPacket;
+		dataFormat.mChannelsPerFrame = 1;
+		dataFormat.mBitsPerChannel = 16;
+		
+		AudioQueueNewOutput(&self.dataFormat, outputCallback, UnsafeMutablePointer<Void>(bridge(self.apu)), CFRunLoopGetCurrent(), kCFRunLoopCommonModes, 0, &self.queue);
+		
+		AudioQueueAllocateBuffer(self.queue, self.bufferByteSize, &self.buffer);
+		
+		self.buffer.memory.mAudioDataByteSize = self.bufferByteSize;
+		
+		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu)), inAudioQueue: self.queue, inBuffer: self.buffer);
+	}
+	
+	// MARK: - Graphics
 	
 	func render(inout screen: [UInt32]) {
 		let width = 256 * 2;
