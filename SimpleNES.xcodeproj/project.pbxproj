@@ -14,6 +14,7 @@
 		666146AE1CA347300022C10D /* Memory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AD1CA347300022C10D /* Memory.swift */; };
 		666146B01CA34BC40022C10D /* FileIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AF1CA34BC40022C10D /* FileIO.swift */; };
 		66796ECA1CDCD2F80015E810 /* APU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66796EC91CDCD2F80015E810 /* APU.swift */; };
+		668B05F21CE1515600315BCD /* APUChannels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668B05F11CE1515600315BCD /* APUChannels.swift */; };
 		66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4361CA2EF3800936DBC /* AppDelegate.swift */; };
 		66A9C4391CA2EF3800936DBC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 66A9C4381CA2EF3800936DBC /* Assets.xcassets */; };
 		66A9C43C1CA2EF3800936DBC /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 66A9C43A1CA2EF3800936DBC /* MainMenu.xib */; };
@@ -42,6 +43,7 @@
 		666146AD1CA347300022C10D /* Memory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Memory.swift; path = Implementation/Memory.swift; sourceTree = "<group>"; };
 		666146AF1CA34BC40022C10D /* FileIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FileIO.swift; path = Implementation/FileIO.swift; sourceTree = "<group>"; };
 		66796EC91CDCD2F80015E810 /* APU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APU.swift; path = Implementation/APU.swift; sourceTree = "<group>"; };
+		668B05F11CE1515600315BCD /* APUChannels.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APUChannels.swift; path = Implementation/APUChannels.swift; sourceTree = "<group>"; };
 		66A9C4331CA2EF3800936DBC /* SimpleNES.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimpleNES.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		66A9C4361CA2EF3800936DBC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		66A9C4381CA2EF3800936DBC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -129,6 +131,7 @@
 				66E1868F1CADB97300EFF583 /* Logger.swift */,
 				66F46AB81CB039B9005B637E /* PPU.swift */,
 				66796EC91CDCD2F80015E810 /* APU.swift */,
+				668B05F11CE1515600315BCD /* APUChannels.swift */,
 			);
 			name = Implementation;
 			sourceTree = "<group>";
@@ -243,6 +246,7 @@
 				66F44E9D1CC05494006F0A6E /* Shader.metal in Sources */,
 				665940911CC11CD300BEA04C /* DisplayWindow.swift in Sources */,
 				666146B01CA34BC40022C10D /* FileIO.swift in Sources */,
+				668B05F21CE1515600315BCD /* APUChannels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
