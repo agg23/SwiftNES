@@ -122,6 +122,7 @@ final class APU {
 	private var evenCycle: Bool;
 	
 	var cpu: CPU?;
+	var buffer: APUBuffer;
 	
 	init() {
 		self.dmcControl = 0;
@@ -158,10 +159,12 @@ final class APU {
 		
 		self.sampleCount = 0;
 		
-		self.output = [Int16](count: 2048, repeatedValue: 0);
+		self.output = [Int16](count: 0x2000, repeatedValue: 0);
 		self.outputIndex = 0;
 		
 		self.evenCycle = true;
+		
+		self.buffer = APUBuffer();
 	}
 	
 	// MARK: - APU Functions
@@ -177,16 +180,18 @@ final class APU {
 		
 		stepFrame();
 		
-		let sample1 = Int(Double(self.sampleCount) / (1789773.0 / 44100.0));
-		let sample2 = Int(Double(self.sampleCount + 1) / (1789773.0 / 44100.0));
+//		let sample1 = Int(Double(self.sampleCount) / (1789773.0 / 44100.0));
+//		let sample2 = Int(Double(self.sampleCount + 1) / (1789773.0 / 44100.0));
+//		
+//		//1789773 / 44100.0
+//		if(sample1 != sample2) {
+//			self.sampleCount = 0;
+//			loadOutput();
+//		} else {
+//			self.sampleCount += 1;
+//		}
 		
-		//1789773 / 44100.0
-		if(sample1 != sample2) {
-			self.sampleCount = 0;
-			loadOutput();
-		} else {
-			self.sampleCount += 1;
-		}
+		self.buffer.saveSample(Int16(outputValue() * 32767));
 		
 		if(self.irqDelay > -1) {
 			self.irqDelay -= 1;
@@ -325,18 +330,18 @@ final class APU {
 		return square_out + tnd_out;
 	}
 	
-	func loadOutput() {
-		let int_sample = Int16(outputValue() * 32767);
-		
-		self.output[self.outputIndex] = int_sample;
-		
-		self.outputIndex += 1;
-		
-		if(self.outputIndex > 2047) {
-			print("wrap");
-			self.outputIndex = 0;
-		}
-	}
+//	func loadOutput() {
+//		let int_sample = Int16(outputValue() * 32767);
+//		
+//		self.output[self.outputIndex] = int_sample;
+//		
+//		self.outputIndex += 1;
+//		
+//		if(self.outputIndex > 0x2000) {
+//			print("wrap");
+//			self.outputIndex = 0;
+//		}
+//	}
 	
 	// MARK: - APU Register Access
 	

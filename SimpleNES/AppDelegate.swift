@@ -25,27 +25,29 @@ var count = 0;
 func outputCallback(data: UnsafeMutablePointer<Void>, inAudioQueue: AudioQueueRef, inBuffer: AudioQueueBufferRef) {
 	let apu: APU = bridge(UnsafePointer<Void>(data));
 	
-	let array = UnsafeMutablePointer<Int16>(inBuffer.memory.mAudioData);
+	apu.buffer.loadBuffer(inBuffer);
 	
-	let output = apu.output;
-	var outputIndex = apu.outputIndex;
-	
-	if(outputIndex == 0) {
-		outputIndex = 1000;
-		for i in 0 ..< 1000 {
-			array[i] = 0;
-		}
-	} else {
-		for i in 0 ..< outputIndex {
-			array[i] = output[i];
-		}
-	}
-	
-	print(apu.outputIndex);
-	
-	apu.outputIndex = 0;
-	
-	inBuffer.memory.mAudioDataByteSize = UInt32(outputIndex) * 2;
+//	let array = UnsafeMutablePointer<Int16>(inBuffer.memory.mAudioData);
+//	
+//	let output = apu.output;
+//	var outputIndex = apu.outputIndex;
+//	
+//	if(outputIndex == 0) {
+//		outputIndex = 0x2000;
+//		for i in 0 ..< 0x2000 {
+//			array[i] = 0;
+//		}
+//	} else {
+//		for i in 0 ..< outputIndex {
+//			array[i] = output[i];
+//		}
+//	}
+//	
+//	print(apu.outputIndex);
+//	
+//	apu.outputIndex = 0;
+//	
+//	inBuffer.memory.mAudioDataByteSize = UInt32(outputIndex) * 2;
 	
 	AudioQueueEnqueueBuffer(inAudioQueue, inBuffer, 0, nil);
 }
@@ -98,7 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.queue = nil;
 		self.buffer = nil;
 		self.buffer2 = nil;
-		self.bufferByteSize = 4096;
+		self.bufferByteSize = 0x4000;
 		self.numPacketsToRead = 0;
 		self.packetsToPlay = 1;
 		
@@ -189,7 +191,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	// MARK: - Audio
 	
 	func initializeAudio() {
-		dataFormat.mSampleRate = 44100.0;
+		dataFormat.mSampleRate = 44744.0;
 		dataFormat.mFormatID = kAudioFormatLinearPCM;
 		
 		// Sort out endianness
