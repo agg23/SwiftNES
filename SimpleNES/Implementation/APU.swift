@@ -118,7 +118,8 @@ final class APU {
 	
 	var output: [Int16];
 	var outputIndex: Int;
-	
+	private var outputCycle: Int;
+	var sampleRateDivisor: Double;
 	private var evenCycle: Bool;
 	
 	var cpu: CPU?;
@@ -161,10 +162,15 @@ final class APU {
 		
 		self.output = [Int16](count: 0x2000, repeatedValue: 0);
 		self.outputIndex = 0;
+		self.outputCycle = 0;
+		
+		self.sampleRateDivisor = 1789773.0 / 44100.0;
 		
 		self.evenCycle = true;
 		
 		self.buffer = APUBuffer();
+		
+		self.buffer.apu = self;
 	}
 	
 	// MARK: - APU Functions
@@ -191,7 +197,12 @@ final class APU {
 //			self.sampleCount += 1;
 //		}
 		
-		self.buffer.saveSample(Int16(outputValue() * 32767));
+		let oldCycle = self.outputCycle;
+		self.outputCycle += 1;
+		
+		if(Int(Double(oldCycle) / self.sampleRateDivisor) != Int(Double(self.outputCycle) / self.sampleRateDivisor)) {
+			self.buffer.saveSample(Int16(outputValue() * 32767));
+		}
 		
 		if(self.irqDelay > -1) {
 			self.irqDelay -= 1;

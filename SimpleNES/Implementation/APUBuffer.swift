@@ -10,9 +10,11 @@ import Foundation
 import AudioToolbox
 
 final class APUBuffer {
-	private let BUFFERSIZE = 500000;
+	var apu: APU?;
+	
+	private let BUFFERSIZE = 44100;
 	// 31250
-	private let IDEALCAPACITY = 500000 * 0.7;
+	private let IDEALCAPACITY = 44100 * 0.4;
 	private let CPUFREQENCY = 1789773.0;
 	private let SAMPLERATE = 44100.0;
 	private let SAMPLERATEDIVISOR = 1789773.0 / 44100.0;
@@ -30,6 +32,8 @@ final class APUBuffer {
 	private var currentSampleRate: Double;
 	
 	init() {
+		self.apu = nil;
+		
 		self.fillBuffer = [Int](count: FILLBUFFERCOUNT, repeatedValue: Int(IDEALCAPACITY));
 		self.fillBufferIndex = 0;
 		
@@ -133,29 +137,35 @@ final class APUBuffer {
 		
 		var capacityModifier = 0.0;
 		
-		if((slope > 1 && sampleDelta < 0) || (slope < -1 && sampleDelta > 0)) {
+		if((slope > 0 && sampleDelta < 0) || (slope < 0 && sampleDelta > 0)) {
 			capacityModifier = fabs(slope)/4.0;
 			
-//			if(capacityModifier > 1) {
-//				capacityModifier = 1;
-//			} else if(capacityModifier < -1) {
-//				capacityModifier = -1;
-//			}
+			if(capacityModifier > 1) {
+				capacityModifier = 1;
+			} else if(capacityModifier < -1) {
+				capacityModifier = -1;
+			}
 		} else if((slope > 0 && sampleDelta > 0) || (slope < 0 && sampleDelta < 0)) {
-			let skew = sampleDelta / Double(size) * 20.0;
+			let skew = fabs(sampleDelta) / Double(size) * 20.0;
 			
 			capacityModifier = (fabs(slope) + skew) / 2.0;
 			
-//			if(capacityModifier > 2) {
-//				capacityModifier = 2;
-//			} else if(capacityModifier < -2) {
-//				capacityModifier = -2;
-//			}
+			if(sampleDelta < 0) {
+				capacityModifier = capacityModifier * -1;
+			}
+			
+			if(capacityModifier > 2) {
+				capacityModifier = 2;
+			} else if(capacityModifier < -2) {
+				capacityModifier = -2;
+			}
 		}
 		
-		let samplesToGet = Int(CPUFREQENCY / (SAMPLERATE + capacityModifier));
+		let samplesToGet = CPUFREQENCY / (SAMPLERATE + capacityModifier);
 		
-		print("Slope \(slope) Capacity \(capacityModifier) Samples \(samplesToGet)");
+		self.apu!.sampleRateDivisor = samplesToGet;
+		
+		print("Delta \(sampleDelta) Slope \(slope) Capacity \(capacityModifier) Samples \(samplesToGet) Size \(sampleCount)");
 		
 		for i in 0 ..< size {
 //			var capacityModifier = sampleCount / IDEALCAPACITY;
@@ -170,12 +180,12 @@ final class APUBuffer {
 //			
 			
 			
-			array[i] = normalizedSample(samplesToGet);
+			array[i] = self.buffer[self.startIndex];
 			
-			if(self.startIndex + samplesToGet >= BUFFERSIZE) {
-				self.startIndex = self.startIndex + samplesToGet - BUFFERSIZE;
-			} else {
-				self.startIndex += samplesToGet;
+			self.startIndex += 1;
+			
+			if(self.startIndex >= BUFFERSIZE) {
+				self.startIndex = 0;
 			}
 			
 			if(self.startIndex == self.endIndex) {
