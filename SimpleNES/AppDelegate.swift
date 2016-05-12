@@ -191,7 +191,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	// MARK: - Audio
 	
 	func initializeAudio() {
-		dataFormat.mSampleRate = 44744.0;
+		dataFormat.mSampleRate = 44100;
 		dataFormat.mFormatID = kAudioFormatLinearPCM;
 		
 		// Sort out endianness
