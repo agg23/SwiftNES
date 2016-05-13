@@ -14,11 +14,11 @@ final class APUBuffer {
 	
 	private let BUFFERSIZE = 44100;
 	// 31250
-	private let IDEALCAPACITY = 44100 * 0.4;
+	private let IDEALCAPACITY = 44100 * 0.2;
 	private let CPUFREQENCY = 1789773.0;
 	private let SAMPLERATE = 44100.0;
 	private let SAMPLERATEDIVISOR = 1789773.0 / 44100.0;
-	private let ALPHA = 0.000005;
+	private let ALPHA = 0.00005;
 	private let FILLBUFFERCOUNT = 60;
 	
 	private var fillBuffer: [Int];
@@ -108,92 +108,27 @@ final class APUBuffer {
 		
 		let size = Int(audioBuffer.memory.mAudioDataBytesCapacity / 2);
 		
-//		// Give a 20% tolerence for correction
-//		let originalTransferSize = Double(size) / 1.5;
-//
-//		let sampleCount =
-		
-		
-//		print(capacityModifier);
-		
-//		if(capacityModifier > 1.03) {
-//			capacityModifier = 1.03;
-//			print("Increasing");
-//		} else if(capacityModifier < 0.97) {
-//			print("Decreasing");
-//			capacityModifier = 0.97;
-//		}
-		
-//		let finalSampleCount = Int(originalTransferSize * capacityModifier);
-//		let samplesToGet = Int(SAMPLERATEDIVISOR * capacityModifier);
-//		print("Count: \(availableSampleCount()), Start: \(self.startIndex), End: \(self.endIndex)");
-		
 		let sampleCount = Double(availableSampleCount());
-		let sampleDelta = sampleCount - IDEALCAPACITY;
 		
-		updateRegression();
+		let capacityModifier = sampleCount / IDEALCAPACITY;
 		
-		let slope = linearRegression();
+		self.rollingSamplesToGet = ALPHA * SAMPLERATEDIVISOR * capacityModifier + (1 - ALPHA) * self.rollingSamplesToGet;
 		
-		var capacityModifier = 0.0;
-		
-		if((slope > 0 && sampleDelta < 0) || (slope < 0 && sampleDelta > 0)) {
-			capacityModifier = fabs(slope)/4.0;
-			
-			if(capacityModifier > 1) {
-				capacityModifier = 1;
-			} else if(capacityModifier < -1) {
-				capacityModifier = -1;
-			}
-		} else if((slope > 0 && sampleDelta > 0) || (slope < 0 && sampleDelta < 0)) {
-			let skew = fabs(sampleDelta) / Double(size) * 20.0;
-			
-			capacityModifier = (fabs(slope) + skew) / 2.0;
-			
-			if(sampleDelta < 0) {
-				capacityModifier = capacityModifier * -1;
-			}
-			
-			if(capacityModifier > 2) {
-				capacityModifier = 2;
-			} else if(capacityModifier < -2) {
-				capacityModifier = -2;
-			}
-		}
-		
-		let samplesToGet = CPUFREQENCY / (SAMPLERATE + capacityModifier);
-		
-		self.apu!.sampleRateDivisor = samplesToGet;
-		
-		print("Delta \(sampleDelta) Slope \(slope) Capacity \(capacityModifier) Samples \(samplesToGet) Size \(sampleCount)");
+		self.apu!.sampleRateDivisor = self.rollingSamplesToGet;
 		
 		for i in 0 ..< size {
-//			var capacityModifier = sampleCount / IDEALCAPACITY;
-			
-//			if(capacityModifier > 1.03) {
-//				capacityModifier = 1.03;
-////				print("Increasing");
-//			} else if(capacityModifier < 0.97) {
-////				print("Decreasing");
-//				capacityModifier = 0.97;
-//			}
-//			
-			
-			
 			array[i] = self.buffer[self.startIndex];
 			
 			self.startIndex += 1;
-			
+
 			if(self.startIndex >= BUFFERSIZE) {
 				self.startIndex = 0;
 			}
-			
+
 			if(self.startIndex == self.endIndex) {
 				print("Buffer underflow");
 			}
 		}
-		
-//		print(availableSampleCount());
 		
 		audioBuffer.memory.mAudioDataByteSize = UInt32(size * 2);
 	}
