@@ -114,10 +114,8 @@ final class APU {
 	
 	private var cycle: Int;
 	
-	private var sampleCount: Int;
-	
-	var output: [Int16];
-	var outputIndex: Int;
+	private var sampleBuffer: Double;
+	private var sampleCount: Double;
 	private var outputCycle: Int;
 	var sampleRateDivisor: Double;
 	private var evenCycle: Bool;
@@ -158,10 +156,8 @@ final class APU {
 		
 		self.cycle = 0;
 		
+		self.sampleBuffer = 0;
 		self.sampleCount = 0;
-		
-		self.output = [Int16](count: 0x2000, repeatedValue: 0);
-		self.outputIndex = 0;
 		self.outputCycle = 0;
 		
 		self.sampleRateDivisor = 1789773.0 / 44100.0;
@@ -180,28 +176,27 @@ final class APU {
 			// Square timers only tick every other cycle
 			self.square1.stepTimer();
 			self.square2.stepTimer();
+			self.noise.stepTimer();
 		}
 		
 		self.triangle.stepTimer();
 		
 		stepFrame();
 		
-//		let sample1 = Int(Double(self.sampleCount) / (1789773.0 / 44100.0));
-//		let sample2 = Int(Double(self.sampleCount + 1) / (1789773.0 / 44100.0));
-//		
-//		//1789773 / 44100.0
-//		if(sample1 != sample2) {
-//			self.sampleCount = 0;
-//			loadOutput();
-//		} else {
-//			self.sampleCount += 1;
-//		}
-		
 		let oldCycle = self.outputCycle;
 		self.outputCycle += 1;
 		
 		if(Int(Double(oldCycle) / self.sampleRateDivisor) != Int(Double(self.outputCycle) / self.sampleRateDivisor)) {
-			self.buffer.saveSample(Int16(outputValue() * 32767));
+			self.sampleBuffer += outputValue();
+			self.sampleCount += 1;
+			
+			self.buffer.saveSample(Int16(self.sampleBuffer / self.sampleCount * 65535) - 32767);
+			
+			self.sampleBuffer = 0;
+			self.sampleCount = 0;
+		} else {
+			self.sampleBuffer += outputValue();
+			self.sampleCount += 1;
 		}
 		
 		if(self.irqDelay > -1) {
@@ -313,6 +308,7 @@ final class APU {
 		var square1: Double = 0;
 		var square2: Double = 0;
 		var triangle: Double = 0;
+		var noise: Double = 0;
 		
 		if(self.square1Enable) {
 			square1 = Double(self.square1.output());
@@ -326,6 +322,10 @@ final class APU {
 			triangle = self.triangle.output() / 8227;
 		}
 		
+		if(self.noiseEnable) {
+			noise = Double(self.noise.output()) / 12241;
+		}
+		
 		var square_out: Double = 0;
 		
 		if(square1 + square2 != 0) {
@@ -335,24 +335,11 @@ final class APU {
 		var tnd_out: Double = 0;
 		
 		if(triangle != 0) {
-			tnd_out = 159.79/(1/(triangle + 0 + 0) + 100);
+			tnd_out = 159.79/(1/(triangle + noise + 0) + 100);
 		}
 		
 		return square_out + tnd_out;
 	}
-	
-//	func loadOutput() {
-//		let int_sample = Int16(outputValue() * 32767);
-//		
-//		self.output[self.outputIndex] = int_sample;
-//		
-//		self.outputIndex += 1;
-//		
-//		if(self.outputIndex > 0x2000) {
-//			print("wrap");
-//			self.outputIndex = 0;
-//		}
-//	}
 	
 	// MARK: - APU Register Access
 	

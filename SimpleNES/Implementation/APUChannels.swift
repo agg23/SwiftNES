@@ -16,6 +16,8 @@ class APURegister {
 	
 	let dutyTable: [[UInt8]] = [[0, 1, 0, 0, 0, 0, 0, 0], [0, 1, 1, 0, 0, 0, 0, 0], [0, 1, 1, 1, 1, 0, 0, 0], [1, 0, 0, 1, 1, 1, 1, 1]];
 	
+	let noiseTable: [UInt16] = [4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068];
+	
 	// Register 4
 	var lengthCounter: UInt8 {
 		didSet {
@@ -258,12 +260,12 @@ final class Triangle: APURegister {
 			self.wavelength = (self.wavelength & 0xFF) | (UInt16(lengthCounter & 0x7) << 8);
 			self.lengthCounterLoad = lengthTable[Int((lengthCounter >> 3) & 0x1F)];
 			self.timer = self.wavelength;
-			self.linearHalt = true;
+			self.linearReload = true;
 		}
 	}
 	
 	var linearCounter: UInt8;
-	var linearHalt: Bool;
+	var linearReload: Bool;
 	
 	var triangleGenerator: UInt8;
 	var triangleIncreasing: Bool;
@@ -275,21 +277,21 @@ final class Triangle: APURegister {
 		self.wavelengthLow = 0;
 		
 		self.linearCounter = 0;
-		self.linearHalt = false;
+		self.linearReload = false;
 		
 		self.triangleGenerator = 0;
 		self.triangleIncreasing = true;
 	}
 	
 	func stepLinear() {
-		if(self.linearHalt) {
+		if(self.linearReload) {
 			self.linearCounter = self.linearCounterLoad;
 		} else if(self.linearCounter > 0) {
 			self.linearCounter -= 1;
 		}
 		
 		if(!self.lengthCounterDisable) {
-			self.linearHalt = false;
+			self.linearReload = false;
 		}
 	}
 	
@@ -335,14 +337,16 @@ final class Noise: APURegister {
 	
 	var control: UInt8 {
 		didSet {
-			self.volume = control & 0xF;
+			self.constantVolume = control & 0xF;
+			self.envelopePeriod = self.constantVolume;
+			
 			self.envelopeDisable = control & 0x10 == 0x10;
 			self.lengthCounterDisable = control & 0x20 == 0x20;
 			self.dutyCycleType = (control >> 6) & 0x3;
 		}
 	}
 	// 4 bits
-	var volume: UInt8;
+	var constantVolume: UInt8;
 	var envelopeDisable: Bool;
 	var dutyCycleType: UInt8;
 	
@@ -351,29 +355,91 @@ final class Noise: APURegister {
 	// Register 3
 	var period: UInt8 {
 		didSet {
-			self.sampleRate = period & 0xF;
+			self.sampleRate = noiseTable[Int(period & 0xF)];
 			self.randomNumberGeneration = period & 0x80 == 0x80;
 		}
 	}
 	// 4 bits
-	var sampleRate: UInt8;
+	var sampleRate: UInt16;
 	// 3 unused bits
 	var randomNumberGeneration: Bool;
 	
 	// 3 unused bits in register 4 (msbWavelength)
+	override var lengthCounter: UInt8 {
+		didSet {
+			self.lengthCounterLoad = lengthTable[Int((lengthCounter >> 3) & 0x1F)];
+			self.envelopeShouldUpdate = true;
+		}
+	}
+	
+	var shiftRegister: UInt16;
+	
+	var envelopeShouldUpdate: Bool;
+	var envelopePeriod: UInt8;
+	var envelopeVolume: UInt8;
+	var envelopeValue: UInt8;
 	
 	override init() {
 		self.control = 0;
-		self.volume = 0;
+		self.constantVolume = 0;
 		self.envelopeDisable = false;
 		self.dutyCycleType = 0;
 		
 		self.period = 0;
 		self.sampleRate = 0;
 		self.randomNumberGeneration = false;
+		
+		self.shiftRegister = 1;
+		
+		self.envelopeShouldUpdate = false;
+		self.envelopePeriod = 0;
+		self.envelopeVolume = 0;
+		self.envelopeValue = 0;
+	}
+	
+	func stepTimer() {
+		if(self.timer == 0) {
+			self.timer = self.sampleRate;
+			
+			let shift: UInt16 = self.randomNumberGeneration ? 6 : 1;
+			
+			let bit0 = self.shiftRegister & 0x1;
+			let bit1 = (self.shiftRegister >> shift) & 0x1;
+			
+			self.shiftRegister = self.shiftRegister >> 1;
+			self.shiftRegister |= (bit0 ^ bit1) << 14;
+		} else {
+			self.timer -= 1;
+		}
 	}
 	
 	func stepEnvelope() {
+		if(self.envelopeShouldUpdate) {
+			self.envelopeVolume = 0xF;
+			self.envelopeValue = self.envelopePeriod;
+			self.envelopeShouldUpdate = false;
+		} else if(self.envelopeValue > 0) {
+			self.envelopeValue -= 1;
+		} else {
+			if(self.envelopeVolume > 0) {
+				self.envelopeVolume -= 1;
+			} else if(self.lengthCounterDisable) {
+				self.envelopeVolume = 0xF;
+			}
+			
+			self.envelopeValue = self.envelopePeriod;
+		}
+	}
+	
+	func output() -> UInt8 {
+		if(self.lengthCounterLoad == 0 || self.shiftRegister & 0x1 == 1) {
+			return 0;
+		}
 		
+		if(!self.envelopeDisable) {
+			return self.envelopeVolume;
+		}
+		
+		return self.constantVolume;
 	}
 }
