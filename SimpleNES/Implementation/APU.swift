@@ -332,11 +332,7 @@ final class APU {
 			square_out = 95.88/(8128/(square1 + square2) + 100);
 		}
 		
-		var tnd_out: Double = 0;
-		
-		if(triangle != 0) {
-			tnd_out = 159.79/(1/(triangle + noise + 0) + 100);
-		}
+		let tnd_out: Double = 159.79/(1/(triangle + noise + 0) + 100);
 		
 		return square_out + tnd_out;
 	}

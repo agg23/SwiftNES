@@ -296,10 +296,12 @@ final class Triangle: APURegister {
 	}
 	
 	func stepTriangleGenerator() {
-		if(self.triangleGenerator == 0) {
+		if(self.triangleGenerator == 0 && !self.triangleIncreasing) {
 			self.triangleIncreasing = true;
-		} else if(self.triangleGenerator == 0xF) {
+			return;
+		} else if(self.triangleGenerator == 0xF && self.triangleIncreasing) {
 			self.triangleIncreasing = false;
+			return;
 		}
 		
 		if(self.triangleIncreasing) {
