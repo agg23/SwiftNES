@@ -453,6 +453,8 @@ final class PPU: NSObject {
 				self.cycle = 340;
 				
 				return;
+			} else if(self.cycle > 320) {
+				visibleScanlineTick();
 			}
 			
 			if(self.cycle == 304 && self.shouldRender) {

@@ -219,8 +219,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	// MARK: - Graphics
 	
 	func render(inout screen: [UInt32]) {
-		let width = 256 * 2;
-		let height = 240 * 2;
+		let width = Int(256 * self.scalingFactor);
+		let height = Int(240 * self.scalingFactor);
 		
 		let bitsPerComponent = 8;
 		
@@ -260,6 +260,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	
 	func applicationWillTerminate(aNotification: NSNotification) {
         // Insert code here to tear down your application
+		self.ppu.dumpMemory();
 		self.logger.endLogging();
     }
 
