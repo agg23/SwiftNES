@@ -190,7 +190,7 @@ final class APU {
 			self.sampleBuffer += outputValue();
 			self.sampleCount += 1;
 			
-			self.buffer.saveSample(Int16(self.sampleBuffer / self.sampleCount * 65535) - 32767);
+			self.buffer.saveSample(Int16(self.sampleBuffer / self.sampleCount * 32767));
 			
 			self.sampleBuffer = 0;
 			self.sampleCount = 0;

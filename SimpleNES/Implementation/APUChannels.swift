@@ -239,7 +239,6 @@ final class Triangle: APURegister {
 	var control: UInt8 {
 		didSet {
 			self.linearCounterLoad = control & 0x7F;
-			self.linearCounter = self.linearCounterLoad;
 			self.lengthCounterDisable = control & 0x80 == 0x80;
 		}
 	}
