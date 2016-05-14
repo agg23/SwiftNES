@@ -100,7 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.queue = nil;
 		self.buffer = nil;
 		self.buffer2 = nil;
-		self.bufferByteSize = 0x1000;
+		self.bufferByteSize = 0x700;
 		self.numPacketsToRead = 0;
 		self.packetsToPlay = 1;
 		
