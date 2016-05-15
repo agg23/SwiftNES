@@ -75,7 +75,7 @@ final class CPU: NSObject {
 	private var dummyReadAddress = 0;
 	
 	/**
-	 True if CPU is current running an OAM transfer
+	 True if CPU is currently running an OAM transfer
 	*/
 	private var oamTransfer = false;
 	
@@ -90,6 +90,11 @@ final class CPU: NSObject {
 	 Stores whether OAM transfer will have an extra cycle
 	*/
 	private var oamExtraCycle = false;
+	
+	/**
+	 True if CPU is currently running a DMC transfer
+	*/
+	private var dmcTransfer = false;
 	
 	/**
 	 True if an error occurred
@@ -203,6 +208,13 @@ final class CPU: NSObject {
 			
 			self.oamTransfer = false;
 			
+			return true;
+		} else if(self.dmcTransfer) {
+			for _ in 0 ..< 4 {
+				ppuStep();
+			}
+			
+			self.dmcTransfer = false;
 			return true;
 		}
 		
@@ -1072,6 +1084,10 @@ final class CPU: NSObject {
 		}
 		
 		self.oamDMAAddress = Int((UInt16(self.ppu.OAMDMA) << 8) & 0xFF00);
+	}
+	
+	func startDMCTransfer() {
+		self.dmcTransfer = true;
 	}
 	
     // MARK: - PC Operations

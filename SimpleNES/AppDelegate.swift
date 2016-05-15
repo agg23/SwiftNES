@@ -115,7 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
 		fileIO.loadFile("/Users/adam/testROMs/games/smb.nes");
 		
-		self.apu = APU();
+		self.apu = APU(memory: mainMemory);
 		
 		self.ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
 		

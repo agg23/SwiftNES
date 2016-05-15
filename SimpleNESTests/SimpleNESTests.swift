@@ -37,7 +37,7 @@ class SimpleNESTests: XCTestCase {
 		
 		let ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
 		
-		let apu = APU();
+		let apu = APU(memory: mainMemory);
 		
 		mainMemory.ppu = ppu;
 		mainMemory.apu = apu;

@@ -444,3 +444,148 @@ final class Noise: APURegister {
 		return self.constantVolume;
 	}
 }
+
+final class DMC {
+	let rateTable: [UInt16] = [428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 84, 72, 54];
+	
+	var control: UInt8 {
+		didSet {
+			self.irqEnabled = control & 0x80 == 0x80;
+			
+			if(!self.irqEnabled) {
+				self.dmcIRQ = false;
+			}
+			
+			self.loopEnabled = control & 0x40 == 0x40;
+			self.rate = self.rateTable[Int(control & 0xF)];
+			self.timer = self.rate;
+		}
+	}
+	
+	var irqEnabled: Bool;
+	var loopEnabled: Bool;
+	var rate: UInt16;
+	
+	var directLoad: UInt8 {
+		didSet {
+			self.volume = directLoad & 0x7F;
+		}
+	}
+	
+	var address: UInt8 {
+		didSet {
+			self.currentAddress = 0xC000 | (Int(address) << 6);
+		}
+	}
+	
+	private var currentAddress: Int;
+	
+	var sampleLength: UInt8 {
+		didSet {
+//			self.sampleLengthRemaining = (UInt16(sampleLength) << 4) | 1;
+		}
+	}
+	
+	var sampleLengthRemaining: UInt16;
+	
+	private var timer: UInt16;
+	private var volume: UInt8;
+	var dmcIRQ: Bool;
+	
+	private var shiftCount: Int;
+	
+	var buffer: UInt8;
+	
+	let memory: Memory;
+	var cpu: CPU?;
+	
+	init(memory: Memory) {
+		self.memory = memory;
+		self.cpu = nil;
+		
+		self.control = 0;
+		self.irqEnabled = false;
+		self.loopEnabled = false;
+		self.rate = 0;
+		
+		self.directLoad = 0;
+		
+		self.address = 0;
+		self.currentAddress = 0;
+		
+		self.sampleLength = 0;
+		self.sampleLengthRemaining = 0;
+		
+		self.timer = 0;
+		self.volume = 0;
+		self.dmcIRQ = false;
+		self.shiftCount = 0;
+		
+		self.buffer = 0;
+	}
+	
+	func restart() {
+		self.currentAddress = 0xC000 | (Int(self.address) << 6);
+		self.sampleLengthRemaining = (UInt16(self.sampleLength) << 4) | 1;
+	}
+	
+	func stepTimer() {
+		stepReader();
+		
+		if(self.timer == 0) {
+			self.timer = self.rate;
+			stepShifter();
+		} else {
+			self.timer -= 1;
+		}
+	}
+	
+	func stepReader() {
+		if(self.sampleLengthRemaining > 0 && self.shiftCount == 0) {
+			// TODO: Delay CPU by 4 cycles (varies, see http://forums.nesdev.com/viewtopic.php?p=62690#p62690)
+			self.cpu!.startDMCTransfer();
+			self.buffer = self.memory.readMemory(self.currentAddress);
+			
+			self.shiftCount = 8;
+			
+			self.currentAddress += 1;
+			
+			if(self.currentAddress > 0xFFFF) {
+				self.currentAddress = 0x8000;
+			}
+			
+			self.sampleLengthRemaining -= 1;
+			
+			if(self.sampleLengthRemaining == 0) {
+				if(self.loopEnabled) {
+					restart();
+				} else if(self.irqEnabled) {
+					self.dmcIRQ = true;
+				}
+			}
+		}
+	}
+	
+	func stepShifter() {
+		if(self.shiftCount == 0) {
+			return;
+		}
+		
+		if(self.buffer & 0x1 == 0x1) {
+			if(self.volume < 126) {
+				self.volume += 2;
+			}
+		} else {
+			if(self.volume > 1) {
+				self.volume -= 2;
+			}
+		}
+		
+		self.buffer = self.buffer >> 1;
+		self.shiftCount -= 1;
+	}
+	
+	func output() -> UInt8 {
+		return self.volume;
+	}
+}

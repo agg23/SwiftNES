@@ -11,45 +11,13 @@ import Foundation
 final class APU {
 	// MARK: - APU Registers
 	
-	private var dmcControl: UInt8 {
-		didSet {
-			self.dmcFrequencyControl = dmcControl & 0xF;
-			self.dmcLoop = dmcControl & 0x40 == 0x40;
-			self.dmcGenerateIRQ = dmcControl & 0x80 == 0x80;
-		}
-	}
-	
-	private var dmcFrequencyControl: UInt8;
-	private var dmcLoop: Bool;
-	private var dmcGenerateIRQ: Bool;
-	
-	private var deltaCounterLoad: UInt8 {
-		didSet {
-			// TODO: Handle LSB of DAC
-			self.dmcDeltaCounter = (deltaCounterLoad >> 1) & 0x3F;
-		}
-	}
-	
-	private var dmcDeltaCounter: UInt8;
-	
-	private var dmcAddressLoad: UInt8 {
-		didSet {
-			// TODO: Handle DMC address load
-		}
-	}
-	
-	private var dmcLength: UInt8 {
-		didSet {
-			// TODO: Handle DMC length
-		}
-	}
-	
 	private var control: UInt8 {
 		didSet {
 			self.square1Enable = control & 0x1 == 0x1;
 			self.square2Enable = control & 0x2 == 0x2;
 			self.triangleEnable = control & 0x4 == 0x4;
 			self.noiseEnable = control & 0x8 == 0x8;
+			self.dmcEnable = control & 0x10 == 0x10;
 			
 			if(!self.square1Enable) {
 				self.square1.lengthCounterLoad = 0;
@@ -67,7 +35,13 @@ final class APU {
 				self.noise.lengthCounterLoad = 0;
 			}
 			
-			// TODO: Handle disabling DMC playback if bit 4 is clear
+			if(!self.dmcEnable) {
+				self.dmc.sampleLengthRemaining = 0;
+			} else if(self.dmc.sampleLengthRemaining == 0) {
+				self.dmc.restart();
+			}
+			
+			self.dmc.dmcIRQ = false;
 		}
 	}
 	
@@ -75,7 +49,7 @@ final class APU {
 	private var square2Enable: Bool;
 	private var triangleEnable: Bool;
 	private var noiseEnable: Bool;
-	
+	private var dmcEnable: Bool;
 	
 	private var timerControl: UInt8 {
 		didSet {
@@ -108,6 +82,7 @@ final class APU {
 	private let square2: Square;
 	private let triangle: Triangle;
 	private let noise: Noise;
+	private let dmc: DMC;
 	
 	private var frameIRQ: Bool;
 	private var irqDelay: Int;
@@ -120,27 +95,20 @@ final class APU {
 	var sampleRateDivisor: Double;
 	private var evenCycle: Bool;
 	
-	var cpu: CPU?;
+	var cpu: CPU? {
+		didSet {
+			self.dmc.cpu = cpu;
+		}
+	}
 	var buffer: APUBuffer;
 	
-	init() {
-		self.dmcControl = 0;
-		self.dmcFrequencyControl = 0;
-		self.dmcLoop = false;
-		self.dmcGenerateIRQ = false;
-		
-		self.deltaCounterLoad = 0;
-		self.dmcDeltaCounter = 0;
-		
-		self.dmcAddressLoad = 0;
-		
-		self.dmcLength = 0;
-		
+	init(memory: Memory) {
 		self.control = 0;
 		self.square1Enable = false;
 		self.square2Enable = false;
 		self.triangleEnable = false;
 		self.noiseEnable = false;
+		self.dmcEnable = false;
 		
 		self.timerControl = 0;
 		self.disableIRQ = false;
@@ -150,6 +118,7 @@ final class APU {
 		self.square2 = Square(isChannel2: true);
 		self.triangle = Triangle();
 		self.noise = Noise();
+		self.dmc = DMC(memory: memory);
 		
 		self.frameIRQ = false;
 		self.irqDelay = -1;
@@ -180,6 +149,7 @@ final class APU {
 		}
 		
 		self.triangle.stepTimer();
+		self.dmc.stepTimer();
 		
 		stepFrame();
 		
@@ -309,6 +279,7 @@ final class APU {
 		var square2: Double = 0;
 		var triangle: Double = 0;
 		var noise: Double = 0;
+		var dmc: Double = 0;
 		
 		if(self.square1Enable) {
 			square1 = Double(self.square1.output());
@@ -326,13 +297,17 @@ final class APU {
 			noise = Double(self.noise.output()) / 12241;
 		}
 		
+		if(self.dmcEnable) {
+			dmc = Double(self.dmc.output()) / 22638;
+		}
+		
 		var square_out: Double = 0;
 		
 		if(square1 + square2 != 0) {
 			square_out = 95.88/(8128/(square1 + square2) + 100);
 		}
 		
-		let tnd_out: Double = 159.79/(1/(triangle + noise + 0) + 100);
+		let tnd_out: Double = 159.79/(1/(triangle + noise + dmc) + 100);
 		
 		return square_out + tnd_out;
 	}
@@ -382,13 +357,13 @@ final class APU {
 					self.noise.lengthCounter = data;
 				}
 			case 0x4010:
-				self.dmcControl = data;
+				self.dmc.control = data;
 			case 0x4011:
-				self.deltaCounterLoad = data;
+				self.dmc.directLoad = data;
 			case 0x4012:
-				self.dmcAddressLoad = data;
+				self.dmc.address = data;
 			case 0x4013:
-				self.dmcLength = data;
+				self.dmc.sampleLength = data;
  			case 0x4015:
 				self.control = data;
 			case 0x4017:
@@ -404,11 +379,12 @@ final class APU {
 			temp |= (self.square2.lengthCounterLoad == 0 || !self.square2Enable) ? 0 : 0x2;
 			temp |= (self.triangle.lengthCounterLoad == 0 || !self.triangleEnable) ? 0 : 0x4;
 			temp |= (self.noise.lengthCounterLoad == 0 || !self.noiseEnable) ? 0 : 0x8;
+			temp |= (self.dmc.sampleLengthRemaining == 0 || !self.dmcEnable) ? 0 : 0x10;
 			
-			// TODO: Return DMC length counter status
 			temp |= self.frameIRQ ? 0x40 : 0;
 			self.frameIRQ = false;
-			// TODO: Return DMC IRQ status
+			
+			temp |= (!self.dmc.dmcIRQ || !self.dmcEnable) ? 0 : 0x80;
 			
 			return temp;
 		} else {
