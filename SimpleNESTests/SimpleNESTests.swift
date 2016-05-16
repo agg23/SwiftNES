@@ -149,12 +149,12 @@ class SimpleNESTests: XCTestCase {
 	
 	func testInstructionTiming() {
 		// Needs implemented APU
-		romTest(defaultPath + "instr_timing/rom_singles/1-instr_timing.nes ", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_timing/rom_singles/1-instr_timing.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 50000000);
 	}
 	
 	func testBranchTiming() {
 		// Needs implemented APU
-		romTest(defaultPath + "instr_timing/rom_singles/2-branch_timing.nes ", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+		romTest(defaultPath + "instr_timing/rom_singles/2-branch_timing.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 50000000);
 	}
 	
 	// MARK: - Instruction Execution from Any Address

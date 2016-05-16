@@ -1007,6 +1007,10 @@ final class CPU: NSObject {
 	 Sets a interrupt to trigger upon the next clock cycle
 	*/
 	func queueInterrupt(interrupt: Interrupt?) {
+		if(interrupt == Interrupt.IRQ && getPBit(2)) {
+			return;
+		}
+		
 		self.interrupt = interrupt;
 		self.interruptDelay = false;
 	}
@@ -1518,7 +1522,7 @@ final class CPU: NSObject {
 		self.A = UInt8(temp & 0xFF);
 		
 		if(self.pageCrossed) {
-			ppuStep();
+			readCycle(self.dummyReadAddress);
 		}
     }
     
@@ -1556,7 +1560,7 @@ final class CPU: NSObject {
 		self.A = UInt8(temp & 0xFF);
 		
 		if(self.pageCrossed) {
-			ppuStep();
+			readCycle(self.dummyReadAddress);
 		}
     }
 	
@@ -1581,7 +1585,7 @@ final class CPU: NSObject {
 		setPBit(1, value: ((value & 0xFF) == 0));
 		
 		if(mode == .AbsoluteIndexedX) {
-			readCycle(address);
+			readCycle(self.dummyReadAddress);
 		}
 		
 		writeCycle(address, data: UInt8(value & 0xFF));
@@ -1709,7 +1713,7 @@ final class CPU: NSObject {
 		setPBit(1, value: ((value & 0xFF) == 0));
 		
 		if(mode == .AbsoluteIndexedX) {
-			readCycle(address);
+			readCycle(self.dummyReadAddress);
 		}
 		
 		writeCycle(address, data: UInt8(value & 0xFF));
@@ -1788,7 +1792,7 @@ final class CPU: NSObject {
             setPBit(1, value: (temp == 0));
 			
 			if(mode == .AbsoluteIndexedX) {
-				readCycle(address);
+				readCycle(self.dummyReadAddress);
 			}
             
             writeCycle(address, data: temp);
@@ -1865,7 +1869,7 @@ final class CPU: NSObject {
             setPBit(1, value: (temp == 0));
 			
 			if(mode == .AbsoluteIndexedX) {
-				readCycle(address);
+				readCycle(self.dummyReadAddress);
 			}
             
             writeCycle(address, data: temp);
@@ -2092,7 +2096,7 @@ final class CPU: NSObject {
         setPBit(1, value: (self.A == 0));
 		
 		if(self.pageCrossed) {
-			ppuStep();
+			readCycle(self.dummyReadAddress);
 		}
     }
     
@@ -2109,7 +2113,7 @@ final class CPU: NSObject {
         setPBit(1, value: (self.A == 0));
         
 		if(self.pageCrossed) {
-			ppuStep();
+			readCycle(self.dummyReadAddress);
 		}
     }
     
@@ -2126,7 +2130,7 @@ final class CPU: NSObject {
         setPBit(1, value: (self.A == 0));
         
 		if(self.pageCrossed) {
-			ppuStep();
+			readCycle(self.dummyReadAddress);
 		}
     }
 	
@@ -2281,7 +2285,7 @@ final class CPU: NSObject {
         setPBit(0, value: (self.A >= mem));
         
 		if(self.pageCrossed) {
-			ppuStep();
+			readCycle(self.dummyReadAddress);
 		}
     }
     
