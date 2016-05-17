@@ -365,15 +365,15 @@ final class CPU: NSObject {
 			
 			// LSR
 			case 0x4A:
-				 LSR(.Accumulator);
+				 LSR(.Accumulator, dummyRead: true);
 			case 0x46:
-				 LSR(.ZeroPage);
+				 LSR(.ZeroPage, dummyRead: true);
 			case 0x56:
-				 LSR(.ZeroPageIndexedX);
+				 LSR(.ZeroPageIndexedX, dummyRead: true);
 			case 0x4E:
-				 LSR(.Absolute);
+				 LSR(.Absolute, dummyRead: true);
 			case 0x5E:
-				 LSR(.AbsoluteIndexedX);
+				 LSR(.AbsoluteIndexedX, dummyRead: true);
 			
 			// RTS
 			case 0x60:
@@ -676,15 +676,15 @@ final class CPU: NSObject {
 				
 			// ROR
 			case 0x6A:
-				 ROR(.Accumulator);
+				 ROR(.Accumulator, dummyRead: true);
 			case 0x66:
-				 ROR(.ZeroPage);
+				 ROR(.ZeroPage, dummyRead: true);
 			case 0x76:
-				 ROR(.ZeroPageIndexedX);
+				 ROR(.ZeroPageIndexedX, dummyRead: true);
 			case 0x6E:
-				 ROR(.Absolute);
+				 ROR(.Absolute, dummyRead: true);
 			case 0x7E:
-				 ROR(.AbsoluteIndexedX);
+				 ROR(.AbsoluteIndexedX, dummyRead: true);
             
             // RRA
             case 0x6F:
@@ -825,6 +825,20 @@ final class CPU: NSObject {
 			// TYA
 			case 0x98:
 				 TYA();
+			
+			// TAS
+			case 0x9B:
+				TAS();
+			
+			// AXA
+			case 0x9F:
+				AXA(.AbsoluteIndexedY);
+			case 0x93:
+				AXA(.IndirectY);
+			
+			// LAS
+			case 0xBB:
+				LAS();
 			
 			default:
 				print("ERROR: Instruction with opcode 0x\(logger.hexString(opcode, padding: 2)) not found");
@@ -1457,6 +1471,47 @@ final class CPU: NSObject {
 		setPBit(1, value: (self.A == 0));
 	}
 	
+	/**
+	 Transfer A AND X into S and Store (Unofficial)
+	*/
+	func TAS() {
+		self.SP = self.A & self.X;
+		
+		ppuStep();
+		
+		let address = addressUsingAddressingMode(.AbsoluteIndexedY);
+		
+		writeCycle(address, data: self.SP & self.PCH);
+	}
+	
+	/**
+	 AND X with A AND 7 and store (Unofficial)
+	*/
+	func AXA(mode: AddressingMode) {
+		let temp = self.A & self.X & 0x7;
+		
+		ppuStep();
+		
+		let address = addressUsingAddressingMode(mode);
+		
+		writeCycle(address, data: temp);
+	}
+	
+	/**
+	 Load A, X, S from address AND S (Unofficial)
+	*/
+	func LAS() {
+		let memory = readFromMemoryUsingAddressingMode(.AbsoluteIndexedY) & self.SP;
+		
+		self.A = memory;
+		self.X = memory;
+		self.SP = memory;
+		
+		if(self.pageCrossed) {
+			ppuStep();
+		}
+	}
+	
     /**
      JuMP
     */
@@ -1829,10 +1884,12 @@ final class CPU: NSObject {
     /**
      Logical Shift Right
     */
-    func LSR(mode: AddressingMode) {
+	func LSR(mode: AddressingMode, dummyRead: Bool) {
         if(mode == .Accumulator) {
 			// Dummy read
-			readCycle(Int(getPC()));
+			if(dummyRead) {
+				readCycle(Int(getPC()));
+			}
 			
 			// Set negative flag
             setPBit(7, value: false);
@@ -1958,10 +2015,12 @@ final class CPU: NSObject {
 	/**
 	 ROtate Right
 	*/
-	func ROR(mode: AddressingMode) {
+	func ROR(mode: AddressingMode, dummyRead: Bool) {
 		if(mode == .Accumulator) {
 			// Dummy read
-			readCycle(Int(getPC()));
+			if(dummyRead) {
+				readCycle(Int(getPC()));
+			}
 			
 			let carry = self.A & 0x1;
 			
@@ -2154,11 +2213,9 @@ final class CPU: NSObject {
 	/**
 	 AND immediate with A, then shift right 1 (unofficial)
 	*/
-	func ALR() -> Int {
+	func ALR() {
 		AND(.Immediate);
-		LSR(.Accumulator);
-		
-		return 2;
+		LSR(.Accumulator, dummyRead: false);
 	}
 	
 	/**
@@ -2166,7 +2223,7 @@ final class CPU: NSObject {
 	*/
 	func ARR() -> Int {
 		AND(.Immediate);
-		ROR(.Accumulator);
+		ROR(.Accumulator, dummyRead: false);
 		
 		let bit5 = (self.A >> 5) & 0x1 == 1;
 		let bit6 = (self.A >> 6) & 0x1 == 1;
@@ -2248,7 +2305,9 @@ final class CPU: NSObject {
 		
 		let high = self.X & UInt8(((address >> 8) + Int(1)) & 0xFF);
 		
-		self.mainMemory.writeMemory((Int(high) << 8) | (address & 0xFF), data: self.X);
+		ppuStep();
+		
+		writeCycle((Int(high) << 8) | (address & 0xFF), data: self.X);
 	}
 	
 	/**
@@ -2259,7 +2318,9 @@ final class CPU: NSObject {
 		
 		let high = self.Y & UInt8(((address >> 8) + Int(1)) & 0xFF);
 		
-		self.mainMemory.writeMemory((Int(high) << 8) | (address & 0xFF), data: self.Y);
+		ppuStep();
+		
+		writeCycle((Int(high) << 8) | (address & 0xFF), data: self.Y);
 	}
 	
     // MARK: Flow Control
