@@ -173,7 +173,7 @@ final class APU {
 			self.irqDelay -= 1;
 			
 			if(self.irqDelay == 0) {
-				self.cpu!.queueInterrupt(CPU.Interrupt.IRQ);
+//				self.cpu!.queueInterrupt(CPU.Interrupt.IRQ);
 				self.irqDelay = -1;
 			}
 		}

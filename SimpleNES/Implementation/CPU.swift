@@ -1007,10 +1007,6 @@ final class CPU: NSObject {
 	 Sets a interrupt to trigger upon the next clock cycle
 	*/
 	func queueInterrupt(interrupt: Interrupt?) {
-		if(interrupt == Interrupt.IRQ && getPBit(2)) {
-			return;
-		}
-		
 		self.interrupt = interrupt;
 		self.interruptDelay = false;
 	}
