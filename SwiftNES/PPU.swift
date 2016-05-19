@@ -391,6 +391,22 @@ final class PPU: NSObject {
 	}
 	
 	func step() {
+		self.cycle += 1;
+		
+		if(self.cycle == 341) {
+			self.cycle = 0;
+			if(self.scanline == 260) {
+				// Frame completed
+				self.scanline = -1;
+				
+				self.evenFrame = !self.evenFrame;
+				
+				self.frameReady = true;
+			} else {
+				scanline += 1;
+			}
+		}
+		
 		if(self.nmiDelay > 0) {
 			self.nmiDelay -= 1;
 			if(self.nmiDelay == 0 && self.generateNMI && self.vblank) {
@@ -445,7 +461,7 @@ final class PPU: NSObject {
 				clearVBlank();
 			} else if(!self.evenFrame && self.cycle == 338 && self.shouldRender) {
 				// Skip tick on odd frame
-				self.cycle = 340;
+				self.cycle = 339;
 				
 				return;
 			} else if(self.cycle > 320) {
@@ -461,8 +477,6 @@ final class PPU: NSObject {
 			visibleScanlineTick();
 		}
 		
-		self.cycle += 1;
-		
 		if(!self.lastWrittenRegisterDecayed) {
 			self.lastWrittenRegisterSetCycle += 1;
 			
@@ -473,23 +487,6 @@ final class PPU: NSObject {
 			}
 		}
 		
-		if(self.cycle == 341) {
-			self.cycle = 0;
-			if(self.scanline == 260) {
-				// Frame completed
-				self.scanline = -1;
-				
-				self.evenFrame = !self.evenFrame;
-				
-				self.frameReady = true;
-				
-				return;
-			} else {
-				scanline += 1;
-			}
-		}
-		
-		return;
 	}
 	
 	func visibleScanlineTick() {
@@ -966,9 +963,9 @@ final class PPU: NSObject {
 		nmiChange();
 		
 		if(self.scanline == 241) {
-			if(self.cycle == 1) {
+			if(self.cycle + 1 == 1) {
 				self.suppressVBlankFlag = true;
-			} else if(self.cycle == 2 && self.cyclesSinceNMI != -1) {
+			} else if(self.cycle + 1 == 2 && self.cyclesSinceNMI != -1) {
 				self.cpu!.clearNMI();
 			}
 		}

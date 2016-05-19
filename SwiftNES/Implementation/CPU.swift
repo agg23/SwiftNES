@@ -232,11 +232,8 @@ final class CPU: NSObject {
 		}
 		
 		if(self.previousInterruptWaiting) {
-//			if(self.interruptDelay) {
-//				// Delay interrupt by one instruction
-//				self.interruptDelay = false;
 			if(self.previousIRQTriggered) {
-				if(!getPBit(2)) {
+				if(!getPBit(2) || self.previousBRKSetIRQ) {
 					handleInterrupt();
 					
 					return true;
@@ -248,11 +245,13 @@ final class CPU: NSObject {
 			}
 		}
 		
-		let opcode = fetchPC();
-		
-//		self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: 0, SL: 0);
+//		let cycle = self.ppu.cycle;
+//		let scanline = self.ppu.scanline;
 		
 		ppuStep();
+		let opcode = fetchPC();
+		
+//		self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: cycle, SL: scanline);
 		
 		switch opcode {
 			// LDA
@@ -1096,9 +1095,12 @@ final class CPU: NSObject {
 			self.nmiTriggered = false;
 		} else if(self.previousIRQTriggered) {
 			PCLAddr = 0xFFFE;
-			PCLAddr = 0xFFFF;
+			PCHAddr = 0xFFFF;
 			
-			self.brkSetIRQ = false;
+			if(self.brkSetIRQ) {
+				self.irqTriggered = false;
+				self.brkSetIRQ = false;
+			}
 		} else {
 			// TODO: Handle reset case?
 		}
@@ -1171,7 +1173,12 @@ final class CPU: NSObject {
     */
     func BRK() {
 		queueIRQ();
+		
 		self.brkSetIRQ = true;
+		self.previousBRKSetIRQ = true;
+		
+		self.previousInterruptWaiting = true;
+		self.previousIRQTriggered = true;
     }
     
     /**
