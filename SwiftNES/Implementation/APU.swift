@@ -111,7 +111,7 @@ final class APU {
 		self.dmcEnable = false;
 		
 		self.timerControl = 0;
-		self.disableIRQ = false;
+		self.disableIRQ = true;
 		self.framerateSwitch = false;
 		
 		self.square1 = Square();
@@ -173,7 +173,7 @@ final class APU {
 			self.irqDelay -= 1;
 			
 			if(self.irqDelay == 0) {
-//				self.cpu!.queueInterrupt(CPU.Interrupt.IRQ);
+				self.cpu!.queueIRQ();
 				self.irqDelay = -1;
 			}
 		}

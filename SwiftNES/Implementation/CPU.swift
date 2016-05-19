@@ -48,7 +48,9 @@ final class CPU: NSObject {
 	private var Y: UInt8;
 	
 	
-	var interruptDelay = false;
+	private var interruptDelay = false;
+	private var potentialCLILatencyDelay = false;
+	private var cliLatencyDelay = false;
 
 	private let mainMemory: Memory;
     private let ppu: PPU;
@@ -139,7 +141,13 @@ final class CPU: NSObject {
 	/**
 	 Stores whether an interrupt occured on the previous cycle (when the NES polls the interrupt lines)
 	*/
-	var previousInterruptWaiting: Bool;
+	var previousInterruptWaiting: Bool {
+		didSet {
+			if(!previousInterruptWaiting) {
+				self.interruptDelay = false;
+			}
+		}
+	}
 	var previousNMITriggered: Bool;
 	var previousIRQTriggered: Bool;
 	var previousBRKSetIRQ: Bool;
@@ -232,17 +240,32 @@ final class CPU: NSObject {
 		}
 		
 		if(self.previousInterruptWaiting) {
-			if(self.previousIRQTriggered) {
-				if(!getPBit(2) || self.previousBRKSetIRQ) {
+			if(self.interruptDelay && !(self.previousIRQTriggered && getPBit(2))) {
+				self.interruptDelay = false;
+				self.potentialCLILatencyDelay = true;
+				self.cliLatencyDelay = true;
+			} else if(self.previousNMITriggered) {
+				handleInterrupt();
+				self.potentialCLILatencyDelay = false;
+				
+				return true;
+			} else if(self.previousIRQTriggered) {
+				if(!getPBit(2) || self.previousBRKSetIRQ || self.cliLatencyDelay) {
 					handleInterrupt();
+					self.cliLatencyDelay = false;
+					self.potentialCLILatencyDelay = false;
 					
 					return true;
 				}
 			} else {
-				handleInterrupt();
+				print("Error");
 				
-				return true;
+				return false;
 			}
+		} else {
+			self.cliLatencyDelay = false;
+			self.interruptDelay = false;
+			self.potentialCLILatencyDelay = false;
 		}
 		
 //		let cycle = self.ppu.cycle;
@@ -1199,6 +1222,11 @@ final class CPU: NSObject {
 		
 		// Force unused flag to be set
 		setPBit(5, value: true);
+		
+		if(self.potentialCLILatencyDelay) {
+			self.potentialCLILatencyDelay = false;
+			self.cliLatencyDelay = false;
+		}
     }
     
     /**
@@ -1277,6 +1305,9 @@ final class CPU: NSObject {
 		
 		// Ensure unused bit is set
 		setPBit(5, value: true);
+		if(!self.potentialCLILatencyDelay) {
+			self.interruptDelay = true;
+		}
     }
     
     /**
@@ -2629,6 +2660,7 @@ final class CPU: NSObject {
 	func CLI() {
 		ppuStep();
 		setPBit(2, value: false);
+		self.interruptDelay = true;
 	}
 	
 	/**
