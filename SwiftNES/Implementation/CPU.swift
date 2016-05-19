@@ -48,11 +48,6 @@ final class CPU: NSObject {
 	private var Y: UInt8;
 	
 	
-	/**
-	 The queued interrupt
-	*/
-	private var interrupt: Interrupt?;
-	
 	var interruptDelay = false;
 
 	private let mainMemory: Memory;
@@ -127,15 +122,27 @@ final class CPU: NSObject {
         case Relative
     }
 	
-	enum Interrupt {
-		case VBlank
-		
-		case RESET
-		
-		case Software
-		
-		case IRQ
+	var interruptWaiting: Bool;
+	var nmiTriggered: Bool {
+		didSet {
+			self.interruptWaiting = nmiTriggered || self.irqTriggered;
+		}
 	}
+	
+	var irqTriggered: Bool {
+		didSet {
+			self.interruptWaiting = irqTriggered || self.irqTriggered;
+		}
+	}
+	var brkSetIRQ: Bool;
+	
+	/**
+	 Stores whether an interrupt occured on the previous cycle (when the NES polls the interrupt lines)
+	*/
+	var previousInterruptWaiting: Bool;
+	var previousNMITriggered: Bool;
+	var previousIRQTriggered: Bool;
+	var previousBRKSetIRQ: Bool;
 
 	/**
 	 Initializes the CPU
@@ -152,6 +159,16 @@ final class CPU: NSObject {
 		self.X = 0;
 		self.Y = 0;
 		
+		self.interruptWaiting = false;
+		self.nmiTriggered = false;
+		self.irqTriggered = false;
+		self.brkSetIRQ = false;
+		
+		self.previousInterruptWaiting = false;
+		self.previousNMITriggered = false;
+		self.previousIRQTriggered = false;
+		self.previousBRKSetIRQ = false;
+		
 		self.mainMemory = mainMemory;
         self.ppu = ppu;
 		self.apu = apu;
@@ -161,8 +178,6 @@ final class CPU: NSObject {
     func reset() {
         // Load program start address from RESET vector (0xFFFC)
         let programStartAddress = self.mainMemory.readTwoBytesMemory(0xFFFC);
-		
-		self.interrupt = nil;
 		
 		self.SP = 0xFD;
 		
@@ -216,22 +231,18 @@ final class CPU: NSObject {
 			return true;
 		}
 		
-		if(self.interrupt != nil) {
-			if(self.interruptDelay) {
-				// Delay interrupt by one instruction
-				self.interruptDelay = false;
-			} else if(self.interrupt == Interrupt.IRQ) {
+		if(self.previousInterruptWaiting) {
+//			if(self.interruptDelay) {
+//				// Delay interrupt by one instruction
+//				self.interruptDelay = false;
+			if(self.previousIRQTriggered) {
 				if(!getPBit(2)) {
 					handleInterrupt();
-					
-					self.interrupt = nil;
 					
 					return true;
 				}
 			} else {
 				handleInterrupt();
-				
-				self.interrupt = nil;
 				
 				return true;
 			}
@@ -239,7 +250,7 @@ final class CPU: NSObject {
 		
 		let opcode = fetchPC();
 		
-//			self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: 0, SL: 0);
+//		self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: 0, SL: 0);
 		
 		ppuStep();
 		
@@ -864,6 +875,11 @@ final class CPU: NSObject {
 		for _ in 0 ..< 3 {
 			self.ppu.step();
 		}
+		
+		self.previousInterruptWaiting = self.interruptWaiting;
+		self.previousIRQTriggered = self.irqTriggered;
+		self.previousNMITriggered = self.nmiTriggered;
+		self.previousBRKSetIRQ = self.brkSetIRQ;
 	}
 	
     func address(lower:UInt8, upper:UInt8) -> Int {
@@ -1015,16 +1031,31 @@ final class CPU: NSObject {
 	/**
 	 Sets a interrupt to trigger upon the next clock cycle
 	*/
-	func queueInterrupt(interrupt: Interrupt?) {
-		self.interrupt = interrupt;
-		self.interruptDelay = false;
+//	func queueInterrupt(interrupt: Interrupt?) {
+//		self.interrupt = interrupt;
+//		self.interruptDelay = false;
+//	}
+	func queueIRQ() {
+		self.irqTriggered = true;
+	}
+	
+	func clearIRQ() {
+		self.irqTriggered = false;
+	}
+	
+	func queueNMI() {
+		self.nmiTriggered = true;
+	}
+	
+	func clearNMI() {
+		self.nmiTriggered = false;
 	}
 	
 	/**
 	 Handles the current interrupt
 	*/
 	func handleInterrupt() {
-		let brk = self.interrupt! == .Software;
+		let brk = self.previousBRKSetIRQ;
 		
 		if(!brk) {
 			ppuStep();
@@ -1058,28 +1089,22 @@ final class CPU: NSObject {
 		var PCLAddr = 0;
 		var PCHAddr = 0;
 		
-		switch self.interrupt! {
-			case Interrupt.VBlank:
-				PCLAddr = 0xFFFA;
-				PCHAddr = 0xFFFB;
+		if(self.previousNMITriggered) {
+			PCLAddr = 0xFFFA;
+			PCHAddr = 0xFFFB;
 			
-			case Interrupt.RESET:
-				reset();
-				return;
-				
-			case Interrupt.Software:
-				PCLAddr = 0xFFFE;
-				PCHAddr = 0xFFFF;
+			self.nmiTriggered = false;
+		} else if(self.previousIRQTriggered) {
+			PCLAddr = 0xFFFE;
+			PCLAddr = 0xFFFF;
 			
-			case Interrupt.IRQ:
-				PCLAddr = 0xFFFE;
-				PCLAddr = 0xFFFF;
+			self.brkSetIRQ = false;
+		} else {
+			// TODO: Handle reset case?
 		}
 		
 		self.PCL = readCycle(PCLAddr);
 		self.PCH = readCycle(PCHAddr);
-		
-		self.interrupt = nil;
 	}
 	
 	func startOAMTransfer() {
@@ -1145,7 +1170,8 @@ final class CPU: NSObject {
      Simulate Interrupt ReQuest (IRQ)
     */
     func BRK() {
-		queueInterrupt(Interrupt.Software);
+		queueIRQ();
+		self.brkSetIRQ = true;
     }
     
     /**

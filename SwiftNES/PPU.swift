@@ -384,11 +384,6 @@ final class PPU: NSObject {
 		let nmi = self.generateNMI && self.vblank;
 		
 		if(nmi && !self.nmiPrevious) {
-			if(self.scanline != 241 || self.cycle != 1) {
-				// Delay interrupt by one instruction
-				self.cpu!.interruptDelay = true;
-			}
-
 			self.nmiDelay = 2;
 		}
 		
@@ -399,7 +394,7 @@ final class PPU: NSObject {
 		if(self.nmiDelay > 0) {
 			self.nmiDelay -= 1;
 			if(self.nmiDelay == 0 && self.generateNMI && self.vblank) {
-				self.cpu!.queueInterrupt(CPU.Interrupt.VBlank);
+				self.cpu!.queueNMI();
 				self.cyclesSinceNMI = 0;
 			}
 		}
@@ -974,7 +969,7 @@ final class PPU: NSObject {
 			if(self.cycle == 1) {
 				self.suppressVBlankFlag = true;
 			} else if(self.cycle == 2 && self.cyclesSinceNMI != -1) {
-				self.cpu?.queueInterrupt(nil);
+				self.cpu!.clearNMI();
 			}
 		}
 		
