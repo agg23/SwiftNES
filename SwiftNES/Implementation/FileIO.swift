@@ -1,6 +1,6 @@
 //
 //  FileIO.swift
-//  SimpleNES
+//  SwiftNES
 //
 //  Created by Adam Gastineau on 3/23/16.
 //  Copyright © 2016 Adam Gastineau. All rights reserved.

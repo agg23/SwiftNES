@@ -1,6 +1,6 @@
 //
 //  APUChannels.swift
-//  SimpleNES
+//  SwiftNES
 //
 //  Created by Adam Gastineau on 5/9/16.
 //  Copyright © 2016 Adam Gastineau. All rights reserved.

@@ -1,6 +1,6 @@
 //
 //  DisplayWindow.swift
-//  SimpleNES
+//  SwiftNES
 //
 //  Created by Adam Gastineau on 4/15/16.
 //  Copyright © 2016 Adam Gastineau. All rights reserved.

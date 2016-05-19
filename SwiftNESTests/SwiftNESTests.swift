@@ -1,17 +1,17 @@
 //
-//  SimpleNESTests.swift
-//  SimpleNESTests
+//  SwiftNESTests.swift
+//  SwiftNESTests
 //
 //  Created by Adam Gastineau on 3/23/16.
 //  Copyright © 2016 Adam Gastineau. All rights reserved.
 //
 
 import XCTest
-@testable import SimpleNES
+@testable import SwiftNES
 
 let defaultPath = "/Users/adam/testROMs/";
 
-class SimpleNESTests: XCTestCase {
+class SwiftNESTests: XCTestCase {
     
     override func setUp() {
         super.setUp()

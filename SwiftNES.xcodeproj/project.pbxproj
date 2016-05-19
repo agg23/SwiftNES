@@ -19,7 +19,7 @@
 		66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4361CA2EF3800936DBC /* AppDelegate.swift */; };
 		66A9C4391CA2EF3800936DBC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 66A9C4381CA2EF3800936DBC /* Assets.xcassets */; };
 		66A9C43C1CA2EF3800936DBC /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 66A9C43A1CA2EF3800936DBC /* MainMenu.xib */; };
-		66A9C4471CA2EF3800936DBC /* SimpleNESTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4461CA2EF3800936DBC /* SimpleNESTests.swift */; };
+		66A9C4471CA2EF3800936DBC /* SwiftNESTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4461CA2EF3800936DBC /* SwiftNESTests.swift */; };
 		66A9C4531CA2EF6F00936DBC /* CPU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4521CA2EF6F00936DBC /* CPU.swift */; };
 		66E186901CADB97300EFF583 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E1868F1CADB97300EFF583 /* Logger.swift */; };
 		66F44E9D1CC05494006F0A6E /* Shader.metal in Sources */ = {isa = PBXBuildFile; fileRef = 66F44E9C1CC05494006F0A6E /* Shader.metal */; };
@@ -46,13 +46,13 @@
 		66796EC91CDCD2F80015E810 /* APU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APU.swift; path = Implementation/APU.swift; sourceTree = "<group>"; };
 		668B05F11CE1515600315BCD /* APUChannels.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APUChannels.swift; path = Implementation/APUChannels.swift; sourceTree = "<group>"; };
 		668B05F31CE28D4500315BCD /* APUBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APUBuffer.swift; path = Implementation/APUBuffer.swift; sourceTree = "<group>"; };
-		66A9C4331CA2EF3800936DBC /* SimpleNES.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimpleNES.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		66A9C4331CA2EF3800936DBC /* SwiftNES.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftNES.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		66A9C4361CA2EF3800936DBC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		66A9C4381CA2EF3800936DBC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		66A9C43B1CA2EF3800936DBC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		66A9C43D1CA2EF3800936DBC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		66A9C4421CA2EF3800936DBC /* SimpleNESTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimpleNESTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		66A9C4461CA2EF3800936DBC /* SimpleNESTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleNESTests.swift; sourceTree = "<group>"; };
+		66A9C4421CA2EF3800936DBC /* SwiftNESTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftNESTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		66A9C4461CA2EF3800936DBC /* SwiftNESTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftNESTests.swift; sourceTree = "<group>"; };
 		66A9C4481CA2EF3800936DBC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		66A9C4521CA2EF6F00936DBC /* CPU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CPU.swift; path = Implementation/CPU.swift; sourceTree = "<group>"; };
 		66E1868F1CADB97300EFF583 /* Logger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Logger.swift; path = Implementation/Logger.swift; sourceTree = "<group>"; };
@@ -85,8 +85,8 @@
 			children = (
 				664032B41CC0317B00FF7C6B /* Metal.framework */,
 				664032B51CC0317B00FF7C6B /* MetalKit.framework */,
-				66A9C4351CA2EF3800936DBC /* SimpleNES */,
-				66A9C4451CA2EF3800936DBC /* SimpleNESTests */,
+				66A9C4351CA2EF3800936DBC /* SwiftNES */,
+				66A9C4451CA2EF3800936DBC /* SwiftNESTests */,
 				66A9C4341CA2EF3800936DBC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -94,13 +94,13 @@
 		66A9C4341CA2EF3800936DBC /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				66A9C4331CA2EF3800936DBC /* SimpleNES.app */,
-				66A9C4421CA2EF3800936DBC /* SimpleNESTests.xctest */,
+				66A9C4331CA2EF3800936DBC /* SwiftNES.app */,
+				66A9C4421CA2EF3800936DBC /* SwiftNESTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		66A9C4351CA2EF3800936DBC /* SimpleNES */ = {
+		66A9C4351CA2EF3800936DBC /* SwiftNES */ = {
 			isa = PBXGroup;
 			children = (
 				66A9C4361CA2EF3800936DBC /* AppDelegate.swift */,
@@ -111,16 +111,16 @@
 				66A9C43A1CA2EF3800936DBC /* MainMenu.xib */,
 				66A9C43D1CA2EF3800936DBC /* Info.plist */,
 			);
-			path = SimpleNES;
+			path = SwiftNES;
 			sourceTree = "<group>";
 		};
-		66A9C4451CA2EF3800936DBC /* SimpleNESTests */ = {
+		66A9C4451CA2EF3800936DBC /* SwiftNESTests */ = {
 			isa = PBXGroup;
 			children = (
-				66A9C4461CA2EF3800936DBC /* SimpleNESTests.swift */,
+				66A9C4461CA2EF3800936DBC /* SwiftNESTests.swift */,
 				66A9C4481CA2EF3800936DBC /* Info.plist */,
 			);
-			path = SimpleNESTests;
+			path = SwiftNESTests;
 			sourceTree = "<group>";
 		};
 		66A9C4511CA2EF4900936DBC /* Implementation */ = {
@@ -142,9 +142,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		66A9C4321CA2EF3800936DBC /* SimpleNES */ = {
+		66A9C4321CA2EF3800936DBC /* SwiftNES */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 66A9C44B1CA2EF3800936DBC /* Build configuration list for PBXNativeTarget "SimpleNES" */;
+			buildConfigurationList = 66A9C44B1CA2EF3800936DBC /* Build configuration list for PBXNativeTarget "SwiftNES" */;
 			buildPhases = (
 				66A9C42F1CA2EF3800936DBC /* Sources */,
 				66A9C4301CA2EF3800936DBC /* Frameworks */,
@@ -154,14 +154,14 @@
 			);
 			dependencies = (
 			);
-			name = SimpleNES;
+			name = SwiftNES;
 			productName = SimpleNES;
-			productReference = 66A9C4331CA2EF3800936DBC /* SimpleNES.app */;
+			productReference = 66A9C4331CA2EF3800936DBC /* SwiftNES.app */;
 			productType = "com.apple.product-type.application";
 		};
-		66A9C4411CA2EF3800936DBC /* SimpleNESTests */ = {
+		66A9C4411CA2EF3800936DBC /* SwiftNESTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 66A9C44E1CA2EF3800936DBC /* Build configuration list for PBXNativeTarget "SimpleNESTests" */;
+			buildConfigurationList = 66A9C44E1CA2EF3800936DBC /* Build configuration list for PBXNativeTarget "SwiftNESTests" */;
 			buildPhases = (
 				66A9C43E1CA2EF3800936DBC /* Sources */,
 				66A9C43F1CA2EF3800936DBC /* Frameworks */,
@@ -172,9 +172,9 @@
 			dependencies = (
 				66A9C4441CA2EF3800936DBC /* PBXTargetDependency */,
 			);
-			name = SimpleNESTests;
+			name = SwiftNESTests;
 			productName = SimpleNESTests;
-			productReference = 66A9C4421CA2EF3800936DBC /* SimpleNESTests.xctest */;
+			productReference = 66A9C4421CA2EF3800936DBC /* SwiftNESTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -196,7 +196,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 66A9C42E1CA2EF3800936DBC /* Build configuration list for PBXProject "SimpleNES" */;
+			buildConfigurationList = 66A9C42E1CA2EF3800936DBC /* Build configuration list for PBXProject "SwiftNES" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -209,8 +209,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				66A9C4321CA2EF3800936DBC /* SimpleNES */,
-				66A9C4411CA2EF3800936DBC /* SimpleNESTests */,
+				66A9C4321CA2EF3800936DBC /* SwiftNES */,
+				66A9C4411CA2EF3800936DBC /* SwiftNESTests */,
 			);
 		};
 /* End PBXProject section */
@@ -258,7 +258,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				66A9C4471CA2EF3800936DBC /* SimpleNESTests.swift in Sources */,
+				66A9C4471CA2EF3800936DBC /* SwiftNESTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -267,7 +267,7 @@
 /* Begin PBXTargetDependency section */
 		66A9C4441CA2EF3800936DBC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 66A9C4321CA2EF3800936DBC /* SimpleNES */;
+			target = 66A9C4321CA2EF3800936DBC /* SwiftNES */;
 			targetProxy = 66A9C4431CA2EF3800936DBC /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -373,12 +373,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_USE_OPTIMIZATION_PROFILE = NO;
 				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = SimpleNES/Info.plist;
+				INFOPLIST_FILE = SwiftNES/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LLVM_LTO = NO;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.appcannon.SimpleNES;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.appcannon.SwiftNES;
+				PRODUCT_NAME = SwiftNES;
 				SWIFT_DISABLE_SAFETY_CHECKS = YES;
 			};
 			name = Debug;
@@ -389,13 +389,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_USE_OPTIMIZATION_PROFILE = NO;
 				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = SimpleNES/Info.plist;
+				INFOPLIST_FILE = SwiftNES/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LLVM_LTO = YES;
 				MTL_FAST_MATH = YES;
 				MTL_OPTIMIZATION_LEVEL = s;
-				PRODUCT_BUNDLE_IDENTIFIER = com.appcannon.SimpleNES;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.appcannon.SwiftNES;
+				PRODUCT_NAME = SwiftNES;
 				SWIFT_DISABLE_SAFETY_CHECKS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 			};
@@ -406,11 +406,11 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = SimpleNESTests/Info.plist;
+				INFOPLIST_FILE = SwiftNESTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.appcannon.SimpleNESTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SimpleNES.app/Contents/MacOS/SimpleNES";
+				PRODUCT_BUNDLE_IDENTIFIER = com.appcannon.SwiftNESTests;
+				PRODUCT_NAME = SwiftNESTests;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SwiftNES.app/Contents/MacOS/SwiftNES";
 			};
 			name = Debug;
 		};
@@ -419,18 +419,18 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = SimpleNESTests/Info.plist;
+				INFOPLIST_FILE = SwiftNESTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.appcannon.SimpleNESTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SimpleNES.app/Contents/MacOS/SimpleNES";
+				PRODUCT_BUNDLE_IDENTIFIER = com.appcannon.SwiftNESTests;
+				PRODUCT_NAME = SwiftNESTests;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SwiftNES.app/Contents/MacOS/SwiftNES";
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		66A9C42E1CA2EF3800936DBC /* Build configuration list for PBXProject "SimpleNES" */ = {
+		66A9C42E1CA2EF3800936DBC /* Build configuration list for PBXProject "SwiftNES" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				66A9C4491CA2EF3800936DBC /* Debug */,
@@ -439,7 +439,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		66A9C44B1CA2EF3800936DBC /* Build configuration list for PBXNativeTarget "SimpleNES" */ = {
+		66A9C44B1CA2EF3800936DBC /* Build configuration list for PBXNativeTarget "SwiftNES" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				66A9C44C1CA2EF3800936DBC /* Debug */,
@@ -448,7 +448,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		66A9C44E1CA2EF3800936DBC /* Build configuration list for PBXNativeTarget "SimpleNESTests" */ = {
+		66A9C44E1CA2EF3800936DBC /* Build configuration list for PBXNativeTarget "SwiftNESTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				66A9C44F1CA2EF3800936DBC /* Debug */,

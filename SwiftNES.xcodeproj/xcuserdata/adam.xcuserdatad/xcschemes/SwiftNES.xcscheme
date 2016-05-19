@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "66A9C4321CA2EF3800936DBC"
-               BuildableName = "SimpleNES.app"
-               BlueprintName = "SimpleNES"
-               ReferencedContainer = "container:SimpleNES.xcodeproj">
+               BuildableName = "SwiftNES.app"
+               BlueprintName = "SwiftNES"
+               ReferencedContainer = "container:SwiftNES.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "66A9C4411CA2EF3800936DBC"
-               BuildableName = "SimpleNESTests.xctest"
-               BlueprintName = "SimpleNESTests"
-               ReferencedContainer = "container:SimpleNES.xcodeproj">
+               BuildableName = "SwiftNESTests.xctest"
+               BlueprintName = "SwiftNESTests"
+               ReferencedContainer = "container:SwiftNES.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -43,9 +43,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "66A9C4321CA2EF3800936DBC"
-            BuildableName = "SimpleNES.app"
-            BlueprintName = "SimpleNES"
-            ReferencedContainer = "container:SimpleNES.xcodeproj">
+            BuildableName = "SwiftNES.app"
+            BlueprintName = "SwiftNES"
+            ReferencedContainer = "container:SwiftNES.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -68,9 +68,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "66A9C4321CA2EF3800936DBC"
-            BuildableName = "SimpleNES.app"
-            BlueprintName = "SimpleNES"
-            ReferencedContainer = "container:SimpleNES.xcodeproj">
+            BuildableName = "SwiftNES.app"
+            BlueprintName = "SwiftNES"
+            ReferencedContainer = "container:SwiftNES.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <AdditionalOptions>
@@ -87,9 +87,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "66A9C4321CA2EF3800936DBC"
-            BuildableName = "SimpleNES.app"
-            BlueprintName = "SimpleNES"
-            ReferencedContainer = "container:SimpleNES.xcodeproj">
+            BuildableName = "SwiftNES.app"
+            BlueprintName = "SwiftNES"
+            ReferencedContainer = "container:SwiftNES.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -1,6 +1,6 @@
 //
 //  APU.swift
-//  SimpleNES
+//  SwiftNES
 //
 //  Created by Adam Gastineau on 5/6/16.
 //  Copyright © 2016 Adam Gastineau. All rights reserved.

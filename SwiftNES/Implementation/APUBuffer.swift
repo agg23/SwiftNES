@@ -1,6 +1,6 @@
 //
 //  APUBuffer.swift
-//  SimpleNES
+//  SwiftNES
 //
 //  Created by Adam Gastineau on 5/10/16.
 //  Copyright © 2016 Adam Gastineau. All rights reserved.

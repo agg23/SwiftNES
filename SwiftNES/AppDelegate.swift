@@ -1,6 +1,6 @@
 //
 //  AppDelegate.swift
-//  SimpleNES
+//  SwiftNES
 //
 //  Created by Adam Gastineau on 3/23/16.
 //  Copyright © 2016 Adam Gastineau. All rights reserved.
@@ -252,7 +252,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		if diff >= 1000 {
 			let fps = (Double(self.frameCount) / diff) * 1000;
 			
-			self.window.title = String(format: "SimpleNES [%.0f]", fps);
+			self.window.title = String(format: "SwiftNES [%.0f]", fps);
 			
 			self.frameCount = 0;
 			self.lastFrameUpdate = now;
