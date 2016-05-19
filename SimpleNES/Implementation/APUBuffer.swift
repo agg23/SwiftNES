@@ -91,9 +91,7 @@ final class APUBuffer {
 		self.buffer[self.endIndex] = sampleData;
 		
 		self.endIndex += 1;
-		
-//		print(availableSampleCount());
-		
+				
 		if(self.endIndex >= BUFFERSIZE) {
 			self.endIndex = 0;
 		}

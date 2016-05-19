@@ -27,28 +27,6 @@ func outputCallback(data: UnsafeMutablePointer<Void>, inAudioQueue: AudioQueueRe
 	
 	apu.buffer.loadBuffer(inBuffer);
 	
-//	let array = UnsafeMutablePointer<Int16>(inBuffer.memory.mAudioData);
-//	
-//	let output = apu.output;
-//	var outputIndex = apu.outputIndex;
-//	
-//	if(outputIndex == 0) {
-//		outputIndex = 0x2000;
-//		for i in 0 ..< 0x2000 {
-//			array[i] = 0;
-//		}
-//	} else {
-//		for i in 0 ..< outputIndex {
-//			array[i] = output[i];
-//		}
-//	}
-//	
-//	print(apu.outputIndex);
-//	
-//	apu.outputIndex = 0;
-//	
-//	inBuffer.memory.mAudioDataByteSize = UInt32(outputIndex) * 2;
-	
 	AudioQueueEnqueueBuffer(inAudioQueue, inBuffer, 0, nil);
 }
 
@@ -143,8 +121,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
-        // Insert code here to initialize your application
-		
 		initializeAudio();
 		
 		AudioQueueStart(queue, nil);
@@ -259,7 +235,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 	
 	func applicationWillTerminate(aNotification: NSNotification) {
-        // Insert code here to tear down your application
 		self.ppu.dumpMemory();
 		self.logger.endLogging();
     }

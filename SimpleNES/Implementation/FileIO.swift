@@ -116,16 +116,8 @@ final class FileIO: NSObject {
 				self.mainMemory.writeMemory(0x8002 + offset, data: UInt8((b & 0xFF0000) >> 16));
 				self.mainMemory.writeMemory(0x8003 + offset, data: UInt8((b & 0xFF000000) >> 24));
 				
-//				if(romBanks == 1) {
-//					// If there is only 1 ROM bank, the bank is duplicated at $C000
-//					self.mainMemory.writeMemory(0xC000 + offset, data: UInt8(b & 0xFF));
-//					self.mainMemory.writeMemory(0xC001 + offset, data: UInt8((b & 0xFF00) >> 8));
-//					self.mainMemory.writeMemory(0xC002 + offset, data: UInt8((b & 0xFF0000) >> 16));
-//					self.mainMemory.writeMemory(0xC003 + offset, data: UInt8((b & 0xFF000000) >> 24));
-////
 //////                    print(String(format: "Byte: 0x%8x", b));
 //                    print(String(format: "%d A: 0x%2x, B: 0x%2x, C: 0x%2x, D: 0x%2x", i, UInt8(b & 0xFF), UInt8((b & 0xFF00) >> 8), UInt8((b & 0xFF0000) >> 16), UInt8((b & 0xFF000000) >> 24)));
-//				}
 			}
             
 			i += 1;
