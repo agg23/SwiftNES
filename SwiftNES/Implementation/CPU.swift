@@ -1115,6 +1115,8 @@ final class CPU: NSObject {
 			PCLAddr = 0xFFFA;
 			PCHAddr = 0xFFFB;
 			
+			self.brkSetIRQ = false;
+			self.irqTriggered = false;
 			self.nmiTriggered = false;
 		} else if(self.previousIRQTriggered) {
 			PCLAddr = 0xFFFE;
