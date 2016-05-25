@@ -246,8 +246,8 @@ final class PPU: NSObject {
 	private var cyclesSinceNMI = -1;
 		
 	var cpu: CPU?;
-	private let cpuMemory: Memory;
-	private let ppuMemory: Memory;
+	private let cpuMemory: CPUMemory;
+	private let ppuMemory: PPUMemory;
 	private var oamMemory: [UInt8];
 	
 	private var secondaryOAM = [UInt8](count: 32, repeatedValue: 0);
@@ -292,7 +292,7 @@ final class PPU: NSObject {
 	
 	// MARK: Methods -
 	
-	init(cpuMemory: Memory, ppuMemory: Memory) {
+	init(cpuMemory: CPUMemory, ppuMemory: PPUMemory) {
 		self.cpu = nil;
 		
 		self.cpuMemory = cpuMemory;
@@ -1018,7 +1018,7 @@ final class PPU: NSObject {
 		return value;
 	}
 	
-	func dumpMemory() {
-		self.ppuMemory.dumpMemory();
-	}
+//	func dumpMemory() {
+//		self.ppuMemory.dumpMemory();
+//	}
 }

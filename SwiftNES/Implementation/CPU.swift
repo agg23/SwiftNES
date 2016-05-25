@@ -52,7 +52,7 @@ final class CPU: NSObject {
 	private var potentialCLILatencyDelay = false;
 	private var cliLatencyDelay = false;
 
-	private let mainMemory: Memory;
+	private let mainMemory: CPUMemory;
     private let ppu: PPU;
 	private let apu: APU;
 	
@@ -155,7 +155,7 @@ final class CPU: NSObject {
 	/**
 	 Initializes the CPU
 	*/
-	init(mainMemory: Memory, ppu: PPU, apu: APU, logger: Logger) {
+	init(mainMemory: CPUMemory, ppu: PPU, apu: APU, logger: Logger) {
 		self.PCL = 0;
 		self.PCH = 0;
 

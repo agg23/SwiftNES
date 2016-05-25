@@ -86,10 +86,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		self.controllerIO = ControllerIO();
 		
-		let mainMemory = Memory();
+		let mainMemory = CPUMemory();
 		mainMemory.controllerIO = controllerIO;
 		
-		let ppuMemory = Memory(memoryType: Memory.MemoryType.PPU);
+		let ppuMemory = PPUMemory();
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
 		fileIO.loadFile("/Users/adam/testROMs/games/smb.nes");
 		
@@ -161,7 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
     }
 	
 	@IBAction func dumpPPUMemory(sender: AnyObject) {
-		self.ppu.dumpMemory();
+//		self.ppu.dumpMemory();
 	}
 	
 	// MARK: - Audio
@@ -235,7 +235,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 	
 	func applicationWillTerminate(aNotification: NSNotification) {
-		self.ppu.dumpMemory();
+//		self.ppu.dumpMemory();
 		self.logger.endLogging();
     }
 

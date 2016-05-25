@@ -27,29 +27,25 @@ final class FileIO: NSObject {
 			return false;
 		}
 		
-		let count = data!.length / sizeof(UInt32);
-		var bytes = [UInt32](count: count, repeatedValue: 0);
+		let count = data!.length / sizeof(UInt8);
+		var bytes = [UInt8](count: count, repeatedValue: 0);
 		
-		data?.getBytes(&bytes, length: data!.length * sizeof(UInt32));
-		
-		let nesHead = bytes[0];
+		data?.getBytes(&bytes, length: data!.length * sizeof(UInt8));
 		
 		// NES(escape) in little endian
-		if(nesHead != 0x1a53454e) {
+		if(bytes[0] != 0x4E || bytes[1] != 0x45 || bytes[2] != 0x53 || bytes[3] != 0x1A) {
 			print("Invalid input file, does not contain NES header");
 			return false;
 		}
 		
-		let banksHead = bytes[1];
+		let prgBanks = bytes[4];
 		
-		let romBanks = UInt8(banksHead & 0xFF);
-		
-		if(romBanks == 1) {
+		if(prgBanks == 1) {
 			self.mainMemory.mirrorPRGROM = true;
 		}
 		
-		let vROMBanks = UInt8((banksHead & 0xFF00) >> 8);
-		let misc = UInt8((banksHead & 0xFF0000) >> 16);
+		let chrBanks = bytes[5];
+		let misc = bytes[6];
 		
 		let verticalMirroring = misc & 0x1 == 1;
 		
@@ -69,7 +65,7 @@ final class FileIO: NSObject {
 		
 		let romMapperLower = (misc & 0xF0) >> 4;
 		
-		let misc2 = UInt8((banksHead & 0xFF000000) >> 24);
+		let misc2 = bytes[7];
 		
 		// This cartridge is for a Nintendo VS System
 		let nesVSSystem = misc2 & 0x1 == 1;
@@ -78,52 +74,29 @@ final class FileIO: NSObject {
 		
 		let romMapper = (romMapperUpper << 4) + romMapperLower;
 		
-		let ramBanksHead = bytes[2];
+		let ramBanks = bytes[8];
 		
-		let ramBanks = ramBanksHead & 0xF;
+		let NTSC = bytes[9] == 0;
 		
-		let NTSC = ((ramBanksHead & 0x10) >> 4) == 0;
-		
-		print("ROM Banks: \(romBanks), VROM Banks: \(vROMBanks)");
+		print("PRG Banks: \(prgBanks), CHR Banks: \(chrBanks)");
 		print("Vertical Mirroring: \(verticalMirroring), Battery Backed RAM: \(batteryBackedRAM)");
 		print("Trainer: \(trainer), Four Screen VRAM: \(fourScreenVRAM), NES VS System: \(nesVSSystem)");
 		print("ROM Mapper \(romMapper), RAM Banks: \(ramBanks), NTSC: \(NTSC)");
 		
-//		var b = bytes[4];
+		let prgOffset = Int(prgBanks) * 0x4000;
 		
-		var i = 0;
+		self.mainMemory.banks = [UInt8](count: prgOffset, repeatedValue: 0);
+		self.ppuMemory.banks = [UInt8](count: Int(chrBanks) * 0x2000, repeatedValue: 0);
 		
-		let romEndingOffset = Int(romBanks) * 0x4000;
-		
-		while(i < count - 4) {
-			let b = bytes[4 + i];
-			let offset = i * 4;
-			
-			if(offset+3 > romEndingOffset) {
-				// Remaining data is VROM
-				
-				self.ppuMemory.writeMemory(0x0 + offset - romEndingOffset, data: UInt8(b & 0xFF));
-				self.ppuMemory.writeMemory(0x1 + offset - romEndingOffset, data: UInt8((b & 0xFF00) >> 8));
-				self.ppuMemory.writeMemory(0x2 + offset - romEndingOffset, data: UInt8((b & 0xFF0000) >> 16));
-				self.ppuMemory.writeMemory(0x3 + offset - romEndingOffset, data: UInt8((b & 0xFF000000) >> 24));
-                
-//                print(String(format: "Byte: 0x%8x", b));
-//                print(String(format: "A: 0x%2x, B: 0x%2x, C: 0x%2x, D: 0x%2x", UInt8(b & 0xFF), UInt8((b & 0xFF00) >> 8), UInt8((b & 0xFF0000) >> 16), UInt8((b & 0xFF000000) >> 24)));
-
-			} else {
-				self.mainMemory.writeMemory(0x8000 + offset, data: UInt8(b & 0xFF));
-				self.mainMemory.writeMemory(0x8001 + offset, data: UInt8((b & 0xFF00) >> 8));
-				self.mainMemory.writeMemory(0x8002 + offset, data: UInt8((b & 0xFF0000) >> 16));
-				self.mainMemory.writeMemory(0x8003 + offset, data: UInt8((b & 0xFF000000) >> 24));
-				
-//////                    print(String(format: "Byte: 0x%8x", b));
-//                    print(String(format: "%d A: 0x%2x, B: 0x%2x, C: 0x%2x, D: 0x%2x", i, UInt8(b & 0xFF), UInt8((b & 0xFF00) >> 8), UInt8((b & 0xFF0000) >> 16), UInt8((b & 0xFF000000) >> 24)));
-			}
-            
-			i += 1;
+		for i in 0 ..< prgOffset {
+			self.mainMemory.banks[i] = bytes[16 + i];
 		}
 		
-		print("Memory initialized, wrote \(i * 4) bytes");
+		for i in 0 ..< Int(chrBanks) * 0x2000 {
+			self.ppuMemory.banks[i] = bytes[prgOffset + 16 + i];
+		}
+		
+		print("Memory initialized");
 		
 		return true;
 	}
