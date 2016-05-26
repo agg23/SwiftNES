@@ -83,12 +83,6 @@ class Memory {
 	func setMapper(mapper: Mapper) {
 		
 	}
-	
-//	final func dumpMemory() {
-//		let logger = Logger(path: "/Users/adam/memory.dump");
-//		logger.dumpMemory(self.memory);
-//		logger.endLogging();
-//	}
 }
 
 final class PPUMemory: Memory {
@@ -143,7 +137,7 @@ final class PPUMemory: Memory {
 		var address = address % 0x4000;
 		
 		if(address < 0x2000) {
-			return self.mapper!.cpuRead(address);
+			return self.mapper!.read(address);
 		} else if((address >= 0x2000) && (address < 0x3000)) {
 			if(self.nametableMirroring == .OneScreen) {
 				address = 0x2000 | (address % 0x200);
@@ -171,7 +165,7 @@ final class PPUMemory: Memory {
 		var address = address % 0x4000;
 		
 		if(address < 0x2000) {
-			self.mapper!.cpuWrite(address, data: data);
+			self.mapper!.write(address, data: data);
 			return;
 		} else if((address >= 0x2000) && (address < 0x3000)) {
 			if(self.nametableMirroring == .OneScreen) {
@@ -210,6 +204,13 @@ final class PPUMemory: Memory {
 		}
 		
 		return self.nametable[0x1F00 + address];
+	}
+	
+	
+	func dumpMemory() {
+		let logger = Logger(path: "/Users/adam/memory.dump");
+		logger.dumpMemory(self.banks);
+		logger.endLogging();
 	}
 }
 
@@ -293,10 +294,10 @@ final class CPUMemory: Memory {
 		} else if(address > 0x3FFF && address < 0x4018) {
 			return (self.apu?.cpuRead(address))!;
 		} else if(self.mirrorPRGROM && address >= 0xC000) {
-			return self.mapper!.cpuRead(address % 0xC000);
+			return self.mapper!.read(address % 0xC000);
 		}
 		
-		return self.mapper!.cpuRead(address);
+		return self.mapper!.read(address);
 	}
 	
 	final override func writeMemory(address: Int, data: UInt8) {
@@ -326,6 +327,6 @@ final class CPUMemory: Memory {
 			address = address % 0xC000;
 		}
 		
-		self.mapper!.cpuWrite(address, data: data);
+		self.mapper!.write(address, data: data);
 	}
 }
