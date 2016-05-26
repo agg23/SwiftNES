@@ -9,11 +9,27 @@
 import Foundation
 
 class Mapper {
-	private let memory: Memory;
+	var cpuMemory: CPUMemory?;
+	var ppuMemory: PPUMemory?;
 	
-	init(memory: Memory) {
-		self.memory = memory;
+	init() {
+		self.cpuMemory = nil;
+		self.ppuMemory = nil;
 	}
 	
+	func ppuRead(address: Int) -> UInt8 {
+		return self.ppuMemory!.banks[address];
+	}
 	
+	func ppuWrite(address: Int, data: UInt8) {
+		self.ppuMemory!.banks[address] = data;
+	}
+	
+	func cpuRead(address: Int) -> UInt8 {
+		return self.cpuMemory!.banks[address];
+	}
+	
+	func cpuWrite(address: Int, data: UInt8) {
+		self.cpuMemory!.banks[address] = data;
+	}
 }

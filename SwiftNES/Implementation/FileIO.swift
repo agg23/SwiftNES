@@ -11,10 +11,10 @@ import Cocoa
 
 final class FileIO: NSObject {
 	
-	let mainMemory: Memory;
-	let ppuMemory: Memory;
+	let mainMemory: CPUMemory;
+	let ppuMemory: PPUMemory;
 	
-	init(mainMemory: Memory, ppuMemory: Memory) {
+	init(mainMemory: CPUMemory, ppuMemory: PPUMemory) {
 		self.mainMemory = mainMemory;
 		self.ppuMemory = ppuMemory;
 	}
@@ -72,7 +72,7 @@ final class FileIO: NSObject {
 		
 		let romMapperUpper = (misc2 & 0xF0) >> 4;
 		
-		let romMapper = (romMapperUpper << 4) + romMapperLower;
+		let romMapper = Int((romMapperUpper << 4) + romMapperLower);
 		
 		let ramBanks = bytes[8];
 		
@@ -88,6 +88,17 @@ final class FileIO: NSObject {
 		self.mainMemory.banks = [UInt8](count: prgOffset, repeatedValue: 0);
 		self.ppuMemory.banks = [UInt8](count: Int(chrBanks) * 0x2000, repeatedValue: 0);
 		
+		if(!setMapper(romMapper, cpuMemory: self.mainMemory, ppuMemory: self.ppuMemory)) {
+			return false;
+		}
+		
+		if(chrBanks == 0) {
+			// Use CHR RAM
+			self.ppuMemory.banks = [UInt8](count: 0x2000, repeatedValue: 0);
+		}
+		
+		let test = bytes[17];
+		
 		for i in 0 ..< prgOffset {
 			self.mainMemory.banks[i] = bytes[16 + i];
 		}
@@ -97,6 +108,23 @@ final class FileIO: NSObject {
 		}
 		
 		print("Memory initialized");
+		
+		return true;
+	}
+	
+	func setMapper(mapper: Int, cpuMemory: CPUMemory, ppuMemory: PPUMemory) -> Bool {
+		switch(mapper) {
+			case 0:
+				// Do nothing, Mapper 0 is default
+				break;
+			case 1:
+				let mapper = Mapper1();
+				cpuMemory.setMapper(mapper);
+				ppuMemory.setMapper(mapper);
+			default:
+				print("Unknown mapper \(mapper)");
+				return false;
+		}
 		
 		return true;
 	}

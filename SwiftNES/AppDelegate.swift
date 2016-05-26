@@ -86,12 +86,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		self.controllerIO = ControllerIO();
 		
-		let mainMemory = CPUMemory();
+		let mapper = Mapper();
+		
+		let mainMemory = CPUMemory(mapper: mapper);
 		mainMemory.controllerIO = controllerIO;
 		
-		let ppuMemory = PPUMemory();
+		let ppuMemory = PPUMemory(mapper: mapper);
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		fileIO.loadFile("/Users/adam/testROMs/games/smb.nes");
+		fileIO.loadFile("/Users/adam/testROMs/unautomatable/holydiverbatman-bin-0.01/testroms/M1_P128K_C32K_S8K.nes");
 		
 		self.apu = APU(memory: mainMemory);
 		

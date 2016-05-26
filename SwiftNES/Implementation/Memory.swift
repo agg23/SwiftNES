@@ -45,11 +45,11 @@ class Memory {
 		case FourScreen
 	}
 	
+	var mapper: Mapper?;
+	
 	var banks: [UInt8];
 	
 	var mirrorPRGROM = false;
-	
-	var nametableMirroring: NametableMirroringType = .OneScreen;
 	
 	/**
 	 Initializes memory with the given type
@@ -60,6 +60,7 @@ class Memory {
 	init() {
 		// Dummy initialization
 		self.banks = [UInt8](count: 1, repeatedValue: 0);
+		self.mapper = nil;
 	}
 	
 	func readMemory(address: Int) -> UInt8 {
@@ -78,6 +79,10 @@ class Memory {
         writeMemory(address, data: UInt8(data & 0xFF));
         writeMemory(address + 1, data: UInt8((data & 0xFF00) >> 8));
     }
+	
+	func setMapper(mapper: Mapper) {
+		
+	}
 	
 //	final func dumpMemory() {
 //		let logger = Logger(path: "/Users/adam/memory.dump");
@@ -119,19 +124,26 @@ final class PPUMemory: Memory {
 	-- $0000 --
 	*/
 	
-	private var nametable: [UInt8];
+	var nametable: [UInt8];
 	
-	override init() {
+	var nametableMirroring: NametableMirroringType = .OneScreen;
+	
+	init(mapper: Mapper) {
 		self.nametable = [UInt8](count: 0x2000, repeatedValue: 0);
 		super.init();
+		setMapper(mapper);
+	}
+	
+	final override func setMapper(mapper: Mapper) {
+		mapper.ppuMemory = self;
+		self.mapper = mapper;
 	}
 	
 	final override func readMemory(address: Int) -> UInt8 {
 		var address = address % 0x4000;
 		
 		if(address < 0x2000) {
-			// TODO: Add mapper
-			return self.banks[address];
+			return self.mapper!.cpuRead(address);
 		} else if((address >= 0x2000) && (address < 0x3000)) {
 			if(self.nametableMirroring == .OneScreen) {
 				address = 0x2000 | (address % 0x200);
@@ -159,8 +171,7 @@ final class PPUMemory: Memory {
 		var address = address % 0x4000;
 		
 		if(address < 0x2000) {
-			// TODO: Add mapper
-			self.banks[address] = data;
+			self.mapper!.cpuWrite(address, data: data);
 			return;
 		} else if((address >= 0x2000) && (address < 0x3000)) {
 			if(self.nametableMirroring == .OneScreen) {
@@ -229,15 +240,26 @@ final class CPUMemory: Memory {
 	-- $0000 --
 	*/
 	
-	private var ram: [UInt8];
+	var ram: [UInt8];
+	
+	var sram: [UInt8];
 	
 	var ppu: PPU?;
 	var apu: APU?;
 	var controllerIO: ControllerIO?;
 	
-	override init() {
+	init(mapper: Mapper) {
 		self.ram = [UInt8](count: 0x800, repeatedValue: 0);
+		
+		self.sram = [UInt8](count: 0x2000, repeatedValue: 0);
+		
 		super.init();
+		setMapper(mapper);
+	}
+	
+	final override func setMapper(mapper: Mapper) {
+		mapper.cpuMemory = self;
+		self.mapper = mapper;
 	}
 	
 	final override func readMemory(address: Int) -> UInt8 {
@@ -271,10 +293,10 @@ final class CPUMemory: Memory {
 		} else if(address > 0x3FFF && address < 0x4018) {
 			return (self.apu?.cpuRead(address))!;
 		} else if(self.mirrorPRGROM && address >= 0xC000) {
-			return self.banks[address % 0xC000];
+			return self.mapper!.cpuRead(address % 0xC000);
 		}
 		
-		return self.banks[address - 0x8000];
+		return self.mapper!.cpuRead(address);
 	}
 	
 	final override func writeMemory(address: Int, data: UInt8) {
@@ -304,6 +326,6 @@ final class CPUMemory: Memory {
 			address = address % 0xC000;
 		}
 		
-		self.banks[address - 0x8000] = data;
+		self.mapper!.cpuWrite(address, data: data);
 	}
 }
