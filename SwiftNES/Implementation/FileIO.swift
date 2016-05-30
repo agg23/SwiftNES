@@ -125,6 +125,8 @@ final class FileIO: NSObject {
 				mapper = Mapper1();
 			case 2:
 				mapper = Mapper2();
+			case 3:
+				mapper = Mapper3();
 			default:
 				print("Unknown mapper \(mapperNumber)");
 				return false;
