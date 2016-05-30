@@ -44,7 +44,7 @@ final class FileIO: NSObject {
 			self.mainMemory.mirrorPRGROM = true;
 		}
 		
-		let chrBanks = bytes[5];
+		var chrBanks = bytes[5];
 		let misc = bytes[6];
 		
 		let verticalMirroring = misc & 0x1 == 1;
@@ -92,14 +92,6 @@ final class FileIO: NSObject {
 			return false;
 		}
 		
-		self.mainMemory.mapper!.chrBankCount = chrBanks;
-		self.mainMemory.mapper!.prgBankCount = prgBanks;
-		
-		if(chrBanks == 0) {
-			// Use CHR RAM
-			self.ppuMemory.banks = [UInt8](count: 0x2000, repeatedValue: 0);
-		}
-				
 		for i in 0 ..< prgOffset {
 			self.mainMemory.banks[i] = bytes[16 + i];
 		}
@@ -108,24 +100,38 @@ final class FileIO: NSObject {
 			self.ppuMemory.banks[i] = bytes[prgOffset + 16 + i];
 		}
 		
+		if(chrBanks == 0) {
+			// Use CHR RAM
+			chrBanks = 1;
+			self.ppuMemory.banks = [UInt8](count: 0x2000, repeatedValue: 0);
+		}
+
+		self.mainMemory.mapper!.chrBankCount = chrBanks;
+		self.mainMemory.mapper!.prgBankCount = prgBanks;
+		
 		print("Memory initialized");
 		
 		return true;
 	}
 	
-	func setMapper(mapper: Int, cpuMemory: CPUMemory, ppuMemory: PPUMemory) -> Bool {
-		switch(mapper) {
+	func setMapper(mapperNumber: Int, cpuMemory: CPUMemory, ppuMemory: PPUMemory) -> Bool {
+		var mapper = cpuMemory.mapper!;
+		
+		switch(mapperNumber) {
 			case 0:
 				// Do nothing, Mapper 0 is default
 				break;
 			case 1:
-				let mapper = Mapper1();
-				cpuMemory.setMapper(mapper);
-				ppuMemory.setMapper(mapper);
+				mapper = Mapper1();
+			case 2:
+				mapper = Mapper2();
 			default:
-				print("Unknown mapper \(mapper)");
+				print("Unknown mapper \(mapperNumber)");
 				return false;
 		}
+		
+		cpuMemory.setMapper(mapper);
+		ppuMemory.setMapper(mapper);
 		
 		return true;
 	}
