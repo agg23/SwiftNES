@@ -92,13 +92,14 @@ final class FileIO: NSObject {
 			return false;
 		}
 		
+		self.mainMemory.mapper!.chrBankCount = chrBanks;
+		self.mainMemory.mapper!.prgBankCount = prgBanks;
+		
 		if(chrBanks == 0) {
 			// Use CHR RAM
 			self.ppuMemory.banks = [UInt8](count: 0x2000, repeatedValue: 0);
 		}
-		
-		let test = bytes[17];
-		
+				
 		for i in 0 ..< prgOffset {
 			self.mainMemory.banks[i] = bytes[16 + i];
 		}

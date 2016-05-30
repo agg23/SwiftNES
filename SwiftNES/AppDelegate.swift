@@ -237,7 +237,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 	
 	func applicationWillTerminate(aNotification: NSNotification) {
-//		self.ppu.dumpMemory();
+		self.ppu.dumpMemory();
 		self.logger.endLogging();
     }
 

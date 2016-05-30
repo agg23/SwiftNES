@@ -1018,7 +1018,7 @@ final class PPU: NSObject {
 		return value;
 	}
 	
-//	func dumpMemory() {
-//		self.ppuMemory.dumpMemory();
-//	}
+	func dumpMemory() {
+		self.ppuMemory.dumpMemory();
+	}
 }

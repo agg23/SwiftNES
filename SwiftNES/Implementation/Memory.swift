@@ -121,9 +121,11 @@ final class PPUMemory: Memory {
 	var nametable: [UInt8];
 	
 	var nametableMirroring: NametableMirroringType = .OneScreen;
+	var oneScreenUpper: Bool;
 	
 	init(mapper: Mapper) {
 		self.nametable = [UInt8](count: 0x2000, repeatedValue: 0);
+		self.oneScreenUpper = false;
 		super.init();
 		setMapper(mapper);
 	}
@@ -140,7 +142,10 @@ final class PPUMemory: Memory {
 			return self.mapper!.read(address);
 		} else if((address >= 0x2000) && (address < 0x3000)) {
 			if(self.nametableMirroring == .OneScreen) {
-				address = 0x2000 | (address % 0x200);
+				address = 0x2000 | (address % 0x400);
+				if(self.oneScreenUpper) {
+					address += 0x400;
+				}
 			} else if(self.nametableMirroring == .Horizontal) {
 				if(address >= 0x2C00) {
 					address -= 0x800;
@@ -169,7 +174,10 @@ final class PPUMemory: Memory {
 			return;
 		} else if((address >= 0x2000) && (address < 0x3000)) {
 			if(self.nametableMirroring == .OneScreen) {
-				address = 0x2000 | (address % 0x200);
+				address = 0x2000 | (address % 0x400);
+				if(self.oneScreenUpper) {
+					address += 0x400;
+				}
 			} else if(self.nametableMirroring == .Horizontal) {
 				if(address >= 0x2C00) {
 					address -= 0x800;
@@ -294,7 +302,7 @@ final class CPUMemory: Memory {
 		} else if(address > 0x3FFF && address < 0x4018) {
 			return (self.apu?.cpuRead(address))!;
 		} else if(self.mirrorPRGROM && address >= 0xC000) {
-			return self.mapper!.read(address % 0xC000);
+			return self.mapper!.read(address - 0x4000);
 		}
 		
 		return self.mapper!.read(address);
@@ -324,7 +332,7 @@ final class CPUMemory: Memory {
 			self.apu?.cpuWrite(address, data: data);
 			return;
 		} else if(self.mirrorPRGROM && address >= 0xC000) {
-			address = address % 0xC000;
+			address = address - 0x4000;
 		}
 		
 		self.mapper!.write(address, data: data);

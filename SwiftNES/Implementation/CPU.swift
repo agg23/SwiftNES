@@ -161,7 +161,7 @@ final class CPU: NSObject {
 
 		self.SP = 0;
 
-		self.P = 0;
+		self.P = 0x24;
 
 		self.A = 0;
 		self.X = 0;

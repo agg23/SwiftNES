@@ -20,10 +20,10 @@ final class Mapper1: Mapper {
 			switch(mirroring) {
 				case 0:
 					self.ppuMemory!.nametableMirroring = .OneScreen;
-					self.oneScreenUpper = false;
+					self.ppuMemory!.oneScreenUpper = false;
 				case 1:
 					self.ppuMemory!.nametableMirroring = .OneScreen;
-					self.oneScreenUpper = true;
+					self.ppuMemory!.oneScreenUpper = true;
 				case 2:
 					self.ppuMemory!.nametableMirroring = .Vertical;
 				case 3:
@@ -39,7 +39,6 @@ final class Mapper1: Mapper {
 		}
 	};
 	
-	private var oneScreenUpper: Bool;
 	private var prgRomBankMode: UInt8;
 	private var chrRomBankMode: Bool;
 	
@@ -75,12 +74,11 @@ final class Mapper1: Mapper {
 		self.shiftRegister = 0x10;
 		self.control = 0;
 		
-		self.oneScreenUpper = false;
 		self.prgRomBankMode = 0;
 		self.chrRomBankMode = false;
 		
 		self.chrBank0 = 0;
-		self.chrBank1 = 0;
+		self.chrBank1 = 1;
 		
 		self.prgBank = 0;
 		
@@ -150,17 +148,17 @@ final class Mapper1: Mapper {
 			self.control = self.shiftRegister;
 		} else if(address < 0xC000) {
 			// CHR bank 0
-			self.chrBank0 = self.shiftRegister;
+			self.chrBank0 = self.shiftRegister & self.chrBankCount;
 			
 			if(!self.chrRomBankMode) {
 				self.chrBank0 = self.chrBank0 & 0xFE;
 			}
 		} else if(address < 0xE000) {
 			// CHR bank 1
-			self.chrBank1 = self.shiftRegister;
+			self.chrBank1 = self.shiftRegister & self.chrBankCount;
 		} else {
 			// PRG bank
-			self.prgBank = self.shiftRegister;
+			self.prgBank = self.shiftRegister & 0xF;
 			
 			if(self.prgRomBankMode & 0x2 == 0) {
 				self.prgBank = self.prgBank & 0xFE;
@@ -176,7 +174,7 @@ final class Mapper1: Mapper {
 		if(self.chrRomBankMode) {
 			self.chrBank1Offset = Int(self.chrBank1) * 0x1000;
 		} else {
-			self.chrBank1Offset = self.chrBank0Offset;
+			self.chrBank1Offset = self.chrBank0Offset + 0x1000;
 		}
 		
 		switch(self.prgRomBankMode) {
