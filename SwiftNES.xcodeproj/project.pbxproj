@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		6613873F1CFCD80700564AE3 /* Mapper2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6613873E1CFCD80700564AE3 /* Mapper2.swift */; };
 		661387411CFCEFE400564AE3 /* Mapper3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661387401CFCEFE400564AE3 /* Mapper3.swift */; };
+		661387431CFCF49800564AE3 /* Mapper7.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661387421CFCF49800564AE3 /* Mapper7.swift */; };
 		664032B61CC0317B00FF7C6B /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 664032B41CC0317B00FF7C6B /* Metal.framework */; };
 		664032B71CC0317B00FF7C6B /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 664032B51CC0317B00FF7C6B /* MetalKit.framework */; };
 		665345491CF5F5370066550A /* Mapper1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665345481CF5F5370066550A /* Mapper1.swift */; };
@@ -43,6 +44,7 @@
 /* Begin PBXFileReference section */
 		6613873E1CFCD80700564AE3 /* Mapper2.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper2.swift; path = Implementation/Mappers/Mapper2.swift; sourceTree = "<group>"; };
 		661387401CFCEFE400564AE3 /* Mapper3.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper3.swift; path = Implementation/Mappers/Mapper3.swift; sourceTree = "<group>"; };
+		661387421CFCF49800564AE3 /* Mapper7.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper7.swift; path = Implementation/Mappers/Mapper7.swift; sourceTree = "<group>"; };
 		664032B41CC0317B00FF7C6B /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		664032B51CC0317B00FF7C6B /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		665345481CF5F5370066550A /* Mapper1.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper1.swift; path = Implementation/Mappers/Mapper1.swift; sourceTree = "<group>"; };
@@ -95,6 +97,7 @@
 				665345481CF5F5370066550A /* Mapper1.swift */,
 				6613873E1CFCD80700564AE3 /* Mapper2.swift */,
 				661387401CFCEFE400564AE3 /* Mapper3.swift */,
+				661387421CFCF49800564AE3 /* Mapper7.swift */,
 			);
 			name = Mappers;
 			sourceTree = "<group>";
@@ -273,6 +276,7 @@
 				665940911CC11CD300BEA04C /* DisplayWindow.swift in Sources */,
 				666146B01CA34BC40022C10D /* FileIO.swift in Sources */,
 				668B05F41CE28D4500315BCD /* APUBuffer.swift in Sources */,
+				661387431CFCF49800564AE3 /* Mapper7.swift in Sources */,
 				665345491CF5F5370066550A /* Mapper1.swift in Sources */,
 				668B05F21CE1515600315BCD /* APUChannels.swift in Sources */,
 			);
