@@ -268,8 +268,8 @@ final class CPU: NSObject {
 			self.potentialCLILatencyDelay = false;
 		}
 		
-//		let cycle = self.ppu.cycle;
-//		let scanline = self.ppu.scanline;
+//		let cycle = self.ppu.getCycle();
+//		let scanline = self.ppu.getScanline();
 		
 		ppuStep();
 		let opcode = fetchPC();
@@ -896,6 +896,7 @@ final class CPU: NSObject {
 		
 		for _ in 0 ..< 3 {
 			self.ppu.step();
+			self.mainMemory.mapper!.step();
 		}
 		
 		self.previousInterruptWaiting = self.interruptWaiting;

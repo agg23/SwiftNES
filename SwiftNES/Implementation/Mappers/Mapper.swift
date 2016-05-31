@@ -64,4 +64,8 @@ class Mapper {
 				break;
 		}
 	}
+	
+	func step() {
+		
+	}
 }

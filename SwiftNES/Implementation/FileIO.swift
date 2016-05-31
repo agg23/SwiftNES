@@ -127,6 +127,8 @@ final class FileIO: NSObject {
 				mapper = Mapper2();
 			case 3:
 				mapper = Mapper3();
+			case 4:
+				mapper = Mapper4();
 			case 7:
 				mapper = Mapper7();
 				ppuMemory.nametableMirroring = .OneScreen;

@@ -397,4 +397,30 @@ class SwiftNESTests: XCTestCase {
 	func testDMCRates() {
 		romTest(defaultPath + "apu_test/rom_singles/8-dmc_rates.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
 	}
+	
+	// MARK: - Mapper Testing
+	
+	func testMMC3Clocking() {
+		romTest(defaultPath + "mmc3_test_2/rom_singles/1-clocking.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testMMC3Details() {
+		romTest(defaultPath + "mmc3_test_2/rom_singles/2-details.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testMMC3A12Clocking() {
+		romTest(defaultPath + "mmc3_test_2/rom_singles/3-A12_clocking.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testMMC3ScanlineTiming() {
+		romTest(defaultPath + "mmc3_test_2/rom_singles/4-scanline_timing.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testMMC3() {
+		romTest(defaultPath + "mmc3_test_2/rom_singles/5-MMC3.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
+	
+	func testMMC3Alternate() {
+		romTest(defaultPath + "mmc3_test_2/rom_singles/6-MMC3_alt.nes", testAddress: 0x6000, desiredResult: 0x00, intermediary: 0x80, maxInstructions: 5000000);
+	}
 }

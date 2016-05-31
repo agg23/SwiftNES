@@ -1018,6 +1018,18 @@ final class PPU: NSObject {
 		return value;
 	}
 	
+	func getScanline() -> Int {
+		return self.scanline;
+	}
+	
+	func getCycle() -> Int {
+		return self.cycle;
+	}
+	
+	func getRenderingEnabled() -> Bool {
+		return self.renderBackground || self.renderSprites;
+	}
+	
 	func dumpMemory() {
 		self.ppuMemory.dumpMemory();
 	}
