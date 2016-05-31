@@ -130,6 +130,8 @@ final class FileIO: NSObject {
 			case 7:
 				mapper = Mapper7();
 				ppuMemory.nametableMirroring = .OneScreen;
+			case 9:
+				mapper = Mapper9();
 			default:
 				print("Unknown mapper \(mapperNumber)");
 				return false;
