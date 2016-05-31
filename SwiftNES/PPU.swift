@@ -586,6 +586,10 @@ final class PPU: NSObject {
 	}
 	
 	func renderSpritePixel(currentXCoord: Int, backgroundPixelTransparent: Bool) {
+		if(!self.spriteClipping && currentXCoord < 8) {
+			return;
+		}
+		
 		for i in 0 ..< 8 {
 			var sprite = currentSpriteData[i];
 			let xCoord = Int(sprite.xCoord);
@@ -669,7 +673,7 @@ final class PPU: NSObject {
 		
 		var patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
 		
-		if(patternValue & 0x3 == 0) {
+		if(patternValue & 0x3 == 0 || (!self.backgroundClipping && pixelXCoord < 8)) {
 			patternValue = 0;
 		}
 		
