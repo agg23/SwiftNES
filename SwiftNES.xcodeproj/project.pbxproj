@@ -11,6 +11,7 @@
 		661387411CFCEFE400564AE3 /* Mapper3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661387401CFCEFE400564AE3 /* Mapper3.swift */; };
 		661387431CFCF49800564AE3 /* Mapper7.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661387421CFCF49800564AE3 /* Mapper7.swift */; };
 		661387451CFD09DB00564AE3 /* Mapper9.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661387441CFD09DB00564AE3 /* Mapper9.swift */; };
+		661387491CFD2F8500564AE3 /* Mapper11.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661387481CFD2F8500564AE3 /* Mapper11.swift */; };
 		664032B61CC0317B00FF7C6B /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 664032B41CC0317B00FF7C6B /* Metal.framework */; };
 		664032B71CC0317B00FF7C6B /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 664032B51CC0317B00FF7C6B /* MetalKit.framework */; };
 		665345491CF5F5370066550A /* Mapper1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665345481CF5F5370066550A /* Mapper1.swift */; };
@@ -47,6 +48,7 @@
 		661387401CFCEFE400564AE3 /* Mapper3.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper3.swift; path = Implementation/Mappers/Mapper3.swift; sourceTree = "<group>"; };
 		661387421CFCF49800564AE3 /* Mapper7.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper7.swift; path = Implementation/Mappers/Mapper7.swift; sourceTree = "<group>"; };
 		661387441CFD09DB00564AE3 /* Mapper9.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper9.swift; path = Implementation/Mappers/Mapper9.swift; sourceTree = "<group>"; };
+		661387481CFD2F8500564AE3 /* Mapper11.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper11.swift; path = Implementation/Mappers/Mapper11.swift; sourceTree = "<group>"; };
 		664032B41CC0317B00FF7C6B /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		664032B51CC0317B00FF7C6B /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		665345481CF5F5370066550A /* Mapper1.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper1.swift; path = Implementation/Mappers/Mapper1.swift; sourceTree = "<group>"; };
@@ -101,6 +103,7 @@
 				661387401CFCEFE400564AE3 /* Mapper3.swift */,
 				661387421CFCF49800564AE3 /* Mapper7.swift */,
 				661387441CFD09DB00564AE3 /* Mapper9.swift */,
+				661387481CFD2F8500564AE3 /* Mapper11.swift */,
 			);
 			name = Mappers;
 			sourceTree = "<group>";
@@ -266,6 +269,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				661387451CFD09DB00564AE3 /* Mapper9.swift in Sources */,
+				661387491CFD2F8500564AE3 /* Mapper11.swift in Sources */,
 				661387411CFCEFE400564AE3 /* Mapper3.swift in Sources */,
 				66E186901CADB97300EFF583 /* Logger.swift in Sources */,
 				6659408D1CC117D900BEA04C /* ControllerIO.swift in Sources */,
