@@ -28,10 +28,12 @@ class SwiftNESTests: XCTestCase {
 		
 		let controllerIO = ControllerIO();
 		
-		let mainMemory = Memory();
+		let mapper = Mapper();
+		
+		let mainMemory = CPUMemory(mapper: mapper);
 		mainMemory.controllerIO = controllerIO;
 		
-		let ppuMemory = Memory(memoryType: Memory.MemoryType.PPU);
+		let ppuMemory = PPUMemory(mapper: mapper);
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
 		XCTAssert(fileIO.loadFile(path));
 		
