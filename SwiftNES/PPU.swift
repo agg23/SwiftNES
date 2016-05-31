@@ -633,8 +633,12 @@ final class PPU: NSObject {
 				}
 			}
 			
-			if(!getBit(5, pointer: &sprite.attribute) || backgroundPixelTransparent) {
+			let backgroundSprite = getBit(5, pointer: &sprite.attribute);
+			
+			if(!backgroundSprite || backgroundPixelTransparent) {
 				writePixel(xCoord + xOffset, y: self.scanline, color: colors[paletteIndex]);
+				return;
+			} else if(backgroundSprite) {
 				return;
 			}
 		}
