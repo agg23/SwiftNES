@@ -164,7 +164,7 @@ final class Mapper4: Mapper {
 				if(address % 2 == 0) {
 					self.irqLoadRegister = data;
 				} else {
-					self.irqShouldReload = true;
+					self.irqCounter = 0;
 				}
 			case 0xE000 ..< 0x10000:
 				if(address % 2 == 0) {
@@ -255,17 +255,11 @@ final class Mapper4: Mapper {
 	// MARK: - IRQ Handling
 	
 	override func step() {
-		let ppu = self.cpuMemory!.ppu!;
-		let scanline = ppu.getScanline();
-		
-		if(scanline > 239 && scanline < 261 || ppu.getCycle() != 260 || !ppu.getRenderingEnabled()) {
-			return;
-		}
-		
-		if(self.irqShouldReload) {
-			self.irqCounter = self.irqLoadRegister;
-			self.irqShouldReload = false;
-		} else if(self.irqCounter == 0) {
+//		print("Clocking \(self.cpuMemory!.ppu!.getScanline())");
+		if(self.irqCounter == 0) {
+			if(self.irqLoadRegister == 0) {
+				self.cpuMemory!.ppu!.cpu!.queueIRQ();
+			}
 			self.irqCounter = self.irqLoadRegister;
 		} else {
 			self.irqCounter -= 1;

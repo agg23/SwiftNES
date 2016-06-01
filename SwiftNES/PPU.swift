@@ -132,6 +132,14 @@ final class PPU: NSObject {
 				// Second write
 				self.tempVramAddress = (self.tempVramAddress & 0xFF00) | UInt16(PPUADDR);
 				self.currentVramAddress = self.tempVramAddress;
+				
+				if(self.tempVramAddress & 0x1000 == 0x1000 && self.currentPPUADDRAddress & 0x1000 == 0) {
+					if(self.ppuMemory.a12Timer == 0) {
+						self.ppuMemory.mapper!.step();
+					}
+					self.ppuMemory.a12Timer = 16;
+				}
+
 				// TODO: Fix hack
 				self.currentPPUADDRAddress = self.tempVramAddress;
 			} else {
@@ -395,6 +403,7 @@ final class PPU: NSObject {
 		
 		if(self.cycle == 341) {
 			self.cycle = 0;
+			
 			if(self.scanline == 260) {
 				// Frame completed
 				self.scanline = -1;
@@ -405,6 +414,10 @@ final class PPU: NSObject {
 			} else {
 				scanline += 1;
 			}
+		}
+		
+		if(self.ppuMemory.a12Timer > 0) {
+			self.ppuMemory.a12Timer -= 1;
 		}
 		
 		if(self.nmiDelay > 0) {
@@ -464,7 +477,7 @@ final class PPU: NSObject {
 				self.cycle = 339;
 				
 				return;
-			} else if(self.cycle > 320) {
+			} else if(self.cycle > 256) {
 				visibleScanlineTick();
 			}
 			
@@ -555,7 +568,7 @@ final class PPU: NSObject {
 			
 			self.spriteZeroInSecondaryOAM = self.spriteZeroWillBeInSecondaryOAM;
 			
-			if(phaseIndex == 0 && self.secondaryOAMIndex < 32) {
+			if(phaseIndex == 0 && self.secondaryOAMIndex < 32 && self.renderSprites) {
 				spriteCopy();
 			}
 		} else if(self.cycle <= 336) {
@@ -800,6 +813,10 @@ final class PPU: NSObject {
 		let xCoord = self.secondaryOAM[secondaryOAMIndex + 3];
 		
 		var yShift = self.scanline - Int(yCoord);
+		
+		if(yCoord == 0xFF) {
+			yShift = 0;
+		}
 		
 		var basePatternTableAddress = 0x0000;
 		

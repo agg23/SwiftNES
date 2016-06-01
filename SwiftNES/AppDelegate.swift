@@ -93,7 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		let ppuMemory = PPUMemory(mapper: mapper);
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		fileIO.loadFile("/Users/adam/testROMs/games/smb3.nes");
+		fileIO.loadFile("/Users/adam/testROMs/mmc3_test_2/rom_singles/2-details.nes");
 		
 		self.apu = APU(memory: mainMemory);
 		

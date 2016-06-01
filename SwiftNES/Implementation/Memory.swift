@@ -123,9 +123,15 @@ final class PPUMemory: Memory {
 	var nametableMirroring: NametableMirroringType = .OneScreen;
 	var oneScreenUpper: Bool;
 	
+	private var previousAddress: Int;
+	var a12Timer: Int;
+	
 	init(mapper: Mapper) {
 		self.nametable = [UInt8](count: 0x2000, repeatedValue: 0);
 		self.oneScreenUpper = false;
+		
+		self.previousAddress = 0;
+		self.a12Timer = 0;
 		super.init();
 		setMapper(mapper);
 	}
@@ -137,6 +143,15 @@ final class PPUMemory: Memory {
 	
 	final override func readMemory(address: Int) -> UInt8 {
 		var address = address % 0x4000;
+		
+		if(address & 0x1000 == 0x1000 && self.previousAddress & 0x1000 == 0) {
+			if(self.a12Timer == 0) {
+				self.mapper!.step();
+			}
+			self.a12Timer = 16;
+		}
+		
+		self.previousAddress = address;
 		
 		if(address < 0x2000) {
 			return self.mapper!.read(address);
@@ -168,6 +183,15 @@ final class PPUMemory: Memory {
 	
 	final override func writeMemory(address: Int, data: UInt8) {
 		var address = address % 0x4000;
+		
+		if(address & 0x1000 == 0x1000 && self.previousAddress & 0x1000 == 0) {
+			if(self.a12Timer == 0) {
+				self.mapper!.step();
+			}
+			self.a12Timer = 16;
+		}
+		
+		self.previousAddress = address;
 		
 		if(address < 0x2000) {
 			self.mapper!.write(address, data: data);
