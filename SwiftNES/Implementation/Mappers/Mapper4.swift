@@ -255,7 +255,6 @@ final class Mapper4: Mapper {
 	// MARK: - IRQ Handling
 	
 	override func step() {
-//		print("Clocking \(self.cpuMemory!.ppu!.getScanline())");
 		if(self.irqCounter == 0) {
 			if(self.irqLoadRegister == 0) {
 				self.cpuMemory!.ppu!.cpu!.queueIRQ();
