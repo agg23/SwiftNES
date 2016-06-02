@@ -37,6 +37,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	
 	@IBOutlet weak var metalView: MTKView!
 	
+	@IBOutlet weak var playPauseEmulationButton: NSMenuItem!
+	
 	private var device: MTLDevice!;
 	private var commandQueue: MTLCommandQueue! = nil
 	private var pipeline: MTLComputePipelineState! = nil
@@ -61,6 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	private var frameCount = 0;
 	private var lastFrameUpdate: Double = 0;
 	
+	private var fileLoaded: Bool;
 	private var paused: Bool;
 	
 	private let scalingFactor:CGFloat = 2.0;
@@ -82,6 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.numPacketsToRead = 0;
 		self.packetsToPlay = 1;
 		
+		self.fileLoaded = false;
 		self.paused = true;
 		
 		self.logger = Logger(path: "/Users/adam/nes.log");
@@ -154,11 +158,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.metalView.draw();
     }
 	
+	func application(sender: NSApplication, openFile filename: String) -> Bool {
+		return loadROM(NSURL.fileURLWithPath(filename));
+	}
+	
+	// MARK: - Menu Controls
+	
 	@IBAction func openROM(sender: AnyObject) {
 		let openDialog = NSOpenPanel();
 		
+		self.paused = true;
+		
 		if(openDialog.runModal() == NSFileHandlingPanelOKButton) {
-			loadROM(openDialog.URL!.path!);
+			loadROM(openDialog.URL!);
+		}
+		
+		self.paused = false;
+	}
+	
+	
+	@IBAction func playPauseEmulation(sender: AnyObject) {
+		if(!self.fileLoaded) {
+			return;
+		}
+		
+		self.paused = !self.paused;
+		
+		// TODO: Handle AudioQueue when paused
+		if(self.paused) {
+			self.playPauseEmulationButton.title = "Resume Emulation";
+		} else {
+			self.playPauseEmulationButton.title = "Pause Emulation";
 		}
 	}
 	
@@ -166,7 +196,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 //		self.ppu.dumpMemory();
 	}
 	
-	func loadROM(path: String) {
+	override func validateMenuItem(menuItem: NSMenuItem) -> Bool {
+		if(menuItem == self.playPauseEmulationButton) {
+			return self.fileLoaded;
+		}
+		
+		return true;
+	}
+	
+	func loadROM(url: NSURL) -> Bool {
 		let mapper = Mapper();
 		
 		let mainMemory = CPUMemory(mapper: mapper);
@@ -174,7 +212,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		let ppuMemory = PPUMemory(mapper: mapper);
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		fileIO.loadFile(path);
+		self.fileLoaded = fileIO.loadFile(url.path!);
+		
+		if(!self.fileLoaded) {
+			return false;
+		}
+		
+		NSDocumentController.sharedDocumentController().noteNewRecentDocumentURL(url);
+		
+		self.playPauseEmulationButton.enabled = true;
 		
 		self.apu = APU(memory: mainMemory);
 		
@@ -194,6 +240,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		AudioQueueStart(queue, nil);
 		
 		self.paused = false;
+		
+		return true;
 	}
 	
 	// MARK: - Audio
