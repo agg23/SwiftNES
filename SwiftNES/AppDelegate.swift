@@ -53,15 +53,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	private var textureLoader: MTKTextureLoader?;
 	
 	private let controllerIO: ControllerIO;
-	private var cpu: CPU;
-	private var ppu: PPU;
-	private var apu: APU;
-	private let logger: Logger;
+	private var cpu: CPU?;
+	private var ppu: PPU?;
+	private var apu: APU?;
+	private let logger: Logger?;
 	
 	private var frameCount = 0;
 	private var lastFrameUpdate: Double = 0;
 	
-	private var remainingCycles = 0;
+	private var paused: Bool;
 	
 	private let scalingFactor:CGFloat = 2.0;
 	
@@ -82,31 +82,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.numPacketsToRead = 0;
 		self.packetsToPlay = 1;
 		
+		self.paused = true;
+		
 		self.logger = Logger(path: "/Users/adam/nes.log");
 		
 		self.controllerIO = ControllerIO();
 		
-		let mapper = Mapper();
+		dataFormat.mSampleRate = 44100;
+		dataFormat.mFormatID = kAudioFormatLinearPCM;
 		
-		let mainMemory = CPUMemory(mapper: mapper);
-		mainMemory.controllerIO = controllerIO;
+		// Sort out endianness
+		if (NSHostByteOrder() == NS_BigEndian) {
+			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsBigEndian | kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
+		} else {
+			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
+		}
 		
-		let ppuMemory = PPUMemory(mapper: mapper);
-		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		fileIO.loadFile("/Users/adam/testROMs/mmc3_test_2/rom_singles/2-details.nes");
-		
-		self.apu = APU(memory: mainMemory);
-		
-		self.ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
-		
-		mainMemory.ppu = self.ppu;
-		mainMemory.apu = self.apu;
-		
-		self.cpu = CPU(mainMemory: mainMemory, ppu: self.ppu, apu: self.apu, logger: logger);
-		self.apu.cpu = self.cpu;
-		self.ppu.cpu = self.cpu;
-		
-		self.cpu.reset();
+		dataFormat.mFramesPerPacket = 1;
+		dataFormat.mBytesPerFrame = 2;
+		dataFormat.mBytesPerPacket = dataFormat.mBytesPerFrame * dataFormat.mFramesPerPacket;
+		dataFormat.mChannelsPerFrame = 1;
+		dataFormat.mBitsPerChannel = 16;
 	}
 	
 	func windowSetup() {
@@ -123,10 +119,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
-		initializeAudio();
-		
-		AudioQueueStart(queue, nil);
-		
 		windowSetup();
 		
 		self.sizingRect = self.window.convertRectToBacking(NSMakeRect(0, 0, 256 * self.scalingFactor, 240 * self.scalingFactor));
@@ -162,36 +154,63 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.metalView.draw();
     }
 	
+	@IBAction func openROM(sender: AnyObject) {
+		let openDialog = NSOpenPanel();
+		
+		if(openDialog.runModal() == NSFileHandlingPanelOKButton) {
+			loadROM(openDialog.URL!.path!);
+		}
+	}
+	
 	@IBAction func dumpPPUMemory(sender: AnyObject) {
 //		self.ppu.dumpMemory();
+	}
+	
+	func loadROM(path: String) {
+		let mapper = Mapper();
+		
+		let mainMemory = CPUMemory(mapper: mapper);
+		mainMemory.controllerIO = controllerIO;
+		
+		let ppuMemory = PPUMemory(mapper: mapper);
+		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
+		fileIO.loadFile(path);
+		
+		self.apu = APU(memory: mainMemory);
+		
+		self.ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
+		
+		mainMemory.ppu = self.ppu;
+		mainMemory.apu = self.apu;
+		
+		self.cpu = CPU(mainMemory: mainMemory, ppu: self.ppu!, apu: self.apu!, logger: self.logger!);
+		self.apu!.cpu = self.cpu!;
+		self.ppu!.cpu = self.cpu!;
+		
+		self.cpu!.reset();
+		
+		initializeAudio();
+		
+		AudioQueueStart(queue, nil);
+		
+		self.paused = false;
 	}
 	
 	// MARK: - Audio
 	
 	func initializeAudio() {
-		dataFormat.mSampleRate = 44100;
-		dataFormat.mFormatID = kAudioFormatLinearPCM;
+		AudioQueueFreeBuffer(self.queue, self.buffer);
+		AudioQueueFreeBuffer(self.queue, self.buffer2);
 		
-		// Sort out endianness
-		if (NSHostByteOrder() == NS_BigEndian) {
-			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsBigEndian | kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
-		} else {
-			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
-		}
+		AudioQueueDispose(self.queue, true);
 		
-		dataFormat.mFramesPerPacket = 1;
-		dataFormat.mBytesPerFrame = 2;
-		dataFormat.mBytesPerPacket = dataFormat.mBytesPerFrame * dataFormat.mFramesPerPacket;
-		dataFormat.mChannelsPerFrame = 1;
-		dataFormat.mBitsPerChannel = 16;
-		
-		AudioQueueNewOutput(&self.dataFormat, outputCallback, UnsafeMutablePointer<Void>(bridge(self.apu)), CFRunLoopGetCurrent(), kCFRunLoopCommonModes, 0, &self.queue);
+		AudioQueueNewOutput(&self.dataFormat, outputCallback, UnsafeMutablePointer<Void>(bridge(self.apu!)), CFRunLoopGetCurrent(), kCFRunLoopCommonModes, 0, &self.queue);
 		
 		AudioQueueAllocateBuffer(self.queue, self.bufferByteSize, &self.buffer);
 		AudioQueueAllocateBuffer(self.queue, self.bufferByteSize, &self.buffer2);
 		
-		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu)), inAudioQueue: self.queue, inBuffer: self.buffer);
-		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu)), inAudioQueue: self.queue, inBuffer: self.buffer2);
+		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu!)), inAudioQueue: self.queue, inBuffer: self.buffer);
+		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu!)), inAudioQueue: self.queue, inBuffer: self.buffer2);
 	}
 	
 	// MARK: - Graphics
@@ -237,8 +256,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 	
 	func applicationWillTerminate(aNotification: NSNotification) {
-		self.ppu.dumpMemory();
-		self.logger.endLogging();
+		if(self.ppu != nil) {
+			self.ppu!.dumpMemory();
+			self.logger!.endLogging();
+		}
     }
 
 	// MARK: - MTKViewDelegate
@@ -260,12 +281,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 			self.lastFrameUpdate = now;
 		}
 		
-		while(self.cpu.step()) {
-			if(self.ppu.frameReady) {
-				self.ppu.frameReady = false;
-				
-				self.render(&self.ppu.frame);
-				return;
+		if(!self.paused) {
+			while(self.cpu!.step()) {
+				if(self.ppu!.frameReady) {
+					self.ppu!.frameReady = false;
+					
+					self.render(&self.ppu!.frame);
+					return;
+				}
 			}
 		}
 	}
