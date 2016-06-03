@@ -45,8 +45,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	
 	var sizingRect: NSRect? = nil;
 	
-	var textureDescriptor: MTLTextureDescriptor? = nil;
-	
 	private var texture: MTLTexture! = nil;
 	
 	private let threadGroupCount = MTLSizeMake(8, 8, 1);
@@ -66,7 +64,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	private var fileLoaded: Bool;
 	private var paused: Bool;
 	
-	private let scalingFactor:CGFloat = 2.0;
+	private var scalingFactor:CGFloat = 2.0;
 	
 	var dataFormat: AudioStreamBasicDescription;
 	var queue: AudioQueueRef;
@@ -130,8 +128,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		let width = Int(self.sizingRect!.width);
 		let height = Int(self.sizingRect!.height);
 		
-		self.textureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(MTLPixelFormat.RGBA8Unorm, width: width, height: height, mipmapped: false);
-		
 		self.window.controllerIO = self.controllerIO;
 		
 		// Set up Metal
@@ -144,8 +140,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.metalView.drawableSize = CGSizeMake(self.metalView.frame.size.width, self.metalView.frame.size.height);
 		
 		self.commandQueue = self.device!.newCommandQueue();
-		
-		self.texture = self.device!.newTextureWithDescriptor(self.textureDescriptor!);
 		
 		self.textureLoader = MTKTextureLoader(device: self.device!);
 		
@@ -173,7 +167,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 			loadROM(openDialog.URL!);
 		}
 		
-		self.paused = false;
+		self.paused = !self.fileLoaded;
 	}
 	
 	
@@ -192,8 +186,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		}
 	}
 	
+	@IBAction func setRenderScale(sender: AnyObject) {
+		var tag = sender.tag();
+		
+		if(tag < 1 || tag > 3) {
+			tag = 1;
+		}
+		
+		self.scalingFactor = CGFloat(tag);
+		if(self.ppu != nil) {
+			self.ppu!.setRenderScale(tag);
+		}
+		
+		windowSetup();
+	}
+	
 	@IBAction func dumpPPUMemory(sender: AnyObject) {
-//		self.ppu.dumpMemory();
+		self.ppu!.dumpMemory();
 	}
 	
 	override func validateMenuItem(menuItem: NSMenuItem) -> Bool {
@@ -225,6 +234,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.apu = APU(memory: mainMemory);
 		
 		self.ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
+		self.ppu!.setRenderScale(Int(self.scalingFactor));
 		
 		mainMemory.ppu = self.ppu;
 		mainMemory.apu = self.apu;
@@ -305,7 +315,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	
 	func applicationWillTerminate(aNotification: NSNotification) {
 		if(self.ppu != nil) {
-			self.ppu!.dumpMemory();
 			self.logger!.endLogging();
 		}
     }

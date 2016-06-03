@@ -119,21 +119,47 @@
                         </items>
                     </menu>
                 </menuItem>
+                <menuItem title="Debug" id="e9h-Kf-iMq">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <menu key="submenu" title="Debug" id="xai-lr-WNB">
+                        <items>
+                            <menuItem title="Dump PPU Memory" id="qrC-AS-ncK">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="dumpPPUMemory:" target="Voe-Tx-rLC" id="Mpk-tT-Cov"/>
+                                </connections>
+                            </menuItem>
+                        </items>
+                    </menu>
+                </menuItem>
                 <menuItem title="View" id="H8h-7b-M4v">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="View" id="HyV-fh-RgO">
                         <items>
-                            <menuItem title="Show Toolbar" keyEquivalent="t" id="snW-S8-Cw5">
-                                <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
-                                <connections>
-                                    <action selector="toggleToolbarShown:" target="-1" id="BXY-wc-z0C"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Customize Toolbar…" id="1UK-8n-QPP">
+                            <menuItem title="Render Scale" id="rgc-ir-mbs">
                                 <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="runToolbarCustomizationPalette:" target="-1" id="pQI-g3-MTW"/>
-                                </connections>
+                                <menu key="submenu" title="Render Scale" id="1v2-gU-L0r">
+                                    <items>
+                                        <menuItem title="1x" tag="1" id="bvY-Gg-Q9K">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="setRenderScale:" target="Voe-Tx-rLC" id="J7r-pe-YoB"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="2x" tag="2" id="jFe-Sf-K38">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="setRenderScale:" target="Voe-Tx-rLC" id="bGF-Tb-baw"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="3x" tag="3" id="p3a-I0-gaY">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="setRenderScale:" target="Voe-Tx-rLC" id="52Q-h5-jBh"/>
+                                            </connections>
+                                        </menuItem>
+                                    </items>
+                                </menu>
                             </menuItem>
                         </items>
                     </menu>

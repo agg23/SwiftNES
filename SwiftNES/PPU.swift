@@ -1087,4 +1087,11 @@ final class PPU: NSObject {
 	func dumpMemory() {
 		self.ppuMemory.dumpMemory();
 	}
+	
+	func setRenderScale(scale: Int) {
+		self.pixelSize = scale;
+		self.totalPixelCount = 256 * 240 * scale * scale;
+		
+		self.frame = [UInt32](count:self.totalPixelCount, repeatedValue:0);
+	}
 }
