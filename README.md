@@ -16,8 +16,19 @@ All NES hardware operations are emulated on a cycle-by-cycle basis. While this m
 * Full cycle accurate 6502 emulator, including cycle accurate timing on all illegal opcodes, minus decimal mode emulation (which is not used by the NES)
 * Cycle accurate 2C02 PPU emulation, with in-progress open bus handling
 * Work-in-progress 2A03 APU (slight bugs in sound reproduction)
-* Mapper 0 support (more mappers coming soon)
+* A whole host of mappers (with more coming soon)
 * Retina Mac display support, along with display resizing using pixel doubling
+
+## Supported Mappers
+Currently SwiftNES can run approximately 88% of the NTSC NES ROMs, thanks to the currently implemented mappers.
+
+* Mapper 0 (NROM) - Super Mario Bros., Donkey Kong, Excitebike
+* Mapper 1 (MMC1) - Zelda 2, Rad Racer, Lemmings
+* Mapper 2 (UxROM) - Mega Man, Castlevania, Contra
+* Mapper 3 (CNROM) - Arkanoid, Q-bert
+* Mapper 4 (MMC3) - Super Mario Bros. 2 and 3 - **May have slight IRQ timing issues**
+* Mapper 7 (AxROM) - Marble Madness - **May have issues**
+* Mapper 9 (MMC2) - Only used in Mike Tyson's Punch Out!!
 
 ## Accuracy
 
@@ -25,7 +36,7 @@ The final goal behind SwiftNES is to make it one of the most accurate NES emulat
 In order to keep the system simple, the various components making up the NES (the CPU, PPU, and APU) are emulated on a cycle-by-cycle basis, using the CPU clock cycle as the base tick.
 This has the added bonus of increasing the similarity to the inner workings of the NES.
 
-In order to verify the accuracy of each SwiftNES build, the project includes a unit testing system using XCTest that automatically tests SwiftNES against verified NES test ROMs (see [this collection](https://github.com/christopherpow/nes-test-roms)). Although some of the NES test ROMs in the above repo are not actively being tested, the emulator passes 62 of the 72 tests that are run, with this number rising every day.
+In order to verify the accuracy of each SwiftNES build, the project includes a unit testing system using XCTest that automatically tests SwiftNES against verified NES test ROMs (see [this collection](https://github.com/christopherpow/nes-test-roms)). Although some of the ROMs in the above repo are not actively being tested, the emulator passes 66 of the 78 automated tests, with this number rising every day.
 
 ## Challenges
 
@@ -41,4 +52,6 @@ Currently, I am struggling to debug various sound issues without a real indicati
 - [ ] Ensure the CPU properly times all interrupt edge cases correctly, such as NMIs during a BRK, etc...
 - [ ] Clean up PPU open bus, ensuring reads of the PPU registers properly returns data off of the bus
 - [ ] Fix slight sound reproduction issues
-- [ ] Add additional mappers, particularly Mapper 3 ([the Nintendo MMC3](http://wiki.nesdev.com/w/index.php/MMC3))
+- [ ] Add additional mappers
+- [ ] Add support for savestates
+- [ ] Add support for saving battery backed RAM
