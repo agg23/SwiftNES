@@ -697,7 +697,7 @@ final class PPU: NSObject {
 			
 			let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
 			
-			let paletteIndex = Int(self.ppuMemory.readPaletteMemory(0x10 + patternValue));
+			let paletteIndex = Int(self.ppuMemory.readPaletteMemory(0x10 + patternValue)) & 0x3F;
 			
 			// First color each section of sprite palette is transparent
 			if(patternValue & 0x3 == 0) {
@@ -767,7 +767,7 @@ final class PPU: NSObject {
 			patternValue = 0;
 		}
 		
-		let paletteIndex = Int(self.ppuMemory.readPaletteMemory(patternValue));
+		let paletteIndex = Int(self.ppuMemory.readPaletteMemory(patternValue)) & 0x3F;
 		
 		let color = colors[paletteIndex];
 		

@@ -148,38 +148,30 @@ final class Mapper1: Mapper {
 			self.control = self.shiftRegister;
 		} else if(address < 0xC000) {
 			// CHR bank 0
-			self.chrBank0 = self.shiftRegister & self.chrBankCount;
-			
-			if(!self.chrRomBankMode) {
-				self.chrBank0 = self.chrBank0 & 0xFE;
-			}
+			self.chrBank0 = self.shiftRegister & (self.chrBankCount - 1);
 		} else if(address < 0xE000) {
 			// CHR bank 1
-			self.chrBank1 = self.shiftRegister & self.chrBankCount;
+			self.chrBank1 = self.shiftRegister & (self.chrBankCount - 1);
 		} else {
 			// PRG bank
-			self.prgBank = self.shiftRegister & 0xF;
-			
-			if(self.prgRomBankMode & 0x2 == 0) {
-				self.prgBank = self.prgBank & 0xFE;
-			}
+			self.prgBank = self.shiftRegister & (self.prgBankCount - 1);
 		}
 		
 		updateOffsets();
 	}
 	
 	private func updateOffsets() {
-		self.chrBank0Offset = Int(self.chrBank0) * 0x1000;
-		
 		if(self.chrRomBankMode) {
+			self.chrBank0Offset = Int(self.chrBank0) * 0x1000;
 			self.chrBank1Offset = Int(self.chrBank1) * 0x1000;
 		} else {
+			self.chrBank0Offset = Int(self.chrBank0 & 0xFE) * 0x1000;
 			self.chrBank1Offset = self.chrBank0Offset + 0x1000;
 		}
 		
 		switch(self.prgRomBankMode) {
 			case 0, 1:
-				self.prgBank0Offset = Int(self.prgBank) * 0x4000;
+				self.prgBank0Offset = Int(self.prgBank & 0xFE) * 0x4000;
 				self.prgBank1Offset = self.prgBank0Offset + 0x4000;
 			case 2:
 				self.prgBank0Offset = 0;
