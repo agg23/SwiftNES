@@ -46,6 +46,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	var sizingRect: NSRect? = nil;
 	
 	private var texture: MTLTexture! = nil;
+	private var textureOptions = [MTKTextureLoaderOptionTextureUsage: Int(MTLTextureUsage.RenderTarget.rawValue) as NSNumber];
+	private var textureDescriptor: MTLTextureDescriptor? = nil;
 	
 	private let threadGroupCount = MTLSizeMake(8, 8, 1);
 	private var threadGroups: MTLSize?;
@@ -114,15 +116,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		self.window.setFrame(rect, display: false);
 		
-		let windowSize = NSMakeSize(256 * self.scalingFactor, 240 * self.scalingFactor);
+		let width = 256 * self.scalingFactor;
+		let height = 240 * self.scalingFactor;
+		
+		let windowSize = NSMakeSize(width, height);
 		
 		self.window.contentMinSize = windowSize;
 		self.window.contentMaxSize = windowSize;
+		
+		self.textureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(MTLPixelFormat.BGRA8Unorm, width: Int(width), height: Int(height), mipmapped: false);
+		self.texture = self.device!.newTextureWithDescriptor(self.textureDescriptor!);
 	}
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
-		windowSetup();
-		
 		self.sizingRect = self.window.convertRectToBacking(NSMakeRect(0, 0, 256 * self.scalingFactor, 240 * self.scalingFactor));
 		
 		let width = Int(self.sizingRect!.width);
@@ -148,6 +154,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		let library:MTLLibrary!  = self.device.newDefaultLibrary();
 		let function:MTLFunction! = library.newFunctionWithName("kernel_passthrough");
 		self.pipeline = try! self.device!.newComputePipelineStateWithFunction(function);
+		
+		windowSetup();
 		
 		self.metalView.draw();
     }
@@ -277,36 +285,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		let width = Int(256 * self.scalingFactor);
 		let height = Int(240 * self.scalingFactor);
 		
-		let bitsPerComponent = 8;
-		
 		let bytesPerPixel = 4;
 		let bytesPerRow = width * bytesPerPixel;
-		let colorSpace = CGColorSpaceCreateDeviceRGB();
 		
-		let pixels = UnsafeMutableBufferPointer<UInt32>(start: UnsafeMutablePointer<UInt32>(screen), count: screen.count);
-		
-		var bitmapInfo: UInt32 = CGBitmapInfo.ByteOrder32Little.rawValue;
-		bitmapInfo |= CGImageAlphaInfo.NoneSkipFirst.rawValue;
-		
-		let imageContext = CGBitmapContextCreateWithData(pixels.baseAddress, width, height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo, nil, nil);
-		
-		let image = CGBitmapContextCreateImage(imageContext);
-		
-		self.texture = try! self.textureLoader?.newTextureWithCGImage(image!, options: nil);
+		self.metalView.currentDrawable!.texture.replaceRegion(MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: UnsafePointer<Void>(screen), bytesPerRow: bytesPerRow);
 		
 		let commandBuffer = commandQueue.commandBuffer()
-		
-		let encoder = commandBuffer.computeCommandEncoder()
-		
-		encoder.setComputePipelineState(pipeline)
-		
-		encoder.setTexture(self.texture, atIndex: 0)
-		
-		encoder.setTexture(metalView.currentDrawable!.texture, atIndex: 1)
-		
-		encoder.dispatchThreadgroups(threadGroups!, threadsPerThreadgroup: threadGroupCount)
-		
-		encoder.endEncoding()
 		
 		commandBuffer.presentDrawable(metalView.currentDrawable!)
 		
