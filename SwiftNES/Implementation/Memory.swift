@@ -36,13 +36,13 @@ class Memory {
 	*/
 	
 	enum NametableMirroringType {
-		case Vertical
+		case vertical
 		
-		case Horizontal
+		case horizontal
 		
-		case OneScreen
+		case oneScreen
 		
-		case FourScreen
+		case fourScreen
 	}
 	
 	var mapper: Mapper?;
@@ -59,28 +59,28 @@ class Memory {
 	*/
 	init() {
 		// Dummy initialization
-		self.banks = [UInt8](count: 1, repeatedValue: 0);
+		self.banks = [UInt8](repeating: 0, count: 1);
 		self.mapper = nil;
 	}
 	
-	func readMemory(address: Int) -> UInt8 {
+	func readMemory(_ address: Int) -> UInt8 {
 		return 0;
 	}
 	
-	final func readTwoBytesMemory(address: Int) -> UInt16 {
+	final func readTwoBytesMemory(_ address: Int) -> UInt16 {
 		return UInt16(self.readMemory(address + 1)) << 8 | UInt16(self.readMemory(address));
 	}
 	
-	func writeMemory(address: Int, data: UInt8) {
+	func writeMemory(_ address: Int, data: UInt8) {
 		
 	}
 	
-    final func writeTwoBytesMemory(address: Int, data: UInt16) {
+    final func writeTwoBytesMemory(_ address: Int, data: UInt16) {
         writeMemory(address, data: UInt8(data & 0xFF));
         writeMemory(address + 1, data: UInt8((data & 0xFF00) >> 8));
     }
 	
-	func setMapper(mapper: Mapper) {
+	func setMapper(_ mapper: Mapper) {
 		
 	}
 }
@@ -120,14 +120,14 @@ final class PPUMemory: Memory {
 	
 	var nametable: [UInt8];
 	
-	var nametableMirroring: NametableMirroringType = .OneScreen;
+	var nametableMirroring: NametableMirroringType = .oneScreen;
 	var oneScreenUpper: Bool;
 	
 	private var previousAddress: Int;
 	var a12Timer: Int;
 	
 	init(mapper: Mapper) {
-		self.nametable = [UInt8](count: 0x2000, repeatedValue: 0);
+		self.nametable = [UInt8](repeating: 0, count: 0x2000);
 		self.oneScreenUpper = false;
 		
 		self.previousAddress = 0;
@@ -136,12 +136,12 @@ final class PPUMemory: Memory {
 		setMapper(mapper);
 	}
 	
-	final override func setMapper(mapper: Mapper) {
+	final override func setMapper(_ mapper: Mapper) {
 		mapper.ppuMemory = self;
 		self.mapper = mapper;
 	}
 	
-	final override func readMemory(address: Int) -> UInt8 {
+	final override func readMemory(_ address: Int) -> UInt8 {
 		var address = address % 0x4000;
 		
 		if(address & 0x1000 == 0x1000 && self.previousAddress & 0x1000 == 0) {
@@ -156,18 +156,18 @@ final class PPUMemory: Memory {
 		if(address < 0x2000) {
 			return self.mapper!.read(address);
 		} else if((address >= 0x2000) && (address < 0x3000)) {
-			if(self.nametableMirroring == .OneScreen) {
+			if(self.nametableMirroring == .oneScreen) {
 				address = 0x2000 | (address % 0x400);
 				if(self.oneScreenUpper) {
 					address += 0x400;
 				}
-			} else if(self.nametableMirroring == .Horizontal) {
+			} else if(self.nametableMirroring == .horizontal) {
 				if(address >= 0x2C00) {
 					address -= 0x800;
 				} else if(address >= 0x2400) {
 					address -= 0x400;
 				}
-			} else if(self.nametableMirroring == .Vertical) {
+			} else if(self.nametableMirroring == .vertical) {
 				if(address >= 0x2800) {
 					address -= 0x800;
 				}
@@ -181,7 +181,7 @@ final class PPUMemory: Memory {
 		return self.nametable[address - 0x2000];
 	}
 	
-	final override func writeMemory(address: Int, data: UInt8) {
+	final override func writeMemory(_ address: Int, data: UInt8) {
 		var address = address % 0x4000;
 		
 		if(address & 0x1000 == 0x1000 && self.previousAddress & 0x1000 == 0) {
@@ -197,18 +197,18 @@ final class PPUMemory: Memory {
 			self.mapper!.write(address, data: data);
 			return;
 		} else if((address >= 0x2000) && (address < 0x3000)) {
-			if(self.nametableMirroring == .OneScreen) {
+			if(self.nametableMirroring == .oneScreen) {
 				address = 0x2000 | (address % 0x400);
 				if(self.oneScreenUpper) {
 					address += 0x400;
 				}
-			} else if(self.nametableMirroring == .Horizontal) {
+			} else if(self.nametableMirroring == .horizontal) {
 				if(address >= 0x2C00) {
 					address -= 0x800;
 				} else if(address >= 0x2400) {
 					address -= 0x400;
 				}
-			} else if(self.nametableMirroring == .Vertical) {
+			} else if(self.nametableMirroring == .vertical) {
 				if(address >= 0x2800) {
 					address -= 0x800;
 				}
@@ -228,7 +228,7 @@ final class PPUMemory: Memory {
 		self.nametable[address - 0x2000] = data;
 	}
 	
-	func readPaletteMemory(address: Int) -> UInt8 {
+	func readPaletteMemory(_ address: Int) -> UInt8 {
 		var address = address % 0x20;
 		
 		if(address >= 0x10 && address < 0x20 && address & 0x3 == 0) {
@@ -282,20 +282,20 @@ final class CPUMemory: Memory {
 	var controllerIO: ControllerIO?;
 	
 	init(mapper: Mapper) {
-		self.ram = [UInt8](count: 0x800, repeatedValue: 0);
+		self.ram = [UInt8](repeating: 0, count: 0x800);
 		
-		self.sram = [UInt8](count: 0x2000, repeatedValue: 0);
+		self.sram = [UInt8](repeating: 0, count: 0x2000);
 		
 		super.init();
 		setMapper(mapper);
 	}
 	
-	final override func setMapper(mapper: Mapper) {
+	final override func setMapper(_ mapper: Mapper) {
 		mapper.cpuMemory = self;
 		self.mapper = mapper;
 	}
 	
-	final override func readMemory(address: Int) -> UInt8 {
+	final override func readMemory(_ address: Int) -> UInt8 {
 		if(address < 0x2000) {
 			return self.ram[address % 0x800];
 		} else if(address < 0x4000) {
@@ -332,7 +332,7 @@ final class CPUMemory: Memory {
 		return self.mapper!.read(address);
 	}
 	
-	final override func writeMemory(address: Int, data: UInt8) {
+	final override func writeMemory(_ address: Int, data: UInt8) {
 		var address = address;
 		
 		if(address < 0x2000) {

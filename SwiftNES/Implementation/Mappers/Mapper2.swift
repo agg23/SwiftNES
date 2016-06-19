@@ -24,7 +24,7 @@ final class Mapper2: Mapper {
 		self.prgBank1Offset = 0;
 	}
 	
-	override func read(address: Int) -> UInt8 {
+	override func read(_ address: Int) -> UInt8 {
 		switch(address) {
 			case 0x0000 ..< 0x2000:
 				return self.ppuMemory!.banks[address];
@@ -42,7 +42,7 @@ final class Mapper2: Mapper {
 		return 0;
 	}
 	
-	override func write(address: Int, data: UInt8) {
+	override func write(_ address: Int, data: UInt8) {
 		switch(address) {
 			case 0x0000 ..< 0x2000:
 				self.ppuMemory!.banks[address] = data;
@@ -55,7 +55,7 @@ final class Mapper2: Mapper {
 		}
 	}
 	
-	func bankSelect(data: UInt8) {
+	func bankSelect(_ data: UInt8) {
 		self.prgBank0Offset = (Int(data) & 0xF) * 0x4000;
 	}
 }

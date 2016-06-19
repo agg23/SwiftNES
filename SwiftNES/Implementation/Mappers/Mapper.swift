@@ -23,7 +23,7 @@ class Mapper {
 		self.prgBankCount = 0;
 	}
 	
-	func read(address: Int) -> UInt8 {
+	func read(_ address: Int) -> UInt8 {
 		switch(address) {
 			case 0x0000 ..< 0x1000:
 				return self.ppuMemory!.banks[address];
@@ -45,7 +45,7 @@ class Mapper {
 		return 0;
 	}
 	
-	func write(address: Int, data: UInt8) {
+	func write(_ address: Int, data: UInt8) {
 		switch(address) {
 			case 0x0000 ..< 0x1000:
 				self.ppuMemory!.banks[address] = data;

@@ -11,11 +11,11 @@ import Cocoa
 final class DisplayWindow: NSWindow {
 	var controllerIO: ControllerIO?;
 	
-	override func keyDown(theEvent: NSEvent) {
+	override func keyDown(_ theEvent: NSEvent) {
 		controllerIO?.buttonPressEvent(Int(theEvent.keyCode));
 	}
 	
-	override func keyUp(theEvent: NSEvent) {
+	override func keyUp(_ theEvent: NSEvent) {
 		controllerIO?.buttonUpEvent(Int(theEvent.keyCode));
 	}
 }

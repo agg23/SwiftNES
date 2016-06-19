@@ -32,7 +32,7 @@ final class ControllerIO: NSObject {
 		self.strobeHigh = false;
 	}
 	
-	func buttonPressEvent(value: Int) {
+	func buttonPressEvent(_ value: Int) {
 		switch(value) {
 			case kVK_ANSI_X:
 				aPressed = true;
@@ -55,7 +55,7 @@ final class ControllerIO: NSObject {
 		}
 	}
 	
-	func buttonUpEvent(value: Int) {
+	func buttonUpEvent(_ value: Int) {
 		switch(value) {
 			case kVK_ANSI_X:
 				aPressed = false;
@@ -78,7 +78,7 @@ final class ControllerIO: NSObject {
 		}
 	}
 	
-	func buttonState(value: Bool) -> UInt8 {
+	func buttonState(_ value: Bool) -> UInt8 {
 		return value ? 0x41 : 0x40;
 	}
 	

@@ -19,18 +19,18 @@ final class FileIO: NSObject {
 		self.ppuMemory = ppuMemory;
 	}
 	
-	func loadFile(path: String) -> Bool {
-		let data = NSFileManager.defaultManager().contentsAtPath(path);
+	func loadFile(_ path: String) -> Bool {
+		let data = FileManager.default().contents(atPath: path);
 		
 		if(data == nil) {
 			print("File failed to load");
 			return false;
 		}
 		
-		let count = data!.length / sizeof(UInt8);
-		var bytes = [UInt8](count: count, repeatedValue: 0);
+		let count = data!.count / sizeof(UInt8);
+		var bytes = [UInt8](repeating: 0, count: count);
 		
-		data?.getBytes(&bytes, length: data!.length * sizeof(UInt8));
+		(data as NSData?)?.getBytes(&bytes, length: data!.count * sizeof(UInt8));
 		
 		// NES(escape) in little endian
 		if(bytes[0] != 0x4E || bytes[1] != 0x45 || bytes[2] != 0x53 || bytes[3] != 0x1A) {
@@ -50,9 +50,9 @@ final class FileIO: NSObject {
 		let verticalMirroring = misc & 0x1 == 1;
 		
 		if(verticalMirroring) {
-			self.ppuMemory.nametableMirroring = .Vertical;
+			self.ppuMemory.nametableMirroring = .vertical;
 		} else {
-			self.ppuMemory.nametableMirroring = .Horizontal;
+			self.ppuMemory.nametableMirroring = .horizontal;
 		}
 		
 		// Battery Backed RAM at $6000 - $7FFF
@@ -85,8 +85,8 @@ final class FileIO: NSObject {
 		
 		let prgOffset = Int(prgBanks) * 0x4000;
 		
-		self.mainMemory.banks = [UInt8](count: prgOffset, repeatedValue: 0);
-		self.ppuMemory.banks = [UInt8](count: Int(chrBanks) * 0x2000, repeatedValue: 0);
+		self.mainMemory.banks = [UInt8](repeating: 0, count: prgOffset);
+		self.ppuMemory.banks = [UInt8](repeating: 0, count: Int(chrBanks) * 0x2000);
 		
 		if(!setMapper(romMapper, cpuMemory: self.mainMemory, ppuMemory: self.ppuMemory)) {
 			return false;
@@ -103,7 +103,7 @@ final class FileIO: NSObject {
 		if(chrBanks == 0) {
 			// Use CHR RAM
 			chrBanks = 1;
-			self.ppuMemory.banks = [UInt8](count: 0x2000, repeatedValue: 0);
+			self.ppuMemory.banks = [UInt8](repeating: 0, count: 0x2000);
 		}
 
 		self.mainMemory.mapper!.chrBankCount = chrBanks;
@@ -114,7 +114,7 @@ final class FileIO: NSObject {
 		return true;
 	}
 	
-	func setMapper(mapperNumber: Int, cpuMemory: CPUMemory, ppuMemory: PPUMemory) -> Bool {
+	func setMapper(_ mapperNumber: Int, cpuMemory: CPUMemory, ppuMemory: PPUMemory) -> Bool {
 		var mapper = cpuMemory.mapper!;
 		
 		switch(mapperNumber) {
@@ -131,7 +131,7 @@ final class FileIO: NSObject {
 				mapper = Mapper4();
 			case 7:
 				mapper = Mapper7();
-				ppuMemory.nametableMirroring = .OneScreen;
+				ppuMemory.nametableMirroring = .oneScreen;
 			case 9:
 				mapper = Mapper9();
 			case 11:

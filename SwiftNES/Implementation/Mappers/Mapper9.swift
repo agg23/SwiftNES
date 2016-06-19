@@ -43,7 +43,7 @@ final class Mapper9: Mapper {
 		self.chrBank1FE = 0;
 	}
 	
-	override func read(address: Int) -> UInt8 {
+	override func read(_ address: Int) -> UInt8 {
 		switch(address) {
 			case 0x0000 ..< 0x1000:
 				let temp = self.ppuMemory!.banks[self.chrBank0Offset + address];
@@ -87,7 +87,7 @@ final class Mapper9: Mapper {
 		return 0;
 	}
 	
-	override func write(address: Int, data: UInt8) {
+	override func write(_ address: Int, data: UInt8) {
 		switch(address) {
 			case 0x0000 ..< 0x1000:
 				self.ppuMemory!.banks[self.chrBank0Offset + address] = data;
@@ -120,7 +120,7 @@ final class Mapper9: Mapper {
 		}
 	}
 	
-	func setPRGBank(data: UInt8) {
+	func setPRGBank(_ data: UInt8) {
 		self.prgBankOffset = (Int(data) & 0xF) * 0x2000;
 	}
 	
@@ -142,11 +142,11 @@ final class Mapper9: Mapper {
 		}
 	}
 	
-	func setMirroring(data: UInt8) {
+	func setMirroring(_ data: UInt8) {
 		if(data & 0x1 == 0x1) {
-			self.ppuMemory!.nametableMirroring = .Horizontal;
+			self.ppuMemory!.nametableMirroring = .horizontal;
 		} else {
-			self.ppuMemory!.nametableMirroring = .Vertical;
+			self.ppuMemory!.nametableMirroring = .vertical;
 		}
 	}
 }

@@ -11,25 +11,25 @@ import Foundation
 final class Logger: NSObject {
 	
 	let path: String;
-	var fileHandle: NSFileHandle?;
+	var fileHandle: FileHandle?;
 	
 	init(path: String) {
 		self.path = path;
 		
-		NSFileManager.defaultManager().createFileAtPath(self.path, contents: nil, attributes: nil);
+		FileManager.default().createFile(atPath: self.path, contents: nil, attributes: nil);
 		
-		self.fileHandle = NSFileHandle(forWritingAtPath: self.path);
+		self.fileHandle = FileHandle(forWritingAtPath: self.path);
 		
 		if(self.fileHandle == nil) {
 			print("ERROR: Unable to open log file");
 		}
 	}
 	
-	func log(string: String) {
-		self.fileHandle?.writeData((string + "\n").dataUsingEncoding(NSUTF8StringEncoding)!);
+	func log(_ string: String) {
+		self.fileHandle?.write((string + "\n").data(using: String.Encoding.utf8)!);
 	}
 	
-	func hexString<T : UnsignedIntegerType>(value: T, padding: Int) -> String {
+	func hexString<T : UnsignedInteger>(_ value: T, padding: Int) -> String {
 		var string = String(value, radix: 16);
 		
 		for _ in string.characters.count..<padding {
@@ -39,18 +39,18 @@ final class Logger: NSObject {
 		return string;
 	}
 	
-	func logFormattedInstuction(address: UInt16, opcode: UInt8, A: UInt8, X: UInt8, Y: UInt8, P: UInt8, SP: UInt8, CYC: Int, SL: Int) {
+	func logFormattedInstuction(_ address: UInt16, opcode: UInt8, A: UInt8, X: UInt8, Y: UInt8, P: UInt8, SP: UInt8, CYC: Int, SL: Int) {
 		log(String(format: "%@  %@A:%@ X:%@ Y:%@ P:%@ SP:%@ CYC:%@ SL:%@", hexString(address, padding: 4),
-			hexString(opcode, padding: 2).stringByPaddingToLength(42, withString: " ", startingAtIndex: 0),
+			hexString(opcode, padding: 2).padding(toLength: 42, withPad: " ", startingAt: 0),
 			hexString(A, padding: 2), hexString(X, padding: 2), hexString(Y, padding: 2), hexString(P, padding: 2),
-			hexString(SP, padding: 2), String(CYC).stringByPaddingToLength(3, withString: " ", startingAtIndex: 0), String(SL)).uppercaseString);
+			hexString(SP, padding: 2), String(CYC).padding(toLength: 3, withPad: " ", startingAt: 0), String(SL)).uppercased());
 	}
 	
 	func endLogging() {
 		self.fileHandle?.closeFile();
 	}
 	
-	func dumpMemory(memory: [UInt8]) {
+	func dumpMemory(_ memory: [UInt8]) {
 		for i in 0 ..< memory.count {
 			var string = "";
 			
@@ -66,7 +66,7 @@ final class Logger: NSObject {
 				string += " "
 			}
 			
-			self.fileHandle?.writeData(string.uppercaseString.dataUsingEncoding(NSUTF8StringEncoding)!);
+			self.fileHandle?.write(string.uppercased().data(using: String.Encoding.utf8)!);
 		}
 	}
 }

@@ -19,15 +19,15 @@ final class Mapper1: Mapper {
 			
 			switch(mirroring) {
 				case 0:
-					self.ppuMemory!.nametableMirroring = .OneScreen;
+					self.ppuMemory!.nametableMirroring = .oneScreen;
 					self.ppuMemory!.oneScreenUpper = false;
 				case 1:
-					self.ppuMemory!.nametableMirroring = .OneScreen;
+					self.ppuMemory!.nametableMirroring = .oneScreen;
 					self.ppuMemory!.oneScreenUpper = true;
 				case 2:
-					self.ppuMemory!.nametableMirroring = .Vertical;
+					self.ppuMemory!.nametableMirroring = .vertical;
 				case 3:
-					self.ppuMemory!.nametableMirroring = .Horizontal;
+					self.ppuMemory!.nametableMirroring = .horizontal;
 				default:
 					break;
 			}
@@ -90,7 +90,7 @@ final class Mapper1: Mapper {
 		self.prgBank1Offset = 0;
 	}
 	
-	override func read(address: Int) -> UInt8 {
+	override func read(_ address: Int) -> UInt8 {
 		switch(address) {
 			case 0x0000 ..< 0x1000:
 				return self.ppuMemory!.banks[self.chrBank0Offset + address];
@@ -115,7 +115,7 @@ final class Mapper1: Mapper {
 		return 0;
 	}
 	
-	override func write(address: Int, data: UInt8) {
+	override func write(_ address: Int, data: UInt8) {
 		switch(address) {
 			case 0x0000 ..< 0x1000:
 				self.ppuMemory!.banks[self.chrBank0Offset + address] = data;
@@ -132,7 +132,7 @@ final class Mapper1: Mapper {
 		}
 	}
 	
-	private func updateShiftRegister(address: Int, data: UInt8) {
+	private func updateShiftRegister(_ address: Int, data: UInt8) {
 		if(data & 0x80 == 0x80) {
 			self.shiftRegister = 0x10;
 			self.control = self.control | 0x0C;
@@ -148,7 +148,7 @@ final class Mapper1: Mapper {
 		}
 	}
 	
-	private func writeInternalRegister(address: Int, data: UInt8) {
+	private func writeInternalRegister(_ address: Int, data: UInt8) {
 		if(address < 0xA000) {
 			// Control
 			self.control = self.shiftRegister;

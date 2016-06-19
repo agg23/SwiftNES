@@ -10,20 +10,20 @@ import Cocoa
 import MetalKit
 import AudioToolbox
 
-func bridge<T : AnyObject>(obj : T) -> UnsafePointer<Void> {
-	return UnsafePointer(Unmanaged.passUnretained(obj).toOpaque())
+func bridge<T : AnyObject>(_ obj : T) -> UnsafePointer<Void> {
+	return UnsafePointer<Void>(OpaquePointer(bitPattern: Unmanaged.passUnretained(obj)));
 	// return unsafeAddressOf(obj) // ***
 }
 
-func bridge<T : AnyObject>(ptr : UnsafePointer<Void>) -> T {
-	return Unmanaged<T>.fromOpaque(COpaquePointer(ptr)).takeUnretainedValue()
+func bridge<T : AnyObject>(_ ptr : UnsafePointer<Void>) -> T {
+	return Unmanaged<T>.fromOpaque(OpaquePointer(ptr)).takeUnretainedValue()
 	// return unsafeBitCast(ptr, T.self) // ***
 }
 
 var count = 0;
 
-func outputCallback(data: UnsafeMutablePointer<Void>, inAudioQueue: AudioQueueRef, inBuffer: AudioQueueBufferRef) {
-	let apu: APU = bridge(UnsafePointer<Void>(data));
+func outputCallback(_ data: UnsafeMutablePointer<Void>?, inAudioQueue: AudioQueueRef, inBuffer: AudioQueueBufferRef) {
+	let apu: APU = bridge(UnsafePointer<Void>(data!));
 	
 	apu.buffer.loadBuffer(inBuffer);
 	
@@ -46,7 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	var sizingRect: NSRect? = nil;
 	
 	private var texture: MTLTexture! = nil;
-	private var textureOptions = [MTKTextureLoaderOptionTextureUsage: Int(MTLTextureUsage.RenderTarget.rawValue) as NSNumber];
+	private var textureOptions = [MTKTextureLoaderOptionTextureUsage: Int(MTLTextureUsage.renderTarget.rawValue) as NSNumber];
 	private var textureDescriptor: MTLTextureDescriptor? = nil;
 	
 	private let threadGroupCount = MTLSizeMake(8, 8, 1);
@@ -69,9 +69,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	private var scalingFactor:CGFloat = 2.0;
 	
 	var dataFormat: AudioStreamBasicDescription;
-	var queue: AudioQueueRef;
-	var buffer: AudioQueueBufferRef;
-	var buffer2: AudioQueueBufferRef;
+	var queue: AudioQueueRef?;
+	var buffer: AudioQueueBufferRef?;
+	var buffer2: AudioQueueBufferRef?;
 	var bufferByteSize: UInt32;
 	var numPacketsToRead: UInt32;
 	var packetsToPlay: Int64;
@@ -110,7 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 	
 	func windowSetup() {
-		var rect = self.window.frameRectForContentRect(NSMakeRect(0, 0, 256 * self.scalingFactor, 240 * self.scalingFactor));
+		var rect = self.window.frameRect(forContentRect: NSMakeRect(0, 0, 256 * self.scalingFactor, 240 * self.scalingFactor));
 		
 		rect.origin = self.window.frame.origin;
 		
@@ -124,12 +124,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.window.contentMinSize = windowSize;
 		self.window.contentMaxSize = windowSize;
 		
-		self.textureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(MTLPixelFormat.BGRA8Unorm, width: Int(width), height: Int(height), mipmapped: false);
-		self.texture = self.device!.newTextureWithDescriptor(self.textureDescriptor!);
+		self.textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(with: MTLPixelFormat.bgra8Unorm, width: Int(width), height: Int(height), mipmapped: false);
+		self.texture = self.device!.newTexture(with: self.textureDescriptor!);
 	}
 
-    func applicationDidFinishLaunching(aNotification: NSNotification) {
-		self.sizingRect = self.window.convertRectToBacking(NSMakeRect(0, 0, 256 * self.scalingFactor, 240 * self.scalingFactor));
+    func applicationDidFinishLaunching(_ aNotification: Notification) {
+		self.sizingRect = self.window.convertToBacking(NSMakeRect(0, 0, 256 * self.scalingFactor, 240 * self.scalingFactor));
 		
 		let width = Int(self.sizingRect!.width);
 		let height = Int(self.sizingRect!.height);
@@ -143,7 +143,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.metalView.preferredFramesPerSecond = 60;
 		self.metalView.delegate = self;
 		
-		self.metalView.drawableSize = CGSizeMake(self.metalView.frame.size.width, self.metalView.frame.size.height);
+		self.metalView.drawableSize = CGSize(width: self.metalView.frame.size.width, height: self.metalView.frame.size.height);
 		
 		self.commandQueue = self.device!.newCommandQueue();
 		
@@ -152,34 +152,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.threadGroups = MTLSizeMake((width+threadGroupCount.width)/threadGroupCount.width, (height+threadGroupCount.height)/threadGroupCount.height, 1);
 		
 		let library:MTLLibrary!  = self.device.newDefaultLibrary();
-		let function:MTLFunction! = library.newFunctionWithName("kernel_passthrough");
-		self.pipeline = try! self.device!.newComputePipelineStateWithFunction(function);
+		let function:MTLFunction! = library.newFunction(withName: "kernel_passthrough");
+		self.pipeline = try! self.device!.newComputePipelineState(with: function);
 		
 		windowSetup();
 		
 		self.metalView.draw();
     }
 	
-	func application(sender: NSApplication, openFile filename: String) -> Bool {
-		return loadROM(NSURL.fileURLWithPath(filename));
+	func application(_ sender: NSApplication, openFile filename: String) -> Bool {
+		return loadROM(URL(fileURLWithPath: filename));
 	}
 	
 	// MARK: - Menu Controls
 	
-	@IBAction func openROM(sender: AnyObject) {
+	@IBAction func openROM(_ sender: AnyObject) {
 		let openDialog = NSOpenPanel();
 		
 		self.paused = true;
 		
 		if(openDialog.runModal() == NSFileHandlingPanelOKButton) {
-			loadROM(openDialog.URL!);
+			let _ = loadROM(openDialog.url!);
 		}
 		
 		self.paused = !self.fileLoaded;
 	}
 	
 	
-	@IBAction func playPauseEmulation(sender: AnyObject) {
+	@IBAction func playPauseEmulation(_ sender: AnyObject) {
 		if(!self.fileLoaded) {
 			return;
 		}
@@ -194,26 +194,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		}
 	}
 	
-	@IBAction func setRenderScale(sender: AnyObject) {
-		var tag = sender.tag();
+	@IBAction func setRenderScale(_ sender: AnyObject) {
+		var tag = sender.tag;
 		
 		if(tag < 1 || tag > 3) {
 			tag = 1;
 		}
 		
-		self.scalingFactor = CGFloat(tag);
+		self.scalingFactor = CGFloat(tag!);
 		if(self.ppu != nil) {
-			self.ppu!.setRenderScale(tag);
+			self.ppu!.setRenderScale(tag!);
 		}
 		
 		windowSetup();
 	}
 	
-	@IBAction func dumpPPUMemory(sender: AnyObject) {
+	@IBAction func dumpPPUMemory(_ sender: AnyObject) {
 		self.ppu!.dumpMemory();
 	}
 	
-	override func validateMenuItem(menuItem: NSMenuItem) -> Bool {
+	
+	override func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
 		if(menuItem == self.playPauseEmulationButton) {
 			return self.fileLoaded;
 		}
@@ -221,7 +222,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		return true;
 	}
 	
-	func loadROM(url: NSURL) -> Bool {
+	func loadROM(_ url: URL) -> Bool {
 		let mapper = Mapper();
 		
 		let mainMemory = CPUMemory(mapper: mapper);
@@ -235,9 +236,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 			return false;
 		}
 		
-		NSDocumentController.sharedDocumentController().noteNewRecentDocumentURL(url);
+		NSDocumentController.shared().noteNewRecentDocumentURL(url);
 		
-		self.playPauseEmulationButton.enabled = true;
+		self.playPauseEmulationButton.isEnabled = true;
 		
 		self.apu = APU(memory: mainMemory);
 		
@@ -255,7 +256,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		initializeAudio();
 		
-		AudioQueueStart(queue, nil);
+		AudioQueueStart(queue!, nil);
 		
 		self.paused = false;
 		
@@ -265,39 +266,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	// MARK: - Audio
 	
 	func initializeAudio() {
-		AudioQueueFreeBuffer(self.queue, self.buffer);
-		AudioQueueFreeBuffer(self.queue, self.buffer2);
+		AudioQueueFreeBuffer(self.queue!, self.buffer!);
+		AudioQueueFreeBuffer(self.queue!, self.buffer2!);
 		
-		AudioQueueDispose(self.queue, true);
+		AudioQueueDispose(self.queue!, true);
 		
-		AudioQueueNewOutput(&self.dataFormat, outputCallback, UnsafeMutablePointer<Void>(bridge(self.apu!)), CFRunLoopGetCurrent(), kCFRunLoopCommonModes, 0, &self.queue);
+		AudioQueueNewOutput(&self.dataFormat, outputCallback, UnsafeMutablePointer<Void>(bridge(self.apu!)), CFRunLoopGetCurrent(), CFRunLoopMode.commonModes.rawValue, 0, &self.queue);
 		
-		AudioQueueAllocateBuffer(self.queue, self.bufferByteSize, &self.buffer);
-		AudioQueueAllocateBuffer(self.queue, self.bufferByteSize, &self.buffer2);
+		AudioQueueAllocateBuffer(self.queue!, self.bufferByteSize, &self.buffer);
+		AudioQueueAllocateBuffer(self.queue!, self.bufferByteSize, &self.buffer2);
 		
-		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu!)), inAudioQueue: self.queue, inBuffer: self.buffer);
-		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu!)), inAudioQueue: self.queue, inBuffer: self.buffer2);
+		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu!)), inAudioQueue: self.queue!, inBuffer: self.buffer!);
+		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu!)), inAudioQueue: self.queue!, inBuffer: self.buffer2!);
 	}
 	
 	// MARK: - Graphics
 	
-	func render(inout screen: [UInt32]) {
+	func render(_ screen: inout [UInt32]) {
 		let width = Int(256 * self.scalingFactor);
 		let height = Int(240 * self.scalingFactor);
 		
 		let bytesPerPixel = 4;
 		let bytesPerRow = width * bytesPerPixel;
 		
-		self.metalView.currentDrawable!.texture.replaceRegion(MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: UnsafePointer<Void>(screen), bytesPerRow: bytesPerRow);
+		self.metalView.currentDrawable!.texture.replace(MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: UnsafePointer<Void>(screen), bytesPerRow: bytesPerRow);
 		
 		let commandBuffer = commandQueue.commandBuffer()
 		
-		commandBuffer.presentDrawable(metalView.currentDrawable!)
+		commandBuffer.present(metalView.currentDrawable!)
 		
 		commandBuffer.commit()
 	}
 	
-	func applicationWillTerminate(aNotification: NSNotification) {
+	func applicationWillTerminate(_ aNotification: Notification) {
 		if(self.ppu != nil) {
 			self.logger!.endLogging();
 		}
@@ -305,11 +306,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 
 	// MARK: - MTKViewDelegate
 	
-	func mtkView(view: MTKView, drawableSizeWillChange size: CGSize) {
+	func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
 		
 	}
 
-	func drawInMTKView(view: MTKView) {
+	func draw(in view: MTKView) {
 		self.frameCount += 1;
 		let now  = getTimestamp();
 		let diff = now - self.lastFrameUpdate;

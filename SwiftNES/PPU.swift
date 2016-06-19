@@ -257,7 +257,7 @@ final class PPU: NSObject {
 	private let ppuMemory: PPUMemory;
 	private var oamMemory: [UInt8];
 	
-	private var secondaryOAM = [UInt8](count: 32, repeatedValue: 0);
+	private var secondaryOAM = [UInt8](repeating: 0, count: 32);
 	private var spriteZeroWillBeInSecondaryOAM = false;
 	private var spriteZeroInSecondaryOAM = false;
 	
@@ -287,8 +287,8 @@ final class PPU: NSObject {
 	private var patternTableLow: UInt8;
 	private var patternTableHigh: UInt8;
 	
-	private var currentTileData = [Tile](count: 34, repeatedValue: Tile(nameTable: 0, attributeTable: 0, patternTableLow: 0, patternTableHigh: 0, vramAddress: 0));
-	private var currentSpriteData = [Sprite](count: 8, repeatedValue: Sprite(patternTableLow: 0xFF, patternTableHigh: 0xFF, attribute: 0, xCoord: 0, yCoord: 0));
+	private var currentTileData = [Tile](repeating: Tile(nameTable: 0, attributeTable: 0, patternTableLow: 0, patternTableHigh: 0, vramAddress: 0), count: 34);
+	private var currentSpriteData = [Sprite](repeating: Sprite(patternTableLow: 0xFF, patternTableHigh: 0xFF, attribute: 0, xCoord: 0, yCoord: 0), count: 8);
 	
 	private var spriteYCoord: UInt8;
 	private var spriteTileNumber: UInt8;
@@ -311,7 +311,7 @@ final class PPU: NSObject {
 		
 		self.cpuMemory = cpuMemory;
 		self.ppuMemory = ppuMemory;
-		self.oamMemory = [UInt8](count:0x100, repeatedValue: 0);
+		self.oamMemory = [UInt8](repeating: 0, count: 0x100);
 		
 		self.writeOAMDATA = false;
 		
@@ -379,7 +379,7 @@ final class PPU: NSObject {
 		
 		self.oamByte = 0;
 		
-		self.frame = [UInt32](count:self.totalPixelCount, repeatedValue:0);
+		self.frame = [UInt32](repeating: 0, count: self.totalPixelCount);
 	}
 	
 	func reset() {
@@ -674,7 +674,7 @@ final class PPU: NSObject {
 		}
 	}
 	
-	func renderSpritePixel(currentXCoord: Int, backgroundPixelTransparent: Bool) {
+	func renderSpritePixel(_ currentXCoord: Int, backgroundPixelTransparent: Bool) {
 		if(!self.spriteClipping && currentXCoord < 8) {
 			return;
 		}
@@ -737,7 +737,7 @@ final class PPU: NSObject {
 		}
 	}
 	
-	func renderBackgroundPixel(tile: Tile, tileXCoord: Int, pixelOffset: Int) -> Bool {
+	func renderBackgroundPixel(_ tile: Tile, tileXCoord: Int, pixelOffset: Int) -> Bool {
 		let uPixelOffset = UInt8(pixelOffset);
 		
 		// Draw pixels from tile
@@ -775,7 +775,7 @@ final class PPU: NSObject {
 		return patternValue == 0;
 	}
 	
-	func writePixel(x: Int, y: Int, color: UInt32) {
+	func writePixel(_ x: Int, y: Int, color: UInt32) {
 		for i in 0 ..< self.pixelSize {
 			for k in 0 ..< self.pixelSize {
 				self.frame[(y * self.pixelSize + k) * 256 * self.pixelSize + x * self.pixelSize + i] = color;
@@ -933,33 +933,33 @@ final class PPU: NSObject {
 		self.currentVramAddress = (self.currentVramAddress & 0xFBE0) | (self.tempVramAddress & 0x041F);
 	}
 	
-	func writeDMA(address: Int, data: UInt8) {
+	func writeDMA(_ address: Int, data: UInt8) {
 		self.oamMemory[address] = data;
 	}
 	
 	// MARK - Registers
 	
-	func setBit(index: Int, value: Bool, pointer: UnsafeMutablePointer<UInt8>) {
+	func setBit(_ index: Int, value: Bool, pointer: UnsafeMutablePointer<UInt8>) {
 		let bit: UInt8 = value ? 0xFF : 0;
-		pointer.memory ^= (bit ^ pointer.memory) & (1 << UInt8(index));
+		pointer.pointee ^= (bit ^ pointer.pointee) & (1 << UInt8(index));
 	}
 	
-	func getBit(index: Int, pointer: UnsafePointer<UInt8>) -> Bool {
-		return ((pointer.memory >> UInt8(index)) & 0x1) == 1;
+	func getBit(_ index: Int, pointer: UnsafePointer<UInt8>) -> Bool {
+		return ((pointer.pointee >> UInt8(index)) & 0x1) == 1;
 	}
 	
 	/**
 	 Bit level reverses the given byte
 	 From http://stackoverflow.com/a/2602885
 	*/
-	func reverseByte(value: UInt8) -> UInt8 {
+	func reverseByte(_ value: UInt8) -> UInt8 {
 		var b = (value & 0xF0) >> 4 | (value & 0x0F) << 4;
 		b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
 		b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
 		return b;
 	}
 	
-	func cpuWrite(index: Int, data: UInt8) {
+	func cpuWrite(_ index: Int, data: UInt8) {
 		switch (index) {
 			case 0:
 				self.PPUCTRL = data;
@@ -1073,7 +1073,7 @@ final class PPU: NSObject {
 		return self.renderBackground || self.renderSprites;
 	}
 	
-	private func a12(new: UInt16, old: UInt16) {
+	private func a12(_ new: UInt16, old: UInt16) {
 		if(new & 0x1000 == 0x1000 && old & 0x1000 == 0) {
 			if(self.ppuMemory.a12Timer == 0) {
 				self.ppuMemory.mapper!.step();
@@ -1087,10 +1087,10 @@ final class PPU: NSObject {
 		self.ppuMemory.dumpMemory();
 	}
 	
-	func setRenderScale(scale: Int) {
+	func setRenderScale(_ scale: Int) {
 		self.pixelSize = scale;
 		self.totalPixelCount = 256 * 240 * scale * scale;
 		
-		self.frame = [UInt32](count:self.totalPixelCount, repeatedValue:0);
+		self.frame = [UInt32](repeating: 0, count: self.totalPixelCount);
 	}
 }

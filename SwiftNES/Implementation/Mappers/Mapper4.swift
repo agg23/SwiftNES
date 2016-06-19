@@ -93,7 +93,7 @@ final class Mapper4: Mapper {
 		self.chrBankMode = false;
 	}
 	
-	override func read(address: Int) -> UInt8 {
+	override func read(_ address: Int) -> UInt8 {
 		switch(address) {
 			case 0x0000 ..< 0x400:
 				return self.ppuMemory!.banks[self.chrBank0Offset + address];
@@ -130,7 +130,7 @@ final class Mapper4: Mapper {
 		return 0;
 	}
 	
-	override func write(address: Int, data: UInt8) {
+	override func write(_ address: Int, data: UInt8) {
 		switch(address) {
 			case 0x0000 ..< 0x400:
 				self.ppuMemory!.banks[self.chrBank0Offset + address] = data;
@@ -178,14 +178,14 @@ final class Mapper4: Mapper {
 		}
 	}
 	
-	private func bankSelect(data: UInt8) {
+	private func bankSelect(_ data: UInt8) {
 		self.selectedBank = Int(data & 0x7);
 		
 		self.prgBankMode = data & 0x40 == 0x40;
 		self.chrBankMode = data & 0x80 == 0x80;
 	}
 	
-	private func bankData(data: UInt8) {
+	private func bankData(_ data: UInt8) {
 		switch(self.selectedBank) {
 			case 0:
 				self.register0 = data;
@@ -210,12 +210,12 @@ final class Mapper4: Mapper {
 		updateOffsets();
 	}
 	
-	private func setMirroring(data: UInt8) {
-		if(self.ppuMemory!.nametableMirroring != .FourScreen) {
+	private func setMirroring(_ data: UInt8) {
+		if(self.ppuMemory!.nametableMirroring != .fourScreen) {
 			if(data & 0x1 == 0x1) {
-				self.ppuMemory!.nametableMirroring = .Horizontal;
+				self.ppuMemory!.nametableMirroring = .horizontal;
 			} else {
-				self.ppuMemory!.nametableMirroring = .Vertical;
+				self.ppuMemory!.nametableMirroring = .vertical;
 			}
 		}
 	}

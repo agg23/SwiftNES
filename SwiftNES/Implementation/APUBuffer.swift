@@ -29,7 +29,7 @@ final class APUBuffer {
 	init() {
 		self.apu = nil;
 		
-		self.buffer = [Int16](count: BUFFERSIZE, repeatedValue: 0);
+		self.buffer = [Int16](repeating: 0, count: BUFFERSIZE);
 		
 		self.startIndex = 0;
 		self.endIndex = Int(IDEALCAPACITY);
@@ -45,7 +45,7 @@ final class APUBuffer {
 		return self.endIndex - self.startIndex;
 	}
 	
-	func saveSample(sampleData: Int16) {
+	func saveSample(_ sampleData: Int16) {
 		self.buffer[self.endIndex] = sampleData;
 		
 		self.endIndex += 1;
@@ -59,10 +59,10 @@ final class APUBuffer {
 		}
 	}
 	
-	func loadBuffer(audioBuffer: AudioQueueBufferRef) {
-		let array = UnsafeMutablePointer<Int16>(audioBuffer.memory.mAudioData);
+	func loadBuffer(_ audioBuffer: AudioQueueBufferRef) {
+		let array = UnsafeMutablePointer<Int16>(audioBuffer.pointee.mAudioData);
 		
-		let size = Int(audioBuffer.memory.mAudioDataBytesCapacity / 2);
+		let size = Int(audioBuffer.pointee.mAudioDataBytesCapacity / 2);
 		
 		let sampleCount = Double(availableSampleCount());
 		
@@ -86,6 +86,6 @@ final class APUBuffer {
 			}
 		}
 		
-		audioBuffer.memory.mAudioDataByteSize = UInt32(size * 2);
+		audioBuffer.pointee.mAudioDataByteSize = UInt32(size * 2);
 	}
 }
