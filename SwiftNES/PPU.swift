@@ -577,9 +577,8 @@ final class PPU: NSObject {
 		} else if(self.cycle <= 320) {
 			if(self.cycle == 257) {
 				self.secondaryOAMIndex = 0;
+				self.spriteZeroInSecondaryOAM = self.spriteZeroWillBeInSecondaryOAM;
 			}
-			
-			self.spriteZeroInSecondaryOAM = self.spriteZeroWillBeInSecondaryOAM;
 			
 			if(self.secondaryOAMIndex < 32 && self.renderSprites) {
 				if(phaseIndex == 2) {

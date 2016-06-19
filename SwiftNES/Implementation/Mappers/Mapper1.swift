@@ -46,6 +46,7 @@ final class Mapper1: Mapper {
 	private var chrBank1: UInt8;
 	
 	private var prgBank: UInt8;
+	private var prgRAMEnabled: Bool;
 	
 	private var chrBank0Offset: Int;
 	private var chrBank1Offset: Int;
@@ -81,6 +82,7 @@ final class Mapper1: Mapper {
 		self.chrBank1 = 1;
 		
 		self.prgBank = 0;
+		self.prgRAMEnabled = true;
 		
 		self.chrBank0Offset = 0;
 		self.chrBank1Offset = 0x1000;
@@ -97,7 +99,11 @@ final class Mapper1: Mapper {
 			case 0x2000 ..< 0x6000:
 				print("Invalid mapper 1 address \(address)");
 			case 0x6000 ..< 0x8000:
-				return self.cpuMemory!.sram[address - 0x6000];
+				if(self.prgRAMEnabled) {
+					return self.cpuMemory!.sram[address - 0x6000];
+				} else {
+					return 0;
+				}
 			case 0x8000 ..< 0xC000:
 				return self.cpuMemory!.banks[self.prgBank0Offset + address - 0x8000];
 			case 0xC000 ..< 0x10000:
@@ -154,7 +160,8 @@ final class Mapper1: Mapper {
 			self.chrBank1 = self.shiftRegister & (self.chrBankCount - 1);
 		} else {
 			// PRG bank
-			self.prgBank = self.shiftRegister & (self.prgBankCount - 1);
+			self.prgBank = self.shiftRegister & 0xF & (self.prgBankCount - 1);
+			self.prgRAMEnabled = self.shiftRegister & 0x10 == 0;
 		}
 		
 		updateOffsets();

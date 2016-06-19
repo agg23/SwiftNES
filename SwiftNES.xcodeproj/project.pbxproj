@@ -30,7 +30,6 @@
 		66A9C4471CA2EF3800936DBC /* SwiftNESTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4461CA2EF3800936DBC /* SwiftNESTests.swift */; };
 		66A9C4531CA2EF6F00936DBC /* CPU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4521CA2EF6F00936DBC /* CPU.swift */; };
 		66E186901CADB97300EFF583 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E1868F1CADB97300EFF583 /* Logger.swift */; };
-		66F44E9D1CC05494006F0A6E /* Shader.metal in Sources */ = {isa = PBXBuildFile; fileRef = 66F44E9C1CC05494006F0A6E /* Shader.metal */; };
 		66F46AB91CB039B9005B637E /* PPU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F46AB81CB039B9005B637E /* PPU.swift */; };
 /* End PBXBuildFile section */
 
@@ -72,7 +71,6 @@
 		66A9C4481CA2EF3800936DBC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		66A9C4521CA2EF6F00936DBC /* CPU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CPU.swift; path = Implementation/CPU.swift; sourceTree = "<group>"; };
 		66E1868F1CADB97300EFF583 /* Logger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Logger.swift; path = Implementation/Logger.swift; sourceTree = "<group>"; };
-		66F44E9C1CC05494006F0A6E /* Shader.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shader.metal; sourceTree = "<group>"; };
 		66F46AB81CB039B9005B637E /* PPU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PPU.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -136,7 +134,6 @@
 			children = (
 				66A9C4361CA2EF3800936DBC /* AppDelegate.swift */,
 				665940901CC11CD300BEA04C /* DisplayWindow.swift */,
-				66F44E9C1CC05494006F0A6E /* Shader.metal */,
 				66A9C4511CA2EF4900936DBC /* Implementation */,
 				66A9C4381CA2EF3800936DBC /* Assets.xcassets */,
 				66A9C43A1CA2EF3800936DBC /* MainMenu.xib */,
@@ -284,7 +281,6 @@
 				6613873F1CFCD80700564AE3 /* Mapper2.swift in Sources */,
 				66A9C4531CA2EF6F00936DBC /* CPU.swift in Sources */,
 				66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */,
-				66F44E9D1CC05494006F0A6E /* Shader.metal in Sources */,
 				665940911CC11CD300BEA04C /* DisplayWindow.swift in Sources */,
 				666146B01CA34BC40022C10D /* FileIO.swift in Sources */,
 				668B05F41CE28D4500315BCD /* APUBuffer.swift in Sources */,
