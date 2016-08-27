@@ -16,7 +16,7 @@ final class Logger: NSObject {
 	init(path: String) {
 		self.path = path;
 		
-		FileManager.default().createFile(atPath: self.path, contents: nil, attributes: nil);
+		FileManager.default.createFile(atPath: self.path, contents: nil, attributes: nil);
 		
 		self.fileHandle = FileHandle(forWritingAtPath: self.path);
 		

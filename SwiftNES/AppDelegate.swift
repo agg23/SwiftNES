@@ -10,20 +10,20 @@ import Cocoa
 import MetalKit
 import AudioToolbox
 
-func bridge<T : AnyObject>(_ obj : T) -> UnsafePointer<Void> {
-	return UnsafePointer<Void>(OpaquePointer(bitPattern: Unmanaged.passUnretained(obj)));
+func bridge<T : AnyObject>(_ obj : T) -> UnsafeRawPointer {
+	return UnsafeRawPointer(Unmanaged.passUnretained(obj).toOpaque());
 	// return unsafeAddressOf(obj) // ***
 }
 
-func bridge<T : AnyObject>(_ ptr : UnsafePointer<Void>) -> T {
-	return Unmanaged<T>.fromOpaque(OpaquePointer(ptr)).takeUnretainedValue()
+func bridge<T : AnyObject>(_ ptr : UnsafeRawPointer) -> T {
+	return Unmanaged<T>.fromOpaque(ptr).takeUnretainedValue()
 	// return unsafeBitCast(ptr, T.self) // ***
 }
 
 var count = 0;
 
-func outputCallback(_ data: UnsafeMutablePointer<Void>?, inAudioQueue: AudioQueueRef, inBuffer: AudioQueueBufferRef) {
-	let apu: APU = bridge(UnsafePointer<Void>(data!));
+func outputCallback(_ data: UnsafeMutableRawPointer?, inAudioQueue: AudioQueueRef, inBuffer: AudioQueueBufferRef) {
+	let apu: APU = bridge(UnsafeRawPointer(data)!);
 	
 	apu.buffer.loadBuffer(inBuffer);
 	
@@ -126,6 +126,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		self.textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(with: MTLPixelFormat.bgra8Unorm, width: Int(width), height: Int(height), mipmapped: false);
 		self.texture = self.device!.newTexture(with: self.textureDescriptor!);
+		
+		self.metalView.colorPixelFormat = MTLPixelFormat.bgra8Unorm;
 	}
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
@@ -197,7 +199,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	@IBAction func setRenderScale(_ sender: AnyObject) {
 		var tag = sender.tag;
 		
-		if(tag < 1 || tag > 3) {
+		if(tag == nil || tag! < 1 || tag! > 3) {
 			tag = 1;
 		}
 		
@@ -230,7 +232,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		let ppuMemory = PPUMemory(mapper: mapper);
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		self.fileLoaded = fileIO.loadFile(url.path!);
+		self.fileLoaded = fileIO.loadFile(url.path);
 		
 		if(!self.fileLoaded) {
 			return false;
@@ -266,18 +268,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	// MARK: - Audio
 	
 	func initializeAudio() {
-		AudioQueueFreeBuffer(self.queue!, self.buffer!);
-		AudioQueueFreeBuffer(self.queue!, self.buffer2!);
+		if(self.queue != nil) {
+			if(self.buffer != nil) {
+				AudioQueueFreeBuffer(self.queue!, self.buffer!);
+			}
+			
+			if(self.buffer2 != nil) {
+				AudioQueueFreeBuffer(self.queue!, self.buffer2!);
+			}
+			
+			AudioQueueDispose(self.queue!, true);
+		}
 		
-		AudioQueueDispose(self.queue!, true);
-		
-		AudioQueueNewOutput(&self.dataFormat, outputCallback, UnsafeMutablePointer<Void>(bridge(self.apu!)), CFRunLoopGetCurrent(), CFRunLoopMode.commonModes.rawValue, 0, &self.queue);
+		AudioQueueNewOutput(&self.dataFormat, outputCallback, UnsafeMutableRawPointer(mutating: bridge(self.apu!)), CFRunLoopGetCurrent(), CFRunLoopMode.commonModes.rawValue, 0, &self.queue);
 		
 		AudioQueueAllocateBuffer(self.queue!, self.bufferByteSize, &self.buffer);
 		AudioQueueAllocateBuffer(self.queue!, self.bufferByteSize, &self.buffer2);
 		
-		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu!)), inAudioQueue: self.queue!, inBuffer: self.buffer!);
-		outputCallback(UnsafeMutablePointer<Void>(bridge(self.apu!)), inAudioQueue: self.queue!, inBuffer: self.buffer2!);
+		outputCallback(UnsafeMutableRawPointer(mutating: bridge(self.apu!)), inAudioQueue: self.queue!, inBuffer: self.buffer!);
+		outputCallback(UnsafeMutableRawPointer(mutating: bridge(self.apu!)), inAudioQueue: self.queue!, inBuffer: self.buffer2!);
 	}
 	
 	// MARK: - Graphics
@@ -289,7 +298,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		let bytesPerPixel = 4;
 		let bytesPerRow = width * bytesPerPixel;
 		
-		self.metalView.currentDrawable!.texture.replace(MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: UnsafePointer<Void>(screen), bytesPerRow: bytesPerRow);
+		self.metalView.currentDrawable!.texture.replace(MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: UnsafeRawPointer(screen), bytesPerRow: bytesPerRow);
 		
 		let commandBuffer = commandQueue.commandBuffer()
 		

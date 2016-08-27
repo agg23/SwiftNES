@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import Cocoa
+//import Cocoa
 
 final class FileIO: NSObject {
 	
@@ -20,17 +20,17 @@ final class FileIO: NSObject {
 	}
 	
 	func loadFile(_ path: String) -> Bool {
-		let data = FileManager.default().contents(atPath: path);
+		let data = FileManager.default.contents(atPath: path);
 		
 		if(data == nil) {
 			print("File failed to load");
 			return false;
 		}
 		
-		let count = data!.count / sizeof(UInt8);
+		let count = data!.count / MemoryLayout<UInt8>.size;
 		var bytes = [UInt8](repeating: 0, count: count);
 		
-		(data as NSData?)?.getBytes(&bytes, length: data!.count * sizeof(UInt8));
+		(data as NSData?)?.getBytes(&bytes, length: data!.count * MemoryLayout<UInt8>.size);
 		
 		// NES(escape) in little endian
 		if(bytes[0] != 0x4E || bytes[1] != 0x45 || bytes[2] != 0x53 || bytes[3] != 0x1A) {

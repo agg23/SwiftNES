@@ -21,14 +21,40 @@
 		665940911CC11CD300BEA04C /* DisplayWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665940901CC11CD300BEA04C /* DisplayWindow.swift */; };
 		666146AE1CA347300022C10D /* Memory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AD1CA347300022C10D /* Memory.swift */; };
 		666146B01CA34BC40022C10D /* FileIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AF1CA34BC40022C10D /* FileIO.swift */; };
+		6675823B1D330E7F003C04D2 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6675823A1D330E7F003C04D2 /* QuartzCore.framework */; };
 		66796ECA1CDCD2F80015E810 /* APU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66796EC91CDCD2F80015E810 /* APU.swift */; };
 		668B05F21CE1515600315BCD /* APUChannels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668B05F11CE1515600315BCD /* APUChannels.swift */; };
 		668B05F41CE28D4500315BCD /* APUBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668B05F31CE28D4500315BCD /* APUBuffer.swift */; };
+		668CB6BA1D71F1A300E74FCF /* smb3.nes in Resources */ = {isa = PBXBuildFile; fileRef = 668CB6B91D71F1A300E74FCF /* smb3.nes */; };
 		66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4361CA2EF3800936DBC /* AppDelegate.swift */; };
 		66A9C4391CA2EF3800936DBC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 66A9C4381CA2EF3800936DBC /* Assets.xcassets */; };
 		66A9C43C1CA2EF3800936DBC /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 66A9C43A1CA2EF3800936DBC /* MainMenu.xib */; };
 		66A9C4471CA2EF3800936DBC /* SwiftNESTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4461CA2EF3800936DBC /* SwiftNESTests.swift */; };
 		66A9C4531CA2EF6F00936DBC /* CPU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4521CA2EF6F00936DBC /* CPU.swift */; };
+		66B2A31A1D1721ED00538CC1 /* CPU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4521CA2EF6F00936DBC /* CPU.swift */; };
+		66B2A31B1D1721ED00538CC1 /* Memory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AD1CA347300022C10D /* Memory.swift */; };
+		66B2A31C1D1721ED00538CC1 /* ControllerIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6659408C1CC117D900BEA04C /* ControllerIO.swift */; };
+		66B2A31D1D1721ED00538CC1 /* FileIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AF1CA34BC40022C10D /* FileIO.swift */; };
+		66B2A31E1D1721ED00538CC1 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E1868F1CADB97300EFF583 /* Logger.swift */; };
+		66B2A31F1D1721ED00538CC1 /* PPU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F46AB81CB039B9005B637E /* PPU.swift */; };
+		66B2A3201D1721ED00538CC1 /* APU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66796EC91CDCD2F80015E810 /* APU.swift */; };
+		66B2A3211D1721ED00538CC1 /* APUChannels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668B05F11CE1515600315BCD /* APUChannels.swift */; };
+		66B2A3221D1721ED00538CC1 /* APUBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668B05F31CE28D4500315BCD /* APUBuffer.swift */; };
+		66B2A3231D1721F000538CC1 /* Mapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6653454B1CF5F56C0066550A /* Mapper.swift */; };
+		66B2A3241D1721F000538CC1 /* Mapper1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665345481CF5F5370066550A /* Mapper1.swift */; };
+		66B2A3251D1721F000538CC1 /* Mapper2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6613873E1CFCD80700564AE3 /* Mapper2.swift */; };
+		66B2A3261D1721F000538CC1 /* Mapper3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661387401CFCEFE400564AE3 /* Mapper3.swift */; };
+		66B2A3271D1721F000538CC1 /* Mapper4.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6613874A1CFDDFF100564AE3 /* Mapper4.swift */; };
+		66B2A3281D1721F000538CC1 /* Mapper7.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661387421CFCF49800564AE3 /* Mapper7.swift */; };
+		66B2A3291D1721F000538CC1 /* Mapper9.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661387441CFD09DB00564AE3 /* Mapper9.swift */; };
+		66B2A32A1D1721F000538CC1 /* Mapper11.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661387481CFD2F8500564AE3 /* Mapper11.swift */; };
+		66C0E7F81D171FE3008F6C3D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66C0E7F71D171FE3008F6C3D /* AppDelegate.swift */; };
+		66C0E7FA1D171FE3008F6C3D /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66C0E7F91D171FE3008F6C3D /* ViewController.swift */; };
+		66C0E7FD1D171FE3008F6C3D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 66C0E7FB1D171FE3008F6C3D /* Main.storyboard */; };
+		66C0E7FF1D171FE3008F6C3D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 66C0E7FE1D171FE3008F6C3D /* Assets.xcassets */; };
+		66C0E8021D171FE3008F6C3D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 66C0E8001D171FE3008F6C3D /* LaunchScreen.storyboard */; };
+		66C0E80A1D172024008F6C3D /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66C0E8081D172024008F6C3D /* Metal.framework */; };
+		66C0E80B1D172024008F6C3D /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66C0E8091D172024008F6C3D /* MetalKit.framework */; };
 		66E186901CADB97300EFF583 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E1868F1CADB97300EFF583 /* Logger.swift */; };
 		66F46AB91CB039B9005B637E /* PPU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F46AB81CB039B9005B637E /* PPU.swift */; };
 /* End PBXBuildFile section */
@@ -58,9 +84,11 @@
 		665940901CC11CD300BEA04C /* DisplayWindow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DisplayWindow.swift; sourceTree = "<group>"; };
 		666146AD1CA347300022C10D /* Memory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Memory.swift; path = Implementation/Memory.swift; sourceTree = "<group>"; };
 		666146AF1CA34BC40022C10D /* FileIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FileIO.swift; path = Implementation/FileIO.swift; sourceTree = "<group>"; };
+		6675823A1D330E7F003C04D2 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS10.0.sdk/System/Library/Frameworks/QuartzCore.framework; sourceTree = DEVELOPER_DIR; };
 		66796EC91CDCD2F80015E810 /* APU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APU.swift; path = Implementation/APU.swift; sourceTree = "<group>"; };
 		668B05F11CE1515600315BCD /* APUChannels.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APUChannels.swift; path = Implementation/APUChannels.swift; sourceTree = "<group>"; };
 		668B05F31CE28D4500315BCD /* APUBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APUBuffer.swift; path = Implementation/APUBuffer.swift; sourceTree = "<group>"; };
+		668CB6B91D71F1A300E74FCF /* smb3.nes */ = {isa = PBXFileReference; lastKnownFileType = file; name = smb3.nes; path = ../../../testROMs/games/smb3.nes; sourceTree = "<group>"; };
 		66A9C4331CA2EF3800936DBC /* SwiftNES.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftNES.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		66A9C4361CA2EF3800936DBC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		66A9C4381CA2EF3800936DBC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -70,6 +98,15 @@
 		66A9C4461CA2EF3800936DBC /* SwiftNESTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftNESTests.swift; sourceTree = "<group>"; };
 		66A9C4481CA2EF3800936DBC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		66A9C4521CA2EF6F00936DBC /* CPU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CPU.swift; path = Implementation/CPU.swift; sourceTree = "<group>"; };
+		66C0E7F51D171FE3008F6C3D /* SwiftNES-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SwiftNES-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		66C0E7F71D171FE3008F6C3D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		66C0E7F91D171FE3008F6C3D /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		66C0E7FC1D171FE3008F6C3D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		66C0E7FE1D171FE3008F6C3D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		66C0E8011D171FE3008F6C3D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		66C0E8031D171FE3008F6C3D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		66C0E8081D172024008F6C3D /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS10.0.sdk/System/Library/Frameworks/Metal.framework; sourceTree = DEVELOPER_DIR; };
+		66C0E8091D172024008F6C3D /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS10.0.sdk/System/Library/Frameworks/MetalKit.framework; sourceTree = DEVELOPER_DIR; };
 		66E1868F1CADB97300EFF583 /* Logger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Logger.swift; path = Implementation/Logger.swift; sourceTree = "<group>"; };
 		66F46AB81CB039B9005B637E /* PPU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PPU.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -88,6 +125,16 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		66C0E7F21D171FE3008F6C3D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6675823B1D330E7F003C04D2 /* QuartzCore.framework in Frameworks */,
+				66C0E80A1D172024008F6C3D /* Metal.framework in Frameworks */,
+				66C0E80B1D172024008F6C3D /* MetalKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -116,7 +163,9 @@
 				664032B51CC0317B00FF7C6B /* MetalKit.framework */,
 				66A9C4351CA2EF3800936DBC /* SwiftNES */,
 				66A9C4451CA2EF3800936DBC /* SwiftNESTests */,
+				66C0E7F61D171FE3008F6C3D /* SwiftNES-iOS */,
 				66A9C4341CA2EF3800936DBC /* Products */,
+				66C0E8071D172024008F6C3D /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -125,6 +174,7 @@
 			children = (
 				66A9C4331CA2EF3800936DBC /* SwiftNES.app */,
 				66A9C4421CA2EF3800936DBC /* SwiftNESTests.xctest */,
+				66C0E7F51D171FE3008F6C3D /* SwiftNES-iOS.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -168,6 +218,30 @@
 			name = Implementation;
 			sourceTree = "<group>";
 		};
+		66C0E7F61D171FE3008F6C3D /* SwiftNES-iOS */ = {
+			isa = PBXGroup;
+			children = (
+				66C0E7F71D171FE3008F6C3D /* AppDelegate.swift */,
+				66C0E7F91D171FE3008F6C3D /* ViewController.swift */,
+				66C0E7FB1D171FE3008F6C3D /* Main.storyboard */,
+				66C0E7FE1D171FE3008F6C3D /* Assets.xcassets */,
+				66C0E8001D171FE3008F6C3D /* LaunchScreen.storyboard */,
+				66C0E8031D171FE3008F6C3D /* Info.plist */,
+				668CB6B91D71F1A300E74FCF /* smb3.nes */,
+			);
+			path = "SwiftNES-iOS";
+			sourceTree = "<group>";
+		};
+		66C0E8071D172024008F6C3D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				6675823A1D330E7F003C04D2 /* QuartzCore.framework */,
+				66C0E8081D172024008F6C3D /* Metal.framework */,
+				66C0E8091D172024008F6C3D /* MetalKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -206,13 +280,30 @@
 			productReference = 66A9C4421CA2EF3800936DBC /* SwiftNESTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		66C0E7F41D171FE3008F6C3D /* SwiftNES-iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 66C0E8061D171FE3008F6C3D /* Build configuration list for PBXNativeTarget "SwiftNES-iOS" */;
+			buildPhases = (
+				66C0E7F11D171FE3008F6C3D /* Sources */,
+				66C0E7F21D171FE3008F6C3D /* Frameworks */,
+				66C0E7F31D171FE3008F6C3D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "SwiftNES-iOS";
+			productName = "SwiftNES-iOS";
+			productReference = 66C0E7F51D171FE3008F6C3D /* SwiftNES-iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		66A9C42B1CA2EF3800936DBC /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 0720;
+				LastSwiftUpdateCheck = 0800;
 				LastUpgradeCheck = 0730;
 				ORGANIZATIONNAME = "Adam Gastineau";
 				TargetAttributes = {
@@ -224,6 +315,12 @@
 						CreatedOnToolsVersion = 7.2.1;
 						LastSwiftMigration = 0800;
 						TestTargetID = 66A9C4321CA2EF3800936DBC;
+					};
+					66C0E7F41D171FE3008F6C3D = {
+						CreatedOnToolsVersion = 8.0;
+						DevelopmentTeam = 58JLRGUCJQ;
+						DevelopmentTeamName = "Adam Gastineau";
+						ProvisioningStyle = Manual;
 					};
 				};
 			};
@@ -242,6 +339,7 @@
 			targets = (
 				66A9C4321CA2EF3800936DBC /* SwiftNES */,
 				66A9C4411CA2EF3800936DBC /* SwiftNESTests */,
+				66C0E7F41D171FE3008F6C3D /* SwiftNES-iOS */,
 			);
 		};
 /* End PBXProject section */
@@ -260,6 +358,17 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		66C0E7F31D171FE3008F6C3D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				66C0E8021D171FE3008F6C3D /* LaunchScreen.storyboard in Resources */,
+				668CB6BA1D71F1A300E74FCF /* smb3.nes in Resources */,
+				66C0E7FF1D171FE3008F6C3D /* Assets.xcassets in Resources */,
+				66C0E7FD1D171FE3008F6C3D /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -300,6 +409,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		66C0E7F11D171FE3008F6C3D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				66B2A3291D1721F000538CC1 /* Mapper9.swift in Sources */,
+				66B2A32A1D1721F000538CC1 /* Mapper11.swift in Sources */,
+				66B2A31B1D1721ED00538CC1 /* Memory.swift in Sources */,
+				66B2A3271D1721F000538CC1 /* Mapper4.swift in Sources */,
+				66B2A31F1D1721ED00538CC1 /* PPU.swift in Sources */,
+				66C0E7FA1D171FE3008F6C3D /* ViewController.swift in Sources */,
+				66B2A3251D1721F000538CC1 /* Mapper2.swift in Sources */,
+				66B2A31C1D1721ED00538CC1 /* ControllerIO.swift in Sources */,
+				66B2A3231D1721F000538CC1 /* Mapper.swift in Sources */,
+				66B2A3261D1721F000538CC1 /* Mapper3.swift in Sources */,
+				66B2A31D1D1721ED00538CC1 /* FileIO.swift in Sources */,
+				66B2A31E1D1721ED00538CC1 /* Logger.swift in Sources */,
+				66B2A3221D1721ED00538CC1 /* APUBuffer.swift in Sources */,
+				66B2A3211D1721ED00538CC1 /* APUChannels.swift in Sources */,
+				66C0E7F81D171FE3008F6C3D /* AppDelegate.swift in Sources */,
+				66B2A3201D1721ED00538CC1 /* APU.swift in Sources */,
+				66B2A3281D1721F000538CC1 /* Mapper7.swift in Sources */,
+				66B2A3241D1721F000538CC1 /* Mapper1.swift in Sources */,
+				66B2A31A1D1721ED00538CC1 /* CPU.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -317,6 +452,22 @@
 				66A9C43B1CA2EF3800936DBC /* Base */,
 			);
 			name = MainMenu.xib;
+			sourceTree = "<group>";
+		};
+		66C0E7FB1D171FE3008F6C3D /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				66C0E7FC1D171FE3008F6C3D /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		66C0E8001D171FE3008F6C3D /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				66C0E8011D171FE3008F6C3D /* Base */,
+			);
+			name = LaunchScreen.storyboard;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -469,6 +620,48 @@
 			};
 			name = Release;
 		};
+		66C0E8041D171FE3008F6C3D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = 58JLRGUCJQ;
+				INFOPLIST_FILE = "SwiftNES-iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.appcannon.SwiftNES-iOS";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "58860516-5541-401d-b7b6-352ee966f14b";
+				PROVISIONING_PROFILE_SPECIFIER = "Provisioning Profile";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 3.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		66C0E8051D171FE3008F6C3D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = "";
+				INFOPLIST_FILE = "SwiftNES-iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.appcannon.SwiftNES-iOS";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 3.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -495,6 +688,15 @@
 			buildConfigurations = (
 				66A9C44F1CA2EF3800936DBC /* Debug */,
 				66A9C4501CA2EF3800936DBC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		66C0E8061D171FE3008F6C3D /* Build configuration list for PBXNativeTarget "SwiftNES-iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				66C0E8041D171FE3008F6C3D /* Debug */,
+				66C0E8051D171FE3008F6C3D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

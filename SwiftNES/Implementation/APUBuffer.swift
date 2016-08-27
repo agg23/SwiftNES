@@ -60,9 +60,11 @@ final class APUBuffer {
 	}
 	
 	func loadBuffer(_ audioBuffer: AudioQueueBufferRef) {
-		let array = UnsafeMutablePointer<Int16>(audioBuffer.pointee.mAudioData);
+//		let array = UnsafeMutablePointer<Int16>(audioBuffer.pointee.mAudioData);
 		
 		let size = Int(audioBuffer.pointee.mAudioDataBytesCapacity / 2);
+		
+		let array = UnsafeMutableBufferPointer.init(start: audioBuffer.pointee.mAudioData.assumingMemoryBound(to: Int16.self), count: size);
 		
 		let sampleCount = Double(availableSampleCount());
 		

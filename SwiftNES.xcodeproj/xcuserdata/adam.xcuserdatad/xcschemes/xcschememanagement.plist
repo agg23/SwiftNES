@@ -4,6 +4,11 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>SwiftNES-iOS.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
 		<key>SwiftNES.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -18,6 +23,11 @@
 			<true/>
 		</dict>
 		<key>66A9C4411CA2EF3800936DBC</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>66C0E7F41D171FE3008F6C3D</key>
 		<dict>
 			<key>primary</key>
 			<true/>
