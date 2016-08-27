@@ -26,6 +26,7 @@
 		668B05F21CE1515600315BCD /* APUChannels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668B05F11CE1515600315BCD /* APUChannels.swift */; };
 		668B05F41CE28D4500315BCD /* APUBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668B05F31CE28D4500315BCD /* APUBuffer.swift */; };
 		668CB6BA1D71F1A300E74FCF /* smb3.nes in Resources */ = {isa = PBXBuildFile; fileRef = 668CB6B91D71F1A300E74FCF /* smb3.nes */; };
+		668CB6BC1D72104100E74FCF /* MacControllerIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668CB6BB1D72104100E74FCF /* MacControllerIO.swift */; };
 		66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4361CA2EF3800936DBC /* AppDelegate.swift */; };
 		66A9C4391CA2EF3800936DBC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 66A9C4381CA2EF3800936DBC /* Assets.xcassets */; };
 		66A9C43C1CA2EF3800936DBC /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 66A9C43A1CA2EF3800936DBC /* MainMenu.xib */; };
@@ -89,6 +90,7 @@
 		668B05F11CE1515600315BCD /* APUChannels.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APUChannels.swift; path = Implementation/APUChannels.swift; sourceTree = "<group>"; };
 		668B05F31CE28D4500315BCD /* APUBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APUBuffer.swift; path = Implementation/APUBuffer.swift; sourceTree = "<group>"; };
 		668CB6B91D71F1A300E74FCF /* smb3.nes */ = {isa = PBXFileReference; lastKnownFileType = file; name = smb3.nes; path = ../../../testROMs/games/smb3.nes; sourceTree = "<group>"; };
+		668CB6BB1D72104100E74FCF /* MacControllerIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = MacControllerIO.swift; path = Implementation/MacControllerIO.swift; sourceTree = "<group>"; };
 		66A9C4331CA2EF3800936DBC /* SwiftNES.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftNES.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		66A9C4361CA2EF3800936DBC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		66A9C4381CA2EF3800936DBC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -207,6 +209,7 @@
 				66A9C4521CA2EF6F00936DBC /* CPU.swift */,
 				666146AD1CA347300022C10D /* Memory.swift */,
 				6659408C1CC117D900BEA04C /* ControllerIO.swift */,
+				668CB6BB1D72104100E74FCF /* MacControllerIO.swift */,
 				666146AF1CA34BC40022C10D /* FileIO.swift */,
 				66E1868F1CADB97300EFF583 /* Logger.swift */,
 				66F46AB81CB039B9005B637E /* PPU.swift */,
@@ -384,6 +387,7 @@
 				661387491CFD2F8500564AE3 /* Mapper11.swift in Sources */,
 				661387411CFCEFE400564AE3 /* Mapper3.swift in Sources */,
 				66E186901CADB97300EFF583 /* Logger.swift in Sources */,
+				668CB6BC1D72104100E74FCF /* MacControllerIO.swift in Sources */,
 				6659408D1CC117D900BEA04C /* ControllerIO.swift in Sources */,
 				6653454C1CF5F56C0066550A /* Mapper.swift in Sources */,
 				66F46AB91CB039B9005B637E /* PPU.swift in Sources */,

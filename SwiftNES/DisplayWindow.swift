@@ -9,7 +9,7 @@
 import Cocoa
 
 final class DisplayWindow: NSWindow {
-	var controllerIO: ControllerIO?;
+	var controllerIO: MacControllerIO?;
 	
 	override func keyDown(with theEvent: NSEvent) {
 		controllerIO?.buttonPressEvent(Int(theEvent.keyCode));

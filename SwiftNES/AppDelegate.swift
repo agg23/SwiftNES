@@ -54,7 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	
 	private var textureLoader: MTKTextureLoader?;
 	
-	private let controllerIO: ControllerIO;
+	private let controllerIO: MacControllerIO;
 	private var cpu: CPU?;
 	private var ppu: PPU?;
 	private var apu: APU?;
@@ -90,7 +90,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		self.logger = Logger(path: "/Users/adam/nes.log");
 		
-		self.controllerIO = ControllerIO();
+		self.controllerIO = MacControllerIO();
 		
 		dataFormat.mSampleRate = 44100;
 		dataFormat.mFormatID = kAudioFormatLinearPCM;
