@@ -10,6 +10,27 @@ import UIKit
 import QuartzCore
 import Metal
 import MetalKit
+import AudioToolbox
+
+func bridge<T : AnyObject>(_ obj : T) -> UnsafeRawPointer {
+	return UnsafeRawPointer(Unmanaged.passUnretained(obj).toOpaque());
+	// return unsafeAddressOf(obj) // ***
+}
+
+func bridge<T : AnyObject>(_ ptr : UnsafeRawPointer) -> T {
+	return Unmanaged<T>.fromOpaque(ptr).takeUnretainedValue()
+	// return unsafeBitCast(ptr, T.self) // ***
+}
+
+var count = 0;
+
+func outputCallback(_ data: UnsafeMutableRawPointer?, inAudioQueue: AudioQueueRef, inBuffer: AudioQueueBufferRef) {
+	let apu: APU = bridge(UnsafeRawPointer(data)!);
+	
+	apu.buffer.loadBuffer(inBuffer);
+	
+	AudioQueueEnqueueBuffer(inAudioQueue, inBuffer, 0, nil);
+}
 
 class ViewController: UIViewController, MTKViewDelegate {
 
@@ -40,14 +61,22 @@ class ViewController: UIViewController, MTKViewDelegate {
 	private var fileLoaded: Bool;
 	private var paused: Bool;
 	
+	var dataFormat: AudioStreamBasicDescription;
+	var queue: AudioQueueRef?;
+	var buffer: AudioQueueBufferRef?;
+	var buffer2: AudioQueueBufferRef?;
+	var bufferByteSize: UInt32;
+	var numPacketsToRead: UInt32;
+	var packetsToPlay: Int64;
+	
 	required init?(coder aDecoder: NSCoder) {
-//		self.dataFormat = AudioStreamBasicDescription(mSampleRate: 0, mFormatID: 0, mFormatFlags: 0, mBytesPerPacket: 0, mFramesPerPacket: 0, mBytesPerFrame: 0, mChannelsPerFrame: 0, mBitsPerChannel: 0, mReserved: 0);
-//		self.queue = nil;
-//		self.buffer = nil;
-//		self.buffer2 = nil;
-//		self.bufferByteSize = 0x700;
-//		self.numPacketsToRead = 0;
-//		self.packetsToPlay = 1;
+		self.dataFormat = AudioStreamBasicDescription(mSampleRate: 0, mFormatID: 0, mFormatFlags: 0, mBytesPerPacket: 0, mFramesPerPacket: 0, mBytesPerFrame: 0, mChannelsPerFrame: 0, mBitsPerChannel: 0, mReserved: 0);
+		self.queue = nil;
+		self.buffer = nil;
+		self.buffer2 = nil;
+		self.bufferByteSize = 0x700;
+		self.numPacketsToRead = 0;
+		self.packetsToPlay = 1;
 		
 		self.logger = Logger(path: "/Users/adam/nes.log");
 		
@@ -58,21 +87,21 @@ class ViewController: UIViewController, MTKViewDelegate {
 		
 		super.init(coder: aDecoder);
 		
-//		dataFormat.mSampleRate = 44100;
-//		dataFormat.mFormatID = kAudioFormatLinearPCM;
-//		
-//		// Sort out endianness
-//		if (NSHostByteOrder() == NS_BigEndian) {
-//			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsBigEndian | kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
-//		} else {
-//			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
-//		}
-//		
-//		dataFormat.mFramesPerPacket = 1;
-//		dataFormat.mBytesPerFrame = 2;
-//		dataFormat.mBytesPerPacket = dataFormat.mBytesPerFrame * dataFormat.mFramesPerPacket;
-//		dataFormat.mChannelsPerFrame = 1;
-//		dataFormat.mBitsPerChannel = 16;
+		dataFormat.mSampleRate = 44100;
+		dataFormat.mFormatID = kAudioFormatLinearPCM;
+		
+		// Sort out endianness
+		if (NSHostByteOrder() == NS_BigEndian) {
+			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsBigEndian | kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
+		} else {
+			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
+		}
+		
+		dataFormat.mFramesPerPacket = 1;
+		dataFormat.mBytesPerFrame = 2;
+		dataFormat.mBytesPerPacket = dataFormat.mBytesPerFrame * dataFormat.mFramesPerPacket;
+		dataFormat.mChannelsPerFrame = 1;
+		dataFormat.mBitsPerChannel = 16;
 	}
 	
 	override func viewDidLoad() {
@@ -135,14 +164,40 @@ class ViewController: UIViewController, MTKViewDelegate {
 		
 		self.cpu!.reset();
 		
-//		initializeAudio();
-//		
-//		AudioQueueStart(queue!, nil);
-//		
+		initializeAudio();
+		
+		AudioQueueStart(queue!, nil);
+		
 		self.paused = false;
 		
 		return true;
 	}
+	
+	// MARK: - Audio
+	
+	func initializeAudio() {
+		if(self.queue != nil) {
+			if(self.buffer != nil) {
+				AudioQueueFreeBuffer(self.queue!, self.buffer!);
+			}
+			
+			if(self.buffer2 != nil) {
+				AudioQueueFreeBuffer(self.queue!, self.buffer2!);
+			}
+			
+			AudioQueueDispose(self.queue!, true);
+		}
+		
+		AudioQueueNewOutput(&self.dataFormat, outputCallback, UnsafeMutableRawPointer(mutating: bridge(self.apu!)), CFRunLoopGetCurrent(), CFRunLoopMode.commonModes.rawValue, 0, &self.queue);
+		
+		AudioQueueAllocateBuffer(self.queue!, self.bufferByteSize, &self.buffer);
+		AudioQueueAllocateBuffer(self.queue!, self.bufferByteSize, &self.buffer2);
+		
+		outputCallback(UnsafeMutableRawPointer(mutating: bridge(self.apu!)), inAudioQueue: self.queue!, inBuffer: self.buffer!);
+		outputCallback(UnsafeMutableRawPointer(mutating: bridge(self.apu!)), inAudioQueue: self.queue!, inBuffer: self.buffer2!);
+	}
+
+	// MARK: - Graphics
 	
 	func render(_ screen: inout [UInt32]) {
 		let width = Int(256 * 1);
@@ -197,7 +252,7 @@ class ViewController: UIViewController, MTKViewDelegate {
 	}
 	
 	@IBAction func run(_ sender: AnyObject) {
-		print(loadROM(Bundle.main.url(forResource: "smb3", withExtension: "nes")!));
+		print(loadROM(Bundle.main.url(forResource: "Wizards & Warriors (USA)", withExtension: "nes")!));
 	}
 }
 
