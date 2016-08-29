@@ -49,7 +49,7 @@ class ViewController: UIViewController, MTKViewDelegate {
 	
 	private var textureLoader: MTKTextureLoader?;
 	
-	private let controllerIO: ControllerIO;
+	private let controllerIO: iOSControllerIO;
 	private var cpu: CPU?;
 	private var ppu: PPU?;
 	private var apu: APU?;
@@ -80,7 +80,7 @@ class ViewController: UIViewController, MTKViewDelegate {
 		
 		self.logger = Logger(path: "/Users/adam/nes.log");
 		
-		self.controllerIO = ControllerIO();
+		self.controllerIO = iOSControllerIO();
 		
 		self.fileLoaded = false;
 		self.paused = true;
@@ -252,7 +252,16 @@ class ViewController: UIViewController, MTKViewDelegate {
 	}
 	
 	@IBAction func run(_ sender: AnyObject) {
-		print(loadROM(Bundle.main.url(forResource: "Wizards & Warriors (USA)", withExtension: "nes")!));
+		print(loadROM(Bundle.main.url(forResource: "smb3", withExtension: "nes")!));
 	}
+	
+	@IBAction func touchDown(_ sender: AnyObject) {
+		self.controllerIO.buttonPressEvent(sender.tag!);
+	}
+	
+	@IBAction func touchUp(_ sender: AnyObject) {
+		self.controllerIO.buttonUpEvent(sender.tag!);
+	}
+	
 }
 

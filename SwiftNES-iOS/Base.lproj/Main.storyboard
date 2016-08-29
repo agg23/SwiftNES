@@ -25,18 +25,98 @@
                                     <constraint firstAttribute="width" constant="256" id="Srt-5Q-gNW"/>
                                 </constraints>
                             </view>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jhJ-TC-1aB">
-                                <frame key="frameInset" minX="164" minY="485" width="46" height="30"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="Button"/>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jhJ-TC-1aB">
+                                <state key="normal" title="Load ROM"/>
                                 <connections>
                                     <action selector="run:" destination="BYZ-38-t0r" eventType="touchUpInside" id="gzz-bV-45W"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="aLg-0p-3s9">
+                                <frame key="frameInset" minX="49" minY="538" width="30" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Up"/>
+                                <connections>
+                                    <action selector="touchDown:" destination="BYZ-38-t0r" eventType="touchDown" id="sJE-aE-T9u"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpInside" id="1jM-Zj-fCI"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpOutside" id="Aou-6s-DOI"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" tag="3" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zOe-KW-1mI">
+                                <frame key="frameInset" minX="45" minY="591" width="39" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Down"/>
+                                <connections>
+                                    <action selector="touchDown:" destination="BYZ-38-t0r" eventType="touchDown" id="7yz-58-Aey"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpInside" id="9Dr-Nw-ytG"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpOutside" id="Rbc-Jd-JX7"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" tag="1" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Mat-BS-mnK">
+                                <frame key="frameInset" minX="7" minY="563" width="30" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Left"/>
+                                <connections>
+                                    <action selector="touchDown:" destination="BYZ-38-t0r" eventType="touchDown" id="uDc-lD-jsN"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpOutside" id="51M-t0-25Q"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpInside" id="Xeg-M5-37S"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" tag="2" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="c83-HI-j48">
+                                <frame key="frameInset" minX="87" minY="563" width="36" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Right"/>
+                                <connections>
+                                    <action selector="touchDown:" destination="BYZ-38-t0r" eventType="touchDown" id="2Ar-VK-pnb"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpInside" id="2o1-Xu-xJe"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpOutside" id="Oeo-4w-0RL"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" tag="5" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Jrf-gW-I9K">
+                                <frame key="frameInset" minX="211" minY="629" width="34" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Start"/>
+                                <connections>
+                                    <action selector="touchDown:" destination="BYZ-38-t0r" eventType="touchDown" id="gM8-I1-7Zb"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpOutside" id="ecY-AV-Hgl"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpInside" id="t8C-Pz-izM"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" tag="4" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="K0O-3o-6aY">
+                                <frame key="frameInset" minX="136" minY="629" width="44" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Select"/>
+                                <connections>
+                                    <action selector="touchDown:" destination="BYZ-38-t0r" eventType="touchDown" id="EVr-9J-w1C"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpInside" id="K1w-Z2-2Gl"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpOutside" id="jGp-Sn-SSe"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" tag="6" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="NHm-3a-klX">
+                                <frame key="frameInset" minX="277" minY="550" width="30" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="B"/>
+                                <connections>
+                                    <action selector="touchDown:" destination="BYZ-38-t0r" eventType="touchDown" id="UMd-Hz-5FZ"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpOutside" id="1sF-GH-fG7"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpInside" id="RhA-lD-AZT"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" tag="7" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="s8w-UF-w4c">
+                                <frame key="frameInset" minX="321" minY="577" width="30" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="A"/>
+                                <connections>
+                                    <action selector="touchDown:" destination="BYZ-38-t0r" eventType="touchDown" id="BEI-JM-ksf"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpOutside" id="FNK-MX-Xe6"/>
+                                    <action selector="touchUp:" destination="BYZ-38-t0r" eventType="touchUpInside" id="Tz1-73-vs4"/>
                                 </connections>
                             </button>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="3iC-Lx-yDD" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="31o-ub-0cY"/>
+                            <constraint firstItem="jhJ-TC-1aB" firstAttribute="top" secondItem="3iC-Lx-yDD" secondAttribute="bottom" constant="31.5" id="710-Y5-mxi"/>
+                            <constraint firstItem="jhJ-TC-1aB" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="Au8-aD-pt4"/>
                             <constraint firstItem="3iC-Lx-yDD" firstAttribute="centerY" secondItem="8bC-Xf-vdC" secondAttribute="centerY" id="umP-kC-gb1"/>
                         </constraints>
                     </view>

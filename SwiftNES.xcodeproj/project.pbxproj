@@ -27,6 +27,7 @@
 		668B05F41CE28D4500315BCD /* APUBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668B05F31CE28D4500315BCD /* APUBuffer.swift */; };
 		668CB6BA1D71F1A300E74FCF /* smb3.nes in Resources */ = {isa = PBXBuildFile; fileRef = 668CB6B91D71F1A300E74FCF /* smb3.nes */; };
 		668CB6BC1D72104100E74FCF /* MacControllerIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668CB6BB1D72104100E74FCF /* MacControllerIO.swift */; };
+		668CB6C01D73298A00E74FCF /* iOSControllerIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668CB6BF1D73298A00E74FCF /* iOSControllerIO.swift */; };
 		66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4361CA2EF3800936DBC /* AppDelegate.swift */; };
 		66A9C4391CA2EF3800936DBC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 66A9C4381CA2EF3800936DBC /* Assets.xcassets */; };
 		66A9C43C1CA2EF3800936DBC /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 66A9C43A1CA2EF3800936DBC /* MainMenu.xib */; };
@@ -91,6 +92,7 @@
 		668B05F31CE28D4500315BCD /* APUBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APUBuffer.swift; path = Implementation/APUBuffer.swift; sourceTree = "<group>"; };
 		668CB6B91D71F1A300E74FCF /* smb3.nes */ = {isa = PBXFileReference; lastKnownFileType = file; name = smb3.nes; path = ../../../testROMs/games/smb3.nes; sourceTree = "<group>"; };
 		668CB6BB1D72104100E74FCF /* MacControllerIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = MacControllerIO.swift; path = Implementation/MacControllerIO.swift; sourceTree = "<group>"; };
+		668CB6BF1D73298A00E74FCF /* iOSControllerIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iOSControllerIO.swift; sourceTree = "<group>"; };
 		66A9C4331CA2EF3800936DBC /* SwiftNES.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftNES.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		66A9C4361CA2EF3800936DBC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		66A9C4381CA2EF3800936DBC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -226,6 +228,7 @@
 			children = (
 				66C0E7F71D171FE3008F6C3D /* AppDelegate.swift */,
 				66C0E7F91D171FE3008F6C3D /* ViewController.swift */,
+				668CB6BF1D73298A00E74FCF /* iOSControllerIO.swift */,
 				66C0E7FB1D171FE3008F6C3D /* Main.storyboard */,
 				66C0E7FE1D171FE3008F6C3D /* Assets.xcassets */,
 				66C0E8001D171FE3008F6C3D /* LaunchScreen.storyboard */,
@@ -428,6 +431,7 @@
 				66B2A3231D1721F000538CC1 /* Mapper.swift in Sources */,
 				66B2A3261D1721F000538CC1 /* Mapper3.swift in Sources */,
 				66B2A31D1D1721ED00538CC1 /* FileIO.swift in Sources */,
+				668CB6C01D73298A00E74FCF /* iOSControllerIO.swift in Sources */,
 				66B2A31E1D1721ED00538CC1 /* Logger.swift in Sources */,
 				66B2A3221D1721ED00538CC1 /* APUBuffer.swift in Sources */,
 				66B2A3211D1721ED00538CC1 /* APUChannels.swift in Sources */,
