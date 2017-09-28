@@ -124,8 +124,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		self.window.contentMinSize = windowSize;
 		self.window.contentMaxSize = windowSize;
 		
-		self.textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(with: MTLPixelFormat.bgra8Unorm, width: Int(width), height: Int(height), mipmapped: false);
-		self.texture = self.device!.newTexture(with: self.textureDescriptor!);
+        self.textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: MTLPixelFormat.bgra8Unorm, width: Int(width), height: Int(height), mipmapped: false);
+        self.texture = self.device!.makeTexture(descriptor: self.textureDescriptor!);
 		
 		self.metalView.colorPixelFormat = MTLPixelFormat.bgra8Unorm;
 	}
@@ -147,15 +147,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		self.metalView.drawableSize = CGSize(width: self.metalView.frame.size.width, height: self.metalView.frame.size.height);
 		
-		self.commandQueue = self.device!.newCommandQueue();
+        self.commandQueue = self.device!.makeCommandQueue();
 		
 		self.textureLoader = MTKTextureLoader(device: self.device!);
 		
 		self.threadGroups = MTLSizeMake((width+threadGroupCount.width)/threadGroupCount.width, (height+threadGroupCount.height)/threadGroupCount.height, 1);
-		
-		let library:MTLLibrary!  = self.device.newDefaultLibrary();
-		let function:MTLFunction! = library.newFunction(withName: "kernel_passthrough");
-		self.pipeline = try! self.device!.newComputePipelineState(with: function);
 		
 		windowSetup();
 		
@@ -298,9 +294,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		let bytesPerPixel = 4;
 		let bytesPerRow = width * bytesPerPixel;
 		
-		self.metalView.currentDrawable!.texture.replace(MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: UnsafeRawPointer(screen), bytesPerRow: bytesPerRow);
+        self.metalView.currentDrawable!.texture.replace(region: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: UnsafeRawPointer(screen), bytesPerRow: bytesPerRow);
 		
-		let commandBuffer = commandQueue.commandBuffer()
+        let commandBuffer = commandQueue.makeCommandBuffer()
 		
 		commandBuffer.present(metalView.currentDrawable!)
 		
