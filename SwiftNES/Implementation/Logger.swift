@@ -10,63 +10,63 @@ import Foundation
 
 final class Logger: NSObject {
 	
-	let path: String;
-	var fileHandle: FileHandle?;
+	let path: String
+	var fileHandle: FileHandle?
 	
 	init(path: String) {
-		self.path = path;
+		self.path = path
 		
-		FileManager.default.createFile(atPath: self.path, contents: nil, attributes: nil);
+		FileManager.default.createFile(atPath: path, contents: nil, attributes: nil)
 		
-		self.fileHandle = FileHandle(forWritingAtPath: self.path);
+		fileHandle = FileHandle(forWritingAtPath: path)
 		
-		if(self.fileHandle == nil) {
-			print("ERROR: Unable to open log file");
+		if fileHandle == nil {
+			print("ERROR: Unable to open log file")
 		}
 	}
 	
 	func log(_ string: String) {
-		self.fileHandle?.write((string + "\n").data(using: String.Encoding.utf8)!);
+		fileHandle?.write((string + "\n").data(using: String.Encoding.utf8)!)
 	}
 	
 	func hexString<T : UnsignedInteger>(_ value: T, padding: Int) -> String {
-		var string = String(value, radix: 16);
+		var string = String(value, radix: 16)
 		
 		for _ in string.characters.count..<padding {
-			string = "0" + string;
+			string = "0" + string
 		}
 		
-		return string;
+		return string
 	}
 	
 	func logFormattedInstuction(_ address: UInt16, opcode: UInt8, A: UInt8, X: UInt8, Y: UInt8, P: UInt8, SP: UInt8, CYC: Int, SL: Int) {
 		log(String(format: "%@  %@A:%@ X:%@ Y:%@ P:%@ SP:%@ CYC:%@ SL:%@", hexString(address, padding: 4),
 			hexString(opcode, padding: 2).padding(toLength: 42, withPad: " ", startingAt: 0),
 			hexString(A, padding: 2), hexString(X, padding: 2), hexString(Y, padding: 2), hexString(P, padding: 2),
-			hexString(SP, padding: 2), String(CYC).padding(toLength: 3, withPad: " ", startingAt: 0), String(SL)).uppercased());
+			hexString(SP, padding: 2), String(CYC).padding(toLength: 3, withPad: " ", startingAt: 0), String(SL)).uppercased())
 	}
 	
 	func endLogging() {
-		self.fileHandle?.closeFile();
+		fileHandle?.closeFile()
 	}
 	
 	func dumpMemory(_ memory: [UInt8]) {
 		for i in 0 ..< memory.count {
-			var string = "";
+			var string = ""
 			
-			if(i % 8 == 0) {
-				string += hexString(UInt16(i), padding: 4) + ": ";
+			if i % 8 == 0 {
+				string += hexString(UInt16(i), padding: 4) + ": "
 			}
 			
-			string += hexString(memory[i], padding: 2) + " ";
+			string += hexString(memory[i], padding: 2) + " "
 			
-			if(i % 8 == 7) {
-				string += "\n";
-			} else if(i % 2 == 1) {
+			if i % 8 == 7 {
+				string += "\n"
+			} else if i % 2 == 1 {
 				string += " "
 			}
 			
-			self.fileHandle?.write(string.uppercased().data(using: String.Encoding.utf8)!);
+			fileHandle?.write(string.uppercased().data(using: String.Encoding.utf8)!)
 		}
 	}
 }

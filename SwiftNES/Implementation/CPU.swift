@@ -15,88 +15,88 @@ final class CPU: NSObject {
 	/**
 	 Lower Half of PC
 	*/
-	private var PCL: UInt8;
+	private var PCL: UInt8
 
 	/**
 	 Upper Half of PC
 	*/
-	private var PCH: UInt8;
+	private var PCH: UInt8
 
 	/**
 	 Stack Pointer
 	*/
-	private var SP: UInt8;
+	private var SP: UInt8
 
 	/**
 	 Processor Status
 	*/
-	private var P: UInt8;
+	private var P: UInt8
 
 	/**
 	 Accumulator
 	*/
-	private var A: UInt8;
+	private var A: UInt8
 
 	/**
 	 Index Register X
 	*/
-	private var X: UInt8;
+	private var X: UInt8
 
 	/**
 	 Index Register Y
 	*/
-	private var Y: UInt8;
+	private var Y: UInt8
 	
 	
-	private var interruptDelay = false;
-	private var potentialCLILatencyDelay = false;
-	private var cliLatencyDelay = false;
+	private var interruptDelay = false
+	private var potentialCLILatencyDelay = false
+	private var cliLatencyDelay = false
 
-	private let mainMemory: CPUMemory;
-    private let ppu: PPU;
-	private let apu: APU;
+	private let mainMemory: CPUMemory
+    private let ppu: PPU
+	private let apu: APU
 	
-	private let logger: Logger;
+	private let logger: Logger
 	
 	/**
 	 True if the last cycle run by the CPU was even
 	*/
-	private var evenCycle = false;
+	private var evenCycle = false
 	
 	/**
 	 True if page was crossed by last instruction
 	*/
-	private var pageCrossed = false;
+	private var pageCrossed = false
 	
-	private var dummyReadRequired = false;
-	private var dummyReadAddress = 0;
+	private var dummyReadRequired = false
+	private var dummyReadAddress = 0
 	
 	/**
 	 True if CPU is currently running an OAM transfer
 	*/
-	private var oamTransfer = false;
+	private var oamTransfer = false
 	
-	private var oamDMAAddress = 0;
+	private var oamDMAAddress = 0
 	
 	/**
 	 Stores the number of cycles in the current OAM transfer
 	*/
-	private var oamCycles = 0;
+	private var oamCycles = 0
 	
 	/**
 	 Stores whether OAM transfer will have an extra cycle
 	*/
-	private var oamExtraCycle = false;
+	private var oamExtraCycle = false
 	
 	/**
 	 True if CPU is currently running a DMC transfer
 	*/
-	private var dmcTransfer = false;
+	private var dmcTransfer = false
 	
 	/**
 	 True if an error occurred
 	*/
-	var errorOccured = false;
+	var errorOccured = false
 	
     enum AddressingMode {
         case accumulator
@@ -124,81 +124,81 @@ final class CPU: NSObject {
         case relative
     }
 	
-	var interruptWaiting: Bool;
+	var interruptWaiting: Bool
 	var nmiTriggered: Bool {
 		didSet {
-			self.interruptWaiting = nmiTriggered || self.irqTriggered;
+			interruptWaiting = nmiTriggered || irqTriggered
 		}
 	}
 	
 	var irqTriggered: Bool {
 		didSet {
-			self.interruptWaiting = irqTriggered || self.irqTriggered;
+			interruptWaiting = irqTriggered || irqTriggered
 		}
 	}
-	var brkSetIRQ: Bool;
+	var brkSetIRQ: Bool
 	
 	/**
 	 Stores whether an interrupt occured on the previous cycle (when the NES polls the interrupt lines)
 	*/
 	var previousInterruptWaiting: Bool {
 		didSet {
-			if(!previousInterruptWaiting) {
-				self.interruptDelay = false;
+			if !previousInterruptWaiting {
+				interruptDelay = false
 			}
 		}
 	}
-	var previousNMITriggered: Bool;
-	var previousIRQTriggered: Bool;
-	var previousBRKSetIRQ: Bool;
+	var previousNMITriggered: Bool
+	var previousIRQTriggered: Bool
+	var previousBRKSetIRQ: Bool
 
 	/**
 	 Initializes the CPU
 	*/
 	init(mainMemory: CPUMemory, ppu: PPU, apu: APU, logger: Logger) {
-		self.PCL = 0;
-		self.PCH = 0;
+		PCL = 0
+		PCH = 0
 
-		self.SP = 0;
+		SP = 0
 
-		self.P = 0x24;
+		P = 0x24
 
-		self.A = 0;
-		self.X = 0;
-		self.Y = 0;
+		A = 0
+		X = 0
+		Y = 0
 		
-		self.interruptWaiting = false;
-		self.nmiTriggered = false;
-		self.irqTriggered = false;
-		self.brkSetIRQ = false;
+		interruptWaiting = false
+		nmiTriggered = false
+		irqTriggered = false
+		brkSetIRQ = false
 		
-		self.previousInterruptWaiting = false;
-		self.previousNMITriggered = false;
-		self.previousIRQTriggered = false;
-		self.previousBRKSetIRQ = false;
+		previousInterruptWaiting = false
+		previousNMITriggered = false
+		previousIRQTriggered = false
+		previousBRKSetIRQ = false
 		
-		self.mainMemory = mainMemory;
-        self.ppu = ppu;
-		self.apu = apu;
-		self.logger = logger;
+		self.mainMemory = mainMemory
+        self.ppu = ppu
+		self.apu = apu
+		self.logger = logger
     }
     
     func reset() {
         // Load program start address from RESET vector (0xFFFC)
-        let programStartAddress = self.mainMemory.readTwoBytesMemory(0xFFFC);
+        let programStartAddress = mainMemory.readTwoBytesMemory(0xFFFC)
 		
-		self.SP = 0xFD;
+		SP = 0xFD
 		
 		// Set interrupt flag
-		setPBit(2, value: true);
+		setPBit(2, value: true)
 		
 		// Set unused flag
-		setPBit(5, value: true);
+		setPBit(5, value: true)
         
         // Set PC to program start address
-        setPC(programStartAddress);
+        setPC(programStartAddress)
         
-        print("PC initialized to \((UInt16(self.PCH) << 8) | UInt16(self.PCL))");
+        print("PC initialized to \((UInt16(self.PCH) << 8) | UInt16(self.PCL))")
     }
 	
 	/**
@@ -207,820 +207,814 @@ final class CPU: NSObject {
 	 - Returns: True if the instruction completed successfully, false otherwise
 	*/
 	func step() -> Bool {
-		self.pageCrossed = false;
-		self.dummyReadRequired = false;
+		pageCrossed = false
+		dummyReadRequired = false
 		
-		if(self.oamTransfer) {
-			ppuStep();
+		if oamTransfer {
+			ppuStep()
 			
-			if(self.oamExtraCycle) {
-				ppuStep();
+			if oamExtraCycle {
+				ppuStep()
 			}
 			
-			let startAddress = UInt16(self.ppu.OAMADDR);
+			let startAddress = UInt16(ppu.OAMADDR)
 			
 			for i in 0 ..< 256 {
-				let data = self.readCycle(self.oamDMAAddress + i);
+				let data = readCycle(oamDMAAddress + i)
 				
-				ppuStep();
+				ppuStep()
 				
-				self.ppu.writeDMA(Int((startAddress + UInt16(i)) & 0xFF), data: data);
+				ppu.writeDMA(Int((startAddress + UInt16(i)) & 0xFF), data: data)
 			}
 			
-			self.oamTransfer = false;
+			oamTransfer = false
 			
-			return true;
-		} else if(self.dmcTransfer) {
+			return true
+		} else if dmcTransfer {
 			for _ in 0 ..< 4 {
-				ppuStep();
+				ppuStep()
 			}
 			
-			self.dmcTransfer = false;
-			return true;
+			dmcTransfer = false
+			return true
 		}
 		
-		if(self.previousInterruptWaiting) {
-			if(self.interruptDelay && !(self.previousIRQTriggered && getPBit(2))) {
-				self.interruptDelay = false;
-				self.potentialCLILatencyDelay = true;
-				self.cliLatencyDelay = true;
-			} else if(self.previousNMITriggered) {
-				handleInterrupt();
-				self.potentialCLILatencyDelay = false;
+		if previousInterruptWaiting {
+			if interruptDelay && !(previousIRQTriggered && getPBit(2)) {
+				interruptDelay = false
+				potentialCLILatencyDelay = true
+				cliLatencyDelay = true
+			} else if previousNMITriggered {
+				handleInterrupt()
+				potentialCLILatencyDelay = false
 				
-				return true;
-			} else if(self.previousIRQTriggered) {
-				if(!getPBit(2) || self.previousBRKSetIRQ || self.cliLatencyDelay) {
-					handleInterrupt();
-					self.cliLatencyDelay = false;
-					self.potentialCLILatencyDelay = false;
+				return true
+			} else if previousIRQTriggered {
+				if !getPBit(2) || previousBRKSetIRQ || cliLatencyDelay {
+					handleInterrupt()
+					cliLatencyDelay = false
+					potentialCLILatencyDelay = false
 					
-					return true;
+					return true
 				}
 			} else {
-				print("Error");
+				print("Error")
 				
-				return false;
+				return false
 			}
 		} else {
-			self.cliLatencyDelay = false;
-			self.interruptDelay = false;
-			self.potentialCLILatencyDelay = false;
+			cliLatencyDelay = false
+			interruptDelay = false
+			potentialCLILatencyDelay = false
 		}
 		
-//		let cycle = self.ppu.getCycle();
-//		let scanline = self.ppu.getScanline();
+//		let cycle = self.ppu.getCycle()
+//		let scanline = self.ppu.getScanline()
 		
-		ppuStep();
-		let opcode = fetchPC();
+		ppuStep()
+		let opcode = fetchPC()
 		
-//		self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: cycle, SL: scanline);
+//		self.logger.logFormattedInstuction(self.getPC() - 1, opcode: opcode, A: self.A, X: self.X, Y: self.Y, P: self.P, SP: self.SP, CYC: cycle, SL: scanline)
 		
 		switch opcode {
 			// LDA
 			case 0xA5:
-				 LDA(.zeroPage);
+				 LDA(.zeroPage)
 			case 0xA9:
-				 LDA(.immediate);
+				 LDA(.immediate)
 			case 0xB5:
-				 LDA(.zeroPageIndexedX);
+				 LDA(.zeroPageIndexedX)
 			case 0xAD:
-				 LDA(.absolute);
+				 LDA(.absolute)
 			case 0xBD:
-				 LDA(.absoluteIndexedX);
+				 LDA(.absoluteIndexedX)
 			case 0xB9:
-				 LDA(.absoluteIndexedY);
+				 LDA(.absoluteIndexedY)
 			case 0xA1:
-				 LDA(.indirectX);
+				 LDA(.indirectX)
 			case 0xB1:
-				 LDA(.indirectY);
+				 LDA(.indirectY)
 			
 			// BNE
 			case 0xD0:
-				 BNE();
+				 BNE()
 			
 			// JMP
 			case 0x4C:
-				 JMP(.absolute);
+				 JMP(.absolute)
 			case 0x6C:
-				 JMP(.absoluteIndirect);
+				 JMP(.absoluteIndirect)
 			
 			// INX
 			case 0xE8:
-				 INX();
+				 INX()
 			
 			// BPL
 			case 0x10:
-				 BPL();
+				 BPL()
 			
 			// CMP
 			case 0xC9:
-				 CMP(.immediate);
+				 CMP(.immediate)
 			case 0xC5:
-				 CMP(.zeroPage);
+				 CMP(.zeroPage)
 			case 0xD5:
-				 CMP(.zeroPageIndexedX);
+				 CMP(.zeroPageIndexedX)
 			case 0xCD:
-				 CMP(.absolute);
+				 CMP(.absolute)
 			case 0xDD:
-				 CMP(.absoluteIndexedX);
+				 CMP(.absoluteIndexedX)
 			case 0xD9:
-				 CMP(.absoluteIndexedY);
+				 CMP(.absoluteIndexedY)
 			case 0xC1:
-				 CMP(.indirectX);
+				 CMP(.indirectX)
 			case 0xD1:
-				 CMP(.indirectY);
+				 CMP(.indirectY)
 			
 			// BMI
 			case 0x30:
-				 BMI();
+				 BMI()
 			
 			// BEQ
 			case 0xF0:
-				 BEQ();
+				 BEQ()
 			
 			// BIT
 			case 0x24:
-				 BIT(.zeroPage);
+				 BIT(.zeroPage)
 			case 0x2C:
-				 BIT(.absolute);
+				 BIT(.absolute)
 			
 			// STA
 			case 0x85:
-				 STA(.zeroPage);
+				 STA(.zeroPage)
 			case 0x95:
-				 STA(.zeroPageIndexedX);
+				 STA(.zeroPageIndexedX)
 			case 0x8D:
-				 STA(.absolute);
+				 STA(.absolute)
 			case 0x9D:
-				 STA(.absoluteIndexedX);
+				 STA(.absoluteIndexedX)
 			case 0x99:
-				 STA(.absoluteIndexedY);
+				 STA(.absoluteIndexedY)
 			case 0x81:
-				 STA(.indirectX);
+				 STA(.indirectX)
 			case 0x91:
-				 STA(.indirectY);
+				 STA(.indirectY)
 			
 			// DEX
 			case 0xCA:
-				 DEX();
+				 DEX()
 			
 			// INY
 			case 0xC8:
-				 INY();
+				 INY()
 			
 			// TAY
 			case 0xA8:
-				 TAY();
+				 TAY()
 			
 			// INC
 			case 0xE6:
-				 INC(.zeroPage);
+				 INC(.zeroPage)
 			case 0xF6:
-				 INC(.zeroPageIndexedX);
+				 INC(.zeroPageIndexedX)
 			case 0xEE:
-				 INC(.absolute);
+				 INC(.absolute)
 			case 0xFE:
-				 INC(.absoluteIndexedX);
+				 INC(.absoluteIndexedX)
 			
 			// BCS
 			case 0xB0:
-				 BCS();
+				 BCS()
 			
 			// JSR
 			case 0x20:
-				 JSR();
+				 JSR()
 			
 			// LSR
 			case 0x4A:
-				 LSR(.accumulator, dummyRead: true);
+				 LSR(.accumulator, dummyRead: true)
 			case 0x46:
-				 LSR(.zeroPage, dummyRead: true);
+				 LSR(.zeroPage, dummyRead: true)
 			case 0x56:
-				 LSR(.zeroPageIndexedX, dummyRead: true);
+				 LSR(.zeroPageIndexedX, dummyRead: true)
 			case 0x4E:
-				 LSR(.absolute, dummyRead: true);
+				 LSR(.absolute, dummyRead: true)
 			case 0x5E:
-				 LSR(.absoluteIndexedX, dummyRead: true);
+				 LSR(.absoluteIndexedX, dummyRead: true)
 			
 			// RTS
 			case 0x60:
-				 RTS();
+				 RTS()
 			
 			// CLC
 			case 0x18:
-				 CLC();
+				 CLC()
 			
 			// AND
 			case 0x29:
-				 AND(.immediate);
+				 AND(.immediate)
 			case 0x25:
-				 AND(.zeroPage);
+				 AND(.zeroPage)
 			case 0x35:
-				 AND(.zeroPageIndexedX);
+				 AND(.zeroPageIndexedX)
 			case 0x2D:
-				 AND(.absolute);
+				 AND(.absolute)
 			case 0x3D:
-				 AND(.absoluteIndexedX);
+				 AND(.absoluteIndexedX)
 			case 0x39:
-				 AND(.absoluteIndexedY);
+				 AND(.absoluteIndexedY)
 			case 0x21:
-				 AND(.indirectX);
+				 AND(.indirectX)
 			case 0x31:
-				 AND(.indirectY);
+				 AND(.indirectY)
 			
 			// ADC
 			case 0x69:
-				 ADC(.immediate);
+				 ADC(.immediate)
 			case 0x65:
-				 ADC(.zeroPage);
+				 ADC(.zeroPage)
 			case 0x75:
-				 ADC(.zeroPageIndexedX);
+				 ADC(.zeroPageIndexedX)
 			case 0x6D:
-				 ADC(.absolute);
+				 ADC(.absolute)
 			case 0x7D:
-				 ADC(.absoluteIndexedX);
+				 ADC(.absoluteIndexedX)
 			case 0x79:
-				 ADC(.absoluteIndexedY);
+				 ADC(.absoluteIndexedY)
 			case 0x61:
-				 ADC(.indirectX);
+				 ADC(.indirectX)
 			case 0x71:
-				 ADC(.indirectY);
+				 ADC(.indirectY)
 			
 			// ALR
 			case 0x4B:
-				 ALR();
+				 ALR()
 			
 			// ANC
 			case 0x0B, 0x2B:
-				 ANC();
+				 ANC()
 			
 			// ASL
 			case 0x0A:
-				 ASL(.accumulator);
+				 ASL(.accumulator)
 			case 0x06:
-				 ASL(.zeroPage);
+				 ASL(.zeroPage)
 			case 0x16:
-				 ASL(.zeroPageIndexedX);
+				 ASL(.zeroPageIndexedX)
 			case 0x0E:
-				 ASL(.absolute);
+				 ASL(.absolute)
 			case 0x1E:
-				 ASL(.absoluteIndexedX);
+				 ASL(.absoluteIndexedX)
 			
 			// ARR
 			case 0x6B:
-				 ARR();
+				 ARR()
 			
 			// AXS
 			case 0xCB:
-				 AXS();
+				 AXS()
 			
 			// BCC
 			case 0x90:
-				 BCC();
+				 BCC()
 				
 			// BRK
 			case 0x00:
-				 BRK();
+				 BRK()
 				
 			// BVC
 			case 0x50:
-				 BVC();
+				 BVC()
 				
 			// BVS
 			case 0x70:
-				 BVS();
+				 BVS()
 				
 			// CLD
 			case 0xD8:
-				 CLD();
+				 CLD()
 				
 			// CLI
 			case 0x58:
-				 CLI();
+				 CLI()
 				
 			// CLV
 			case 0xB8:
-				 CLV();
+				 CLV()
 				
 			// CPX
 			case 0xE0:
-				 CPX(.immediate);
+				 CPX(.immediate)
 			case 0xE4:
-				 CPX(.zeroPage);
+				 CPX(.zeroPage)
 			case 0xEC:
-				 CPX(.absolute);
+				 CPX(.absolute)
 				
 			// CPY
 			case 0xC0:
-				 CPY(.immediate);
+				 CPY(.immediate)
 			case 0xC4:
-				 CPY(.zeroPage);
+				 CPY(.zeroPage)
 			case 0xCC:
-				 CPY(.absolute);
+				 CPY(.absolute)
 			
 			// DCP
 			case 0xCF:
-				 DCP(.absolute);
+				 DCP(.absolute)
 			case 0xDB:
-				 DCP(.absoluteIndexedY);
+				 DCP(.absoluteIndexedY)
 			case 0xDF:
-				 DCP(.absoluteIndexedX);
+				 DCP(.absoluteIndexedX)
 			case 0xC7:
-				 DCP(.zeroPage);
+				 DCP(.zeroPage)
 			case 0xD7:
-				 DCP(.zeroPageIndexedX);
+				 DCP(.zeroPageIndexedX)
 			case 0xC3:
-				 DCP(.indirectX);
+				 DCP(.indirectX)
 			case 0xD3:
-				 DCP(.indirectY);
+				 DCP(.indirectY)
 			
 			// DEC
 			case 0xC6:
-				 DEC(.zeroPage);
+				 DEC(.zeroPage)
 			case 0xD6:
-				 DEC(.zeroPageIndexedX);
+				 DEC(.zeroPageIndexedX)
 			case 0xCE:
-				 DEC(.absolute);
+				 DEC(.absolute)
 			case 0xDE:
-				 DEC(.absoluteIndexedX);
+				 DEC(.absoluteIndexedX)
 				
 			// DEY
 			case 0x88:
-				 DEY();
+				 DEY()
 				
 			// EOR
 			case 0x49:
-				 EOR(.immediate);
+				 EOR(.immediate)
 			case 0x45:
-				 EOR(.zeroPage);
+				 EOR(.zeroPage)
 			case 0x55:
-				 EOR(.zeroPageIndexedX);
+				 EOR(.zeroPageIndexedX)
 			case 0x4D:
-				 EOR(.absolute);
+				 EOR(.absolute)
 			case 0x5D:
-				 EOR(.absoluteIndexedX);
+				 EOR(.absoluteIndexedX)
 			case 0x59:
-				 EOR(.absoluteIndexedY);
+				 EOR(.absoluteIndexedY)
 			case 0x41:
-				 EOR(.indirectX);
+				 EOR(.indirectX)
 			case 0x51:
-				 EOR(.indirectY);
+				 EOR(.indirectY)
 			
 			// IGN
 			case 0x0C:
-				 IGN(.absolute);
+				 IGN(.absolute)
 			case 0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC:
-				 IGN(.absoluteIndexedX);
+				 IGN(.absoluteIndexedX)
 			case 0x04, 0x44, 0x64:
-				 IGN(.zeroPage);
+				 IGN(.zeroPage)
 			case 0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4:
-				 IGN(.zeroPageIndexedX);
+				 IGN(.zeroPageIndexedX)
 			
 			// ISC
 			case 0xEF:
-				 ISC(.absolute);
+				 ISC(.absolute)
 			case 0xFF:
-				 ISC(.absoluteIndexedX);
+				 ISC(.absoluteIndexedX)
 			case 0xFB:
-				 ISC(.absoluteIndexedY);
+				 ISC(.absoluteIndexedY)
 			case 0xE7:
-				 ISC(.zeroPage);
+				 ISC(.zeroPage)
 			case 0xF7:
-				 ISC(.zeroPageIndexedX);
+				 ISC(.zeroPageIndexedX)
 			case 0xE3:
-				 ISC(.indirectX);
+				 ISC(.indirectX)
 			case 0xF3:
-				 ISC(.indirectY);
+				 ISC(.indirectY)
 			
 			// LAX
 			case 0xA7:
-				 LAX(.zeroPage);
+				 LAX(.zeroPage)
 			case 0xB7:
-				 LAX(.zeroPageIndexedY);
+				 LAX(.zeroPageIndexedY)
 			case 0xAF:
-				 LAX(.absolute);
+				 LAX(.absolute)
 			case 0xBF:
-				 LAX(.absoluteIndexedY);
+				 LAX(.absoluteIndexedY)
 			case 0xA3:
-				 LAX(.indirectX);
+				 LAX(.indirectX)
 			case 0xB3:
-				 LAX(.indirectY);
+				 LAX(.indirectY)
 			
 			// LDX
 			case 0xA2:
-				 LDX(.immediate);
+				 LDX(.immediate)
 			case 0xA6:
-				 LDX(.zeroPage);
+				 LDX(.zeroPage)
 			case 0xB6:
-				 LDX(.zeroPageIndexedY);
+				 LDX(.zeroPageIndexedY)
 			case 0xAE:
-				 LDX(.absolute);
+				 LDX(.absolute)
 			case 0xBE:
-				 LDX(.absoluteIndexedY);
+				 LDX(.absoluteIndexedY)
 				
 			// LDY
 			case 0xA0:
-				 LDY(.immediate);
+				 LDY(.immediate)
 			case 0xA4:
-				 LDY(.zeroPage);
+				 LDY(.zeroPage)
 			case 0xB4:
-				 LDY(.zeroPageIndexedX);
+				 LDY(.zeroPageIndexedX)
 			case 0xAC:
-				 LDY(.absolute);
+				 LDY(.absolute)
 			case 0xBC:
-				 LDY(.absoluteIndexedX);
+				 LDY(.absoluteIndexedX)
 			
 			// LXA
 			// Assuming XAA (0x8B) is the same as LXA
 			case 0x8B, 0xAB:
-				 LXA();
+				 LXA()
 				
 			// NOP
 			case 0xEA, 0x1A, 0x3A, 0x5A, 0x7A, 0xDA, 0xEA, 0xFA:
-				 NOP();
+				 NOP()
 				
 			// ORA
 			case 0x09:
-				 ORA(.immediate);
+				 ORA(.immediate)
 			case 0x05:
-				 ORA(.zeroPage);
+				 ORA(.zeroPage)
 			case 0x15:
-				 ORA(.zeroPageIndexedX);
+				 ORA(.zeroPageIndexedX)
 			case 0x0D:
-				 ORA(.absolute);
+				 ORA(.absolute)
 			case 0x1D:
-				 ORA(.absoluteIndexedX);
+				 ORA(.absoluteIndexedX)
 			case 0x19:
-				 ORA(.absoluteIndexedY);
+				 ORA(.absoluteIndexedY)
 			case 0x01:
-				 ORA(.indirectX);
+				 ORA(.indirectX)
 			case 0x11:
-				 ORA(.indirectY);
+				 ORA(.indirectY)
 				
 			// PHA
 			case 0x48:
-				 PHA();
+				 PHA()
 				
 			// PHP
 			case 0x08:
-				 PHP();
+				 PHP()
 				
 			// PLA
 			case 0x68:
-				 PLA();
+				 PLA()
 				
 			// PLP
 			case 0x28:
-				 PLP();
+				 PLP()
 			
 			// RLA
 			case 0x2F:
-				 RLA(.absolute);
+				 RLA(.absolute)
 			case 0x3F:
-				 RLA(.absoluteIndexedX);
+				 RLA(.absoluteIndexedX)
 			case 0x3B:
-				 RLA(.absoluteIndexedY);
+				 RLA(.absoluteIndexedY)
 			case 0x27:
-				 RLA(.zeroPage);
+				 RLA(.zeroPage)
 			case 0x37:
-				 RLA(.zeroPageIndexedX);
+				 RLA(.zeroPageIndexedX)
 			case 0x23:
-				 RLA(.indirectX);
+				 RLA(.indirectX)
 			case 0x33:
-				 RLA(.indirectY);
+				 RLA(.indirectY)
 			
 			// ROL
 			case 0x2A:
-				 ROL(.accumulator);
+				 ROL(.accumulator)
 			case 0x26:
-				 ROL(.zeroPage);
+				 ROL(.zeroPage)
 			case 0x36:
-				 ROL(.zeroPageIndexedX);
+				 ROL(.zeroPageIndexedX)
 			case 0x2E:
-				 ROL(.absolute);
+				 ROL(.absolute)
 			case 0x3E:
-				 ROL(.absoluteIndexedX);
+				 ROL(.absoluteIndexedX)
 				
 			// ROR
 			case 0x6A:
-				 ROR(.accumulator, dummyRead: true);
+				 ROR(.accumulator, dummyRead: true)
 			case 0x66:
-				 ROR(.zeroPage, dummyRead: true);
+				 ROR(.zeroPage, dummyRead: true)
 			case 0x76:
-				 ROR(.zeroPageIndexedX, dummyRead: true);
+				 ROR(.zeroPageIndexedX, dummyRead: true)
 			case 0x6E:
-				 ROR(.absolute, dummyRead: true);
+				 ROR(.absolute, dummyRead: true)
 			case 0x7E:
-				 ROR(.absoluteIndexedX, dummyRead: true);
+				 ROR(.absoluteIndexedX, dummyRead: true)
             
             // RRA
             case 0x6F:
-                 RRA(.absolute);
+                 RRA(.absolute)
             case 0x7F:
-                 RRA(.absoluteIndexedX);
+                 RRA(.absoluteIndexedX)
             case 0x7B:
-                 RRA(.absoluteIndexedY);
+                 RRA(.absoluteIndexedY)
             case 0x67:
-                 RRA(.zeroPage);
+                 RRA(.zeroPage)
             case 0x77:
-                 RRA(.zeroPageIndexedX);
+                 RRA(.zeroPageIndexedX)
             case 0x63:
-                 RRA(.indirectX);
+                 RRA(.indirectX)
             case 0x73:
-                 RRA(.indirectY);
+                 RRA(.indirectY)
 				
 			// RTI
 			case 0x40:
-				 RTI();
+				 RTI()
 			
 			// SAX
 			case 0x8F:
-				 SAX(.absolute);
+				 SAX(.absolute)
 			case 0x87:
-				 SAX(.zeroPage);
+				 SAX(.zeroPage)
 			case 0x83:
-				 SAX(.indirectX);
+				 SAX(.indirectX)
 			case 0x97:
-				 SAX(.zeroPageIndexedY);
+				 SAX(.zeroPageIndexedY)
 			
 			// SBC
 			case 0xE9, 0xEB:
-				 SBC(.immediate);
+				 SBC(.immediate)
 			case 0xE5:
-				 SBC(.zeroPage);
+				 SBC(.zeroPage)
 			case 0xF5:
-				 SBC(.zeroPageIndexedX);
+				 SBC(.zeroPageIndexedX)
 			case 0xED:
-				 SBC(.absolute);
+				 SBC(.absolute)
 			case 0xFD:
-				 SBC(.absoluteIndexedX);
+				 SBC(.absoluteIndexedX)
 			case 0xF9:
-				 SBC(.absoluteIndexedY);
+				 SBC(.absoluteIndexedY)
 			case 0xE1:
-				 SBC(.indirectX);
+				 SBC(.indirectX)
 			case 0xF1:
-				 SBC(.indirectY);
+				 SBC(.indirectY)
 				
 			// SEC
 			case 0x38:
-				 SEC();
+				 SEC()
 				
 			// SED
 			case 0xF8:
-				 SED();
+				 SED()
 				
 			// SEI
 			case 0x78:
-				 SEI();
+				 SEI()
 			
 			// SKB
 			case 0x80, 0x82, 0x89, 0xC2, 0xE2:
-				 SKB();
+				 SKB()
 			
 			// SLO
 			case 0x0F:
-				 SLO(.absolute);
+				 SLO(.absolute)
 			case 0x1F:
-				 SLO(.absoluteIndexedX);
+				 SLO(.absoluteIndexedX)
 			case 0x1B:
-				 SLO(.absoluteIndexedY);
+				 SLO(.absoluteIndexedY)
 			case 0x07:
-				 SLO(.zeroPage);
+				 SLO(.zeroPage)
 			case 0x17:
-				 SLO(.zeroPageIndexedX);
+				 SLO(.zeroPageIndexedX)
 			case 0x03:
-				 SLO(.indirectX);
+				 SLO(.indirectX)
 			case 0x13:
-				 SLO(.indirectY);
+				 SLO(.indirectY)
 			
 			// SRE
 			case 0x4F:
-				 SRE(.absolute);
+				 SRE(.absolute)
 			case 0x5F:
-				 SRE(.absoluteIndexedX);
+				 SRE(.absoluteIndexedX)
 			case 0x5B:
-				 SRE(.absoluteIndexedY);
+				 SRE(.absoluteIndexedY)
 			case 0x47:
-				 SRE(.zeroPage);
+				 SRE(.zeroPage)
 			case 0x57:
-				 SRE(.zeroPageIndexedX);
+				 SRE(.zeroPageIndexedX)
 			case 0x43:
-				 SRE(.indirectX);
+				 SRE(.indirectX)
 			case 0x53:
-				 SRE(.indirectY);
+				 SRE(.indirectY)
 				
 			// STX
 			case 0x86:
-				 STX(.zeroPage);
+				 STX(.zeroPage)
 			case 0x96:
-				 STX(.zeroPageIndexedY);
+				 STX(.zeroPageIndexedY)
 			case 0x8E:
-				 STX(.absolute);
+				 STX(.absolute)
 				
 			// STY
 			case 0x84:
-				 STY(.zeroPage);
+				 STY(.zeroPage)
 			case 0x94:
-				 STY(.zeroPageIndexedX);
+				 STY(.zeroPageIndexedX)
 			case 0x8C:
-				 STY(.absolute);
+				 STY(.absolute)
 			
 			// SXA
 			case 0x9E:
-				 SXA();
+				 SXA()
 			
 			// SYA
 			case 0x9C:
-				 SYA();
+				 SYA()
 			
 			// TAX
 			case 0xAA:
-				 TAX();
+				 TAX()
 				
 			// TSX
 			case 0xBA:
-				 TSX();
+				 TSX()
 				
 			// TXA
 			case 0x8A:
-				 TXA();
+				 TXA()
 				
 			// TXS
 			case 0x9A:
-				 TXS();
+				 TXS()
 				
 			// TYA
 			case 0x98:
-				 TYA();
+				 TYA()
 			
 			// TAS
 			case 0x9B:
-				TAS();
+				TAS()
 			
 			// AXA
 			case 0x9F:
-				AXA(.absoluteIndexedY);
+				AXA(.absoluteIndexedY)
 			case 0x93:
-				AXA(.indirectY);
+				AXA(.indirectY)
 			
 			// LAS
 			case 0xBB:
-				LAS();
+				LAS()
 			
 			default:
-				print("ERROR: Instruction with opcode 0x\(logger.hexString(opcode, padding: 2)) not found");
-				self.errorOccured = true;
-				return false;
+				print("ERROR: Instruction with opcode 0x\(logger.hexString(opcode, padding: 2)) not found")
+				self.errorOccured = true
+				return false
 		}
 		
-		return true;
+		return true
 	}
 	
 	func readCycle(_ address: Int) -> UInt8 {
-		ppuStep();
+		ppuStep()
 		
-		return self.mainMemory.readMemory(address);
+		return mainMemory.readMemory(address)
 	}
 	
 	func writeCycle(_ address: Int, data: UInt8) {
-		ppuStep();
+		ppuStep()
 		
-		self.mainMemory.writeMemory(address, data: data);
+		mainMemory.writeMemory(address, data: data)
 	}
 	
 	func ppuStep() {
-		self.evenCycle = !self.evenCycle;
+		evenCycle = !evenCycle
 		
-		self.apu.step();
+		apu.step()
 		
 		for _ in 0 ..< 3 {
-			self.ppu.step();
+			ppu.step()
 		}
 		
-		self.previousInterruptWaiting = self.interruptWaiting;
-		self.previousIRQTriggered = self.irqTriggered;
-		self.previousNMITriggered = self.nmiTriggered;
-		self.previousBRKSetIRQ = self.brkSetIRQ;
+		previousInterruptWaiting = interruptWaiting
+		previousIRQTriggered = irqTriggered
+		previousNMITriggered = nmiTriggered
+		previousBRKSetIRQ = brkSetIRQ
 	}
 	
-    func address(_ lower:UInt8, upper:UInt8) -> Int {
-        return Int(lower) | (Int(upper) << 8);
+    func address(_ lower: UInt8, upper: UInt8) -> Int {
+        return Int(lower) | (Int(upper) << 8)
     }
     
     func setPBit(_ index: Int, value: Bool) {
-        let bit: UInt8 = value ? 0xFF : 0;
-        self.P ^= (bit ^ self.P) & (1 << UInt8(index));
+        let bit: UInt8 = value ? 0xFF : 0
+        P ^= (bit ^ P) & (1 << UInt8(index))
     }
     
     func getPBit(_ index: Int) -> Bool {
-        return ((self.P >> UInt8(index)) & 0x1) == 1;
+        return ((P >> UInt8(index)) & 0x1) == 1
     }
     
     func readFromMemoryUsingAddressingMode(_ mode: AddressingMode) -> UInt8 {
         switch mode {
 			case .immediate:
-				ppuStep();
-				return fetchPC();
+				ppuStep()
+				return fetchPC()
 			default: break
         }
         
-        return readCycle(addressUsingAddressingMode(mode));
+        return readCycle(addressUsingAddressingMode(mode))
     }
     
     func addressUsingAddressingMode(_ mode: AddressingMode) -> Int {
         switch mode {
 			case AddressingMode.zeroPage:
-				ppuStep();
-				return Int(fetchPC());
-				
+				ppuStep()
+				return Int(fetchPC())
 			case AddressingMode.zeroPageIndexedX, .zeroPageIndexedY:
-				var index = self.X;
+				var index = X
 				
 				if(mode == AddressingMode.zeroPageIndexedY) {
-					index = self.Y;
+					index = Y
 				}
 				
-				ppuStep();
-				let pc = fetchPC();
+				ppuStep()
+				let pc = fetchPC()
 				
-				ppuStep();
+				ppuStep()
 				
-				return Int(pc &+ index);
-				
+				return Int(pc &+ index)
 			case AddressingMode.absolute:
-				ppuStep();
-				let lowByte = fetchPC();
-				ppuStep();
-				let highByte = fetchPC();
+				ppuStep()
+				let lowByte = fetchPC()
+				ppuStep()
+				let highByte = fetchPC()
 				
-				return address(lowByte, upper: highByte);
-				
+				return address(lowByte, upper: highByte)
 			case AddressingMode.absoluteIndexedX, .absoluteIndexedY:
-				ppuStep();
-				let lowByte = fetchPC();
+				ppuStep()
+				let lowByte = fetchPC()
 				
-				ppuStep();
-				let highByte = fetchPC();
+				ppuStep()
+				let highByte = fetchPC()
 				
-				var index = self.X;
+				var index = X
 				
 				if(mode == AddressingMode.absoluteIndexedY) {
-					index = self.Y;
+					index = Y
 				}
 				
-				let originalAddress = address(lowByte, upper: highByte);
+				let originalAddress = address(lowByte, upper: highByte)
 				
 				if(UInt16(lowByte) + UInt16(index) > 0xFF) {
-					self.dummyReadRequired = true;
+					dummyReadRequired = true
 				}
 				
-				self.dummyReadAddress = ((originalAddress & 0xFF00) | (originalAddress + Int(index)) & 0xFF);
+				dummyReadAddress = ((originalAddress & 0xFF00) | (originalAddress + Int(index)) & 0xFF)
 				
-				let newAddress = (originalAddress + Int(index)) & 0xFFFF;
+				let newAddress = (originalAddress + Int(index)) & 0xFFFF
 				
-				self.pageCrossed = !checkPage(UInt16(newAddress), originalAddress: UInt16(originalAddress));
+				pageCrossed = !checkPage(UInt16(newAddress), originalAddress: UInt16(originalAddress))
 				
-				return newAddress;
-				
+				return newAddress
 			case AddressingMode.indirectX:
-				ppuStep();
-				let immediate = fetchPC();
+				ppuStep()
+				let immediate = fetchPC()
 				
-				ppuStep();
+				ppuStep()
 				
-				let lowByte = readCycle(Int(immediate &+ self.X) & 0xFF);
+				let lowByte = readCycle(Int(immediate &+ X) & 0xFF)
 				
-				let highByte = readCycle(Int(immediate &+ self.X &+ 1) & 0xFF);
+				let highByte = readCycle(Int(immediate &+ X &+ 1) & 0xFF)
 				
-				return address(lowByte, upper: highByte);
-				
+				return address(lowByte, upper: highByte)
 			case AddressingMode.indirectY:
-				ppuStep();
-				let immediate = Int(fetchPC());
+				ppuStep()
+				let immediate = Int(fetchPC())
 				
-				let lowByte = readCycle(immediate);
-				let highByte = readCycle((immediate + 1) & 0xFF);
+				let lowByte = readCycle(immediate)
+				let highByte = readCycle((immediate + 1) & 0xFF)
 				
-				let originalAddress = address(lowByte, upper: highByte);
+				let originalAddress = address(lowByte, upper: highByte)
 				
-				if(UInt16(lowByte) + UInt16(self.Y) > 0xFF) {
-					self.dummyReadRequired = true;
+				if(UInt16(lowByte) + UInt16(Y) > 0xFF) {
+					dummyReadRequired = true
 				}
 				
-				let intY = Int(self.Y);
+				let intY = Int(Y)
 				
-				self.dummyReadAddress = ((originalAddress & 0xFF00) | (originalAddress + intY) & 0xFF);
+				dummyReadAddress = ((originalAddress & 0xFF00) | (originalAddress + intY) & 0xFF)
 				
-				let newAddress = (originalAddress + intY) & 0xFFFF;
+				let newAddress = (originalAddress + intY) & 0xFFFF
 				
-				self.pageCrossed = !checkPage(UInt16(newAddress), originalAddress: UInt16(originalAddress));
+				pageCrossed = !checkPage(UInt16(newAddress), originalAddress: UInt16(originalAddress))
 				
-				return newAddress;
-				
+				return newAddress
 			default:
-				print("Invalid AddressingMode on addressUsingAddressingMode");
-				return 0;
+				print("Invalid AddressingMode on addressUsingAddressingMode")
+				return 0
         }
     }
 	
@@ -1028,14 +1022,14 @@ final class CPU: NSObject {
 	 Returns true if the address lies on the same page as PC
 	*/
 	func checkPage(_ address: UInt16) -> Bool {
-		return checkPage(address, originalAddress: getPC());
+		return checkPage(address, originalAddress: getPC())
 	}
 	
 	/**
 	 Returns true if the address lies on the same page as originalAddress
 	*/
 	func checkPage(_ address: UInt16, originalAddress: UInt16) -> Bool {
-		return address / 0x100 == originalAddress / 0x100;
+		return address / 0x100 == originalAddress / 0x100
 	}
 	
 	/**
@@ -1044,150 +1038,146 @@ final class CPU: NSObject {
 	 ones place digit
 	*/
 	func bcdValue(_ value: UInt8) -> UInt8 {
-		let upper = (value >> 4) & 0xF;
-		let lower = value & 0xF;
+		let upper = (value >> 4) & 0xF
+		let lower = value & 0xF
 		
-		return upper * 10 + lower;
+		return upper * 10 + lower
 	}
 	
 	/**
 	 Sets a interrupt to trigger upon the next clock cycle
 	*/
 //	func queueInterrupt(interrupt: Interrupt?) {
-//		self.interrupt = interrupt;
-//		self.interruptDelay = false;
+//		self.interrupt = interrupt
+//		self.interruptDelay = false
 //	}
 	func queueIRQ() {
-		self.irqTriggered = true;
+		irqTriggered = true
 	}
 	
 	func clearIRQ() {
-		self.irqTriggered = false;
+		irqTriggered = false
 	}
 	
 	func queueNMI() {
-		self.nmiTriggered = true;
+		nmiTriggered = true
 	}
 	
 	func clearNMI() {
-		self.nmiTriggered = false;
+		nmiTriggered = false
 	}
 	
 	/**
 	 Handles the current interrupt
 	*/
 	func handleInterrupt() {
-		let brk = self.previousBRKSetIRQ;
+		let brk = previousBRKSetIRQ
 		
 		if(!brk) {
-			ppuStep();
+			ppuStep()
 		}
 		
 		// Dummy read
-		let _ = readCycle(Int(getPC()));
+		let _ = readCycle(Int(getPC()))
 		
-		if(brk) {
-			incrementPC();
+		if brk {
+			incrementPC()
 		}
 		
-		let oldPCL = self.PCL;
-		let oldPCH = self.PCH;
+		let oldPCL = PCL
+		let oldPCH = PCH
 		
 		// When performing a hardware interrupt, do not set the B flag
-		var pMask: UInt8 = 0x20;
+		var pMask: UInt8 = 0x20
 		
 		if(brk) {
-			pMask = 0x30;
+			pMask = 0x30
 		}
 		
-		push(oldPCH);
-		push(oldPCL);
+		push(oldPCH)
+		push(oldPCL)
 		
-		push(self.P | pMask); 
+		push(P | pMask)
 		
 		// Set interrupt flag
-		setPBit(2, value: true);
+		setPBit(2, value: true)
 		
-		var PCLAddr = 0;
-		var PCHAddr = 0;
+		var PCLAddr = 0
+		var PCHAddr = 0
 		
-		if(self.previousNMITriggered) {
-			PCLAddr = 0xFFFA;
-			PCHAddr = 0xFFFB;
+		if previousNMITriggered {
+			PCLAddr = 0xFFFA
+			PCHAddr = 0xFFFB
 			
-			self.brkSetIRQ = false;
-			self.irqTriggered = false;
-			self.nmiTriggered = false;
-		} else if(self.previousIRQTriggered) {
-			PCLAddr = 0xFFFE;
-			PCHAddr = 0xFFFF;
+			self.brkSetIRQ = false
+			self.irqTriggered = false
+			self.nmiTriggered = false
+		} else if previousIRQTriggered {
+			PCLAddr = 0xFFFE
+			PCHAddr = 0xFFFF
 			
-			if(self.brkSetIRQ) {
-				self.irqTriggered = false;
-				self.brkSetIRQ = false;
+			if brkSetIRQ {
+				irqTriggered = false
+				brkSetIRQ = false
 			}
 		} else {
 			// TODO: Handle reset case?
 		}
 		
-		self.PCL = readCycle(PCLAddr);
-		self.PCH = readCycle(PCHAddr);
+		PCL = readCycle(PCLAddr)
+		PCH = readCycle(PCHAddr)
 	}
 	
 	func startOAMTransfer() {
-		self.oamTransfer = true;
-		self.oamCycles = 0;
-		
-		if(self.evenCycle) {
-			self.oamExtraCycle = false;
-		} else {
-			self.oamExtraCycle = true;
-		}
-		
-		self.oamDMAAddress = Int((UInt16(self.ppu.OAMDMA) << 8) & 0xFF00);
+		oamTransfer = true
+		oamCycles = 0
+
+		oamExtraCycle = !evenCycle
+
+		oamDMAAddress = Int((UInt16(ppu.OAMDMA) << 8) & 0xFF00)
 	}
 	
 	func startDMCTransfer() {
-		self.dmcTransfer = true;
+		dmcTransfer = true
 	}
 	
     // MARK: - PC Operations
     func setPC(_ address: UInt16) {
-        self.PCL = UInt8(address & 0xFF);
-        self.PCH = UInt8((address & 0xFF00) >> 8);
+        PCL = UInt8(address & 0xFF)
+        PCH = UInt8((address & 0xFF00) >> 8)
     }
     
     func getPC() -> UInt16 {
-        return UInt16(self.PCL) | (UInt16(self.PCH) << 8);
+        return UInt16(PCL) | (UInt16(PCH) << 8)
     }
     
     func incrementPC() {
-        setPC(getPC() &+ 1);
+        setPC(getPC() &+ 1)
     }
     
     func decrementPC() {
-		setPC(getPC() &- 1);
+		setPC(getPC() &- 1)
     }
     
     func fetchPC() -> UInt8 {
-        let byte = self.mainMemory.readMemory(Int(getPC()));
+        let byte = mainMemory.readMemory(Int(getPC()))
         
-        incrementPC();
+        incrementPC()
         
-        return byte;
+        return byte
     }
     
     // MARK: - Stack Operations
     func push(_ byte: UInt8) {
-        writeCycle(0x100 + Int(self.SP), data: byte);
+        writeCycle(0x100 + Int(SP), data: byte)
         
-        self.SP = self.SP &- 1;
+        SP = SP &- 1
     }
     
     func pop() -> UInt8 {
-		self.SP = self.SP &+ 1;
+		SP = SP &+ 1
 		
-        return readCycle(0x100 + Int(self.SP));
+        return readCycle(0x100 + Int(SP))
     }
     
     // MARK: - Instructions
@@ -1197,13 +1187,13 @@ final class CPU: NSObject {
      Simulate Interrupt ReQuest (IRQ)
     */
     func BRK() {
-		queueIRQ();
+		queueIRQ()
 		
-		self.brkSetIRQ = true;
-		self.previousBRKSetIRQ = true;
+		brkSetIRQ = true
+		previousBRKSetIRQ = true
 		
-		self.previousInterruptWaiting = true;
-		self.previousIRQTriggered = true;
+		previousInterruptWaiting = true
+		previousIRQTriggered = true
     }
     
     /**
@@ -1211,23 +1201,23 @@ final class CPU: NSObject {
     */
     func RTI() {
 		// Dummy read
-		let _ = readCycle(Int(getPC()));
+		let _ = readCycle(Int(getPC()))
 		
-        self.P = pop();
-        self.PCL = pop();
-        self.PCH = pop();
+        P = pop()
+        PCL = pop()
+        PCH = pop()
 		
-		ppuStep();
+		ppuStep()
 		
 		// Force B flag to be clear
-		setPBit(4, value: false);
+		setPBit(4, value: false)
 		
 		// Force unused flag to be set
-		setPBit(5, value: true);
+		setPBit(5, value: true)
 		
-		if(self.potentialCLILatencyDelay) {
-			self.potentialCLILatencyDelay = false;
-			self.cliLatencyDelay = false;
+		if potentialCLILatencyDelay {
+			potentialCLILatencyDelay = false
+			cliLatencyDelay = false
 		}
     }
     
@@ -1236,16 +1226,16 @@ final class CPU: NSObject {
     */
     func RTS() {
 		// Dummy read
-		let _ = readCycle(Int(getPC()));
+		let _ = readCycle(Int(getPC()))
 		
-        self.PCL = pop();
-        self.PCH = pop();
+        PCL = pop()
+        PCH = pop()
 		
-		ppuStep();
+		ppuStep()
         
-        incrementPC();
+        incrementPC()
 		
-		ppuStep();
+		ppuStep()
     }
     
     /**
@@ -1253,9 +1243,9 @@ final class CPU: NSObject {
     */
     func PHA() {
 		// Dummy read
-		let _ = readCycle(Int(getPC()));
+		let _ = readCycle(Int(getPC()))
 		
-		push(self.A);
+		push(A)
     }
     
     /**
@@ -1263,14 +1253,14 @@ final class CPU: NSObject {
     */
     func PHP() {
 		// Dummy read
-		let _ = readCycle(Int(getPC()));
+		let _ = readCycle(Int(getPC()))
 		
 		// Force break flag to be set
-		setPBit(4, value: true);
+		setPBit(4, value: true)
 		
-        push(self.P);
+        push(P)
 		
-		setPBit(4, value: false);
+		setPBit(4, value: false)
     }
     
     /**
@@ -1278,17 +1268,17 @@ final class CPU: NSObject {
     */
     func PLA() {
 		// Dummy read
-		let _ = readCycle(Int(getPC()));
+		let _ = readCycle(Int(getPC()))
 		
-		ppuStep();
+		ppuStep()
 		
-		self.A = pop();
+		A = pop()
 		
 		// Set negative flag
-		setPBit(7, value: (self.A >> 7) == 1);
+		setPBit(7, value: (A >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (self.A == 0));
+		setPBit(1, value: (A == 0))
     }
     
     /**
@@ -1296,19 +1286,19 @@ final class CPU: NSObject {
     */
     func PLP() {
 		// Dummy read
-		let _ = readCycle(Int(getPC()));
+		let _ = readCycle(Int(getPC()))
 		
-		ppuStep();
+		ppuStep()
 		
-		self.P = pop();
+		P = pop()
 		
 		// Ensure break flag is not set
-		setPBit(4, value: false);
+		setPBit(4, value: false)
 		
 		// Ensure unused bit is set
-		setPBit(5, value: true);
-		if(!self.potentialCLILatencyDelay) {
-			self.interruptDelay = true;
+		setPBit(5, value: true)
+		if !potentialCLILatencyDelay {
+			interruptDelay = true
 		}
     }
     
@@ -1316,19 +1306,19 @@ final class CPU: NSObject {
      Jump to SubRoutine
     */
     func JSR() {
-		ppuStep();
-		let lowByte = fetchPC();
+		ppuStep()
+		let lowByte = fetchPC()
 		
-		ppuStep();
+		ppuStep()
 		
-		let temp = getPC();
+		let temp = getPC()
         
-        push(UInt8((temp >> 8) & 0xFF));
-        push(UInt8(temp & 0xFF));
+        push(UInt8((temp >> 8) & 0xFF))
+        push(UInt8(temp & 0xFF))
 		
-		ppuStep();
-        self.PCH = fetchPC();
-        self.PCL = lowByte;
+		ppuStep()
+        PCH = fetchPC()
+        PCL = lowByte
     }
 	
 	// MARK: Memory
@@ -1337,109 +1327,107 @@ final class CPU: NSObject {
 	 Store A in Memory
 	*/
 	func STA(_ mode: AddressingMode) {
-		let address = addressUsingAddressingMode(mode);
+		let address = addressUsingAddressingMode(mode)
 		
 		// Ignore page cross
 		
 		if(mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY) {
-			let _ = readCycle(self.dummyReadAddress);
+			let _ = readCycle(dummyReadAddress)
 		}
 		
-		writeCycle(address, data: self.A);
+		writeCycle(address, data: A)
 	}
 	
 	/**
 	 Store X in Memory
 	*/
 	func STX(_ mode: AddressingMode) {
-		let address = addressUsingAddressingMode(mode);
+		let address = addressUsingAddressingMode(mode)
 		
 		// Ignore page cross
-		
-		writeCycle(address, data: self.X);
+		writeCycle(address, data: X)
 	}
 	
 	/**
 	 Store Y in Memory
 	*/
 	func STY(_ mode: AddressingMode) {
-		let address = addressUsingAddressingMode(mode);
+		let address = addressUsingAddressingMode(mode)
 		
 		// Ignore page cross
-		
-		writeCycle(address, data: self.Y);
+		writeCycle(address, data: Y)
 	}
 	
 	/**
 	 Store A AND X in Memory (unofficial)
 	*/
 	func SAX(_ mode: AddressingMode) {
-		let address = addressUsingAddressingMode(mode);
+		let address = addressUsingAddressingMode(mode)
 		
 		// Ignore page cross
 		
 		if(mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY) {
-			let _ = readCycle(address);
+			let _ = readCycle(address)
 		}
 		
-		writeCycle(address, data: self.A & self.X);
+		writeCycle(address, data: A & X)
 	}
 	
 	/**
 	 Load A from Memory
 	*/
 	func LDA(_ mode: AddressingMode) {
-		LOAD(mode, register: &self.A);
+		LOAD(mode, register: &A)
 	}
 	
 	/**
 	 Load X from Memory
 	*/
 	func LDX(_ mode: AddressingMode) {
-		LOAD(mode, register: &self.X);
+		LOAD(mode, register: &X)
 	}
 	
 	/**
 	 Load Y from Memory
 	*/
 	func LDY(_ mode: AddressingMode) {
-		LOAD(mode, register: &self.Y);
+		LOAD(mode, register: &Y)
 	}
 	
 	/**
 	 Load A and X from Memory (unofficial)
 	*/
 	func LAX(_ mode: AddressingMode) {
-		LOAD(mode, register: &self.A);
-		self.X = self.A;
+		LOAD(mode, register: &A)
+		X = A
 	}
 	
 	/**
 	Internal handler for LDA, LDX, LDY
 	*/
 	func LOAD(_ mode: AddressingMode, register: UnsafeMutablePointer<UInt8>) {
-		if(mode == .immediate) {
-			ppuStep();
-			register.pointee = fetchPC();
+		if mode == .immediate {
+			ppuStep()
+			register.pointee = fetchPC()
 		} else {
-			let address = addressUsingAddressingMode(mode);
+			let address = addressUsingAddressingMode(mode)
 			
-			if(self.pageCrossed) {
-				if(self.dummyReadRequired) {
-					let _ = readCycle(self.dummyReadAddress);
+			if pageCrossed {
+				if dummyReadRequired {
+					_ = readCycle(dummyReadAddress)
 				} else {
-					let _ = readCycle(address);
+					_ = readCycle(address)
 				}
 			}
 			
-			register.pointee = readCycle(address);
+			register.pointee = readCycle(address)
 		}
 		
 		// Set negative flag
-		setPBit(7, value: (register.pointee >> 7) == 1);
+		setPBit(7, value: (register.pointee >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (register.pointee == 0));
+		setPBit(1, value: (register.pointee == 0))
 	}
 	
 	/**
@@ -1447,15 +1435,15 @@ final class CPU: NSObject {
 	*/
 	func TAX() {
 		// Dummy read
-		let _ = readCycle(Int(getPC()));
+		_ = readCycle(Int(getPC()))
 		
-		self.X = self.A;
+		X = A
 		
 		// Set negative flag
-		setPBit(7, value: (self.X >> 7) == 1);
+		setPBit(7, value: (X >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (self.X == 0));
+		setPBit(1, value: (X == 0))
 	}
 	
 	/**
@@ -1463,15 +1451,15 @@ final class CPU: NSObject {
 	*/
 	func TAY() {
 		// Dummy read
-		let _ = readCycle(Int(getPC()));
+		_ = readCycle(Int(getPC()))
 		
-		self.Y = self.A;
+		Y = A
 		
 		// Set negative flag
-		setPBit(7, value: (self.Y >> 7) == 1);
+		setPBit(7, value: (Y >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (self.Y == 0));
+		setPBit(1, value: (Y == 0))
 	}
 	
 	/**
@@ -1479,15 +1467,15 @@ final class CPU: NSObject {
 	*/
 	func TSX() {
 		// Dummy read
-		let _ = readCycle(Int(getPC()));
+		_ = readCycle(Int(getPC()))
 		
-		self.X = self.SP;
+		X = SP
 		
 		// Set negative flag
-		setPBit(7, value: (self.X >> 7) == 1);
+		setPBit(7, value: (X >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (self.X == 0));
+		setPBit(1, value: (X == 0))
 	}
 	
 	/**
@@ -1495,15 +1483,15 @@ final class CPU: NSObject {
 	*/
 	func TXA() {
 		// Dummy read
-		let _ = readCycle(Int(getPC()));
+		_ = readCycle(Int(getPC()))
 		
-		self.A = self.X;
+		A = X
 		
 		// Set negative flag
-		setPBit(7, value: (self.A >> 7) == 1);
+		setPBit(7, value: (A >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (self.A == 0));
+		setPBit(1, value: (A == 0))
 	}
 	
 	/**
@@ -1511,9 +1499,9 @@ final class CPU: NSObject {
 	*/
 	func TXS() {
 		// Dummy read
-		let _ = readCycle(Int(getPC()));
+		_ = readCycle(Int(getPC()))
 		
-		self.SP = self.X;
+		SP = X
 	}
 	
 	/**
@@ -1521,55 +1509,55 @@ final class CPU: NSObject {
 	*/
 	func TYA() {
 		// Dummy read
-		let _ = readCycle(Int(getPC()));
+		_ = readCycle(Int(getPC()))
 		
-		self.A = self.Y;
+		A = Y
 		
 		// Set negative flag
-		setPBit(7, value: (self.A >> 7) == 1);
+		setPBit(7, value: (A >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (self.A == 0));
+		setPBit(1, value: (A == 0))
 	}
 	
 	/**
 	 Transfer A AND X into S and Store (Unofficial)
 	*/
 	func TAS() {
-		self.SP = self.A & self.X;
+		SP = A & X
 		
-		ppuStep();
+		ppuStep()
 		
-		let address = addressUsingAddressingMode(.absoluteIndexedY);
+		let address = addressUsingAddressingMode(.absoluteIndexedY)
 		
-		writeCycle(address, data: self.SP & self.PCH);
+		writeCycle(address, data: SP & PCH)
 	}
 	
 	/**
 	 AND X with A AND 7 and store (Unofficial)
 	*/
 	func AXA(_ mode: AddressingMode) {
-		let temp = self.A & self.X & 0x7;
+		let temp = A & X & 0x7
 		
-		ppuStep();
+		ppuStep()
 		
-		let address = addressUsingAddressingMode(mode);
+		let address = addressUsingAddressingMode(mode)
 		
-		writeCycle(address, data: temp);
+		writeCycle(address, data: temp)
 	}
 	
 	/**
 	 Load A, X, S from address AND S (Unofficial)
 	*/
 	func LAS() {
-		let memory = readFromMemoryUsingAddressingMode(.absoluteIndexedY) & self.SP;
+		let memory = readFromMemoryUsingAddressingMode(.absoluteIndexedY) & SP
 		
-		self.A = memory;
-		self.X = memory;
-		self.SP = memory;
+		A = memory
+		X = memory
+		SP = memory
 		
-		if(self.pageCrossed) {
-			ppuStep();
+		if pageCrossed {
+			ppuStep()
 		}
 	}
 	
@@ -1579,24 +1567,24 @@ final class CPU: NSObject {
     func JMP(_ mode: AddressingMode) {
         switch mode {
             case AddressingMode.absolute:
-				ppuStep();
-                let lowByte = fetchPC();
+				ppuStep()
+                let lowByte = fetchPC()
 				
-				ppuStep();
-                self.PCH = fetchPC();
-                self.PCL = lowByte;
+				ppuStep()
+                PCH = fetchPC()
+                PCL = lowByte
             case AddressingMode.absoluteIndirect:
-				ppuStep();
-				let lowerByte = UInt16(fetchPC());
+				ppuStep()
+				let lowerByte = UInt16(fetchPC())
 				
-				ppuStep();
-				let higherByte = UInt16(fetchPC()) << 8;
+				ppuStep()
+				let higherByte = UInt16(fetchPC()) << 8
 				
-                self.PCL = readCycle(Int(lowerByte | higherByte));
+                PCL = readCycle(Int(lowerByte | higherByte))
 				// Add 1 only to lower byte due to CPU bug
-                self.PCH = readCycle(Int(((lowerByte &+ 1) & 0xFF) | higherByte));
+                PCH = readCycle(Int(((lowerByte &+ 1) & 0xFF) | higherByte))
             default:
-                print("Invalid AddressingMode on JMP");
+                print("Invalid AddressingMode on JMP")
         }
     }
 	
@@ -1606,35 +1594,35 @@ final class CPU: NSObject {
      Add Memory to A with Carry
     */
     func ADC(_ mode: AddressingMode) {
-		let memoryValue = readFromMemoryUsingAddressingMode(mode);
+		let memoryValue = readFromMemoryUsingAddressingMode(mode)
 		
-		let temp = UInt16(self.A) + UInt16(memoryValue) + (getPBit(0) ? 1 : 0);
+		let temp = UInt16(A) + UInt16(memoryValue) + (getPBit(0) ? 1 : 0)
 		
 		// Set overflow flag
-		setPBit(6, value: (~(self.A ^ memoryValue) & (self.A ^ UInt8(temp & 0xFF)) & 0x80) == 0x80);
+		setPBit(6, value: (~(A ^ memoryValue) & (A ^ UInt8(temp & 0xFF)) & 0x80) == 0x80)
 		
 		// Set negative flag
-		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (temp & 0xFF) == 0);
+		setPBit(1, value: (temp & 0xFF) == 0)
 		
 		// Decimal mode not supported by NES CPU
 		// Decimal flag
 		/*if(getPBit(3)) {
-			temp = UInt16(bcdValue(self.A)) + UInt16(bcdValue(memoryValue)) + (getPBit(0) ? 1 : 0);
+			temp = UInt16(bcdValue(self.A)) + UInt16(bcdValue(memoryValue)) + (getPBit(0) ? 1 : 0)
 			
 			// Set carry flag
-			setPBit(0, value: temp > 99);
+			setPBit(0, value: temp > 99)
 		} else {*/
 		
 		// Set carry flag
-		setPBit(0, value: temp > 255);
+		setPBit(0, value: temp > 255)
 		
-		self.A = UInt8(temp & 0xFF);
+		A = UInt8(temp & 0xFF)
 		
-		if(self.pageCrossed) {
-			let _ = readCycle(self.dummyReadAddress);
+		if pageCrossed {
+			_ = readCycle(dummyReadAddress)
 		}
     }
     
@@ -1642,37 +1630,37 @@ final class CPU: NSObject {
      Subtract Memory to A with Borrow
     */
     func SBC(_ mode: AddressingMode) {
-		let memoryValue = readFromMemoryUsingAddressingMode(mode);
+		let memoryValue = readFromMemoryUsingAddressingMode(mode)
 		
-		var temp: Int;
+		var temp: Int
 		
 		// Decimal mode not supported by NES CPU
 		// Decimal flag
 		/*if(getPBit(3)) {
-			temp = Int(bcdValue(self.A)) - Int(bcdValue(memoryValue)) - (getPBit(0) ? 0 : 1);
+			temp = Int(bcdValue(self.A)) - Int(bcdValue(memoryValue)) - (getPBit(0) ? 0 : 1)
 			
 			// Set overflow flag
-			setPBit(6, value: (temp > 99) || (temp < 0));
+			setPBit(6, value: (temp > 99) || (temp < 0))
 		} else {*/
 		
-		temp = Int(self.A) - Int(memoryValue) - (getPBit(0) ? 0 : 1);
+		temp = Int(A) - Int(memoryValue) - (getPBit(0) ? 0 : 1)
 		
 		// Set overflow flag
-		setPBit(6, value: ((self.A ^ memoryValue) & (self.A ^ UInt8(temp & 0xFF)) & 0x80) == 0x80);
+		setPBit(6, value: ((A ^ memoryValue) & (A ^ UInt8(temp & 0xFF)) & 0x80) == 0x80)
 		
 		// Set carry flag
-		setPBit(0, value: temp >= 0);
+		setPBit(0, value: temp >= 0)
 		
 		// Set negative flag
-		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (temp & 0xFF) == 0);
+		setPBit(1, value: (temp & 0xFF) == 0)
 		
-		self.A = UInt8(temp & 0xFF);
+		A = UInt8(temp & 0xFF)
 		
-		if(self.pageCrossed) {
-			let _ = readCycle(self.dummyReadAddress);
+		if pageCrossed {
+			_ = readCycle(dummyReadAddress)
 		}
     }
 	
@@ -1680,226 +1668,226 @@ final class CPU: NSObject {
 	 Increment Memory
 	*/
 	func INC(_ mode: AddressingMode) {
-		let address = addressUsingAddressingMode(mode);
+		let address = addressUsingAddressingMode(mode)
 		
 		// Ignore page cross
 		
-		var value = Int(readCycle(address));
+		var value = Int(readCycle(address))
 		
-		ppuStep();
+		ppuStep()
 		
-		value = value + 1;
+		value = value + 1
 		
 		// Set negative flag
-		setPBit(7, value: (value >> 7) & 0x1 == 1);
+		setPBit(7, value: (value >> 7) & 0x1 == 1)
 		
 		// Set zero flag
-		setPBit(1, value: ((value & 0xFF) == 0));
+		setPBit(1, value: ((value & 0xFF) == 0))
 		
-		if(mode == .absoluteIndexedX) {
-			let _ = readCycle(self.dummyReadAddress);
+		if mode == .absoluteIndexedX {
+			_ = readCycle(dummyReadAddress)
 		}
 		
-		writeCycle(address, data: UInt8(value & 0xFF));
+		writeCycle(address, data: UInt8(value & 0xFF))
 	}
 	
 	/**
 	 Increment X
 	*/
 	func INX() {
-		ppuStep();
+		ppuStep()
 		
-		self.X = self.X &+ 1;
+		X = X &+ 1
 		
 		// Set negative flag
-		setPBit(7, value: (self.X >> 7) == 1);
+		setPBit(7, value: (X >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (self.X == 0));
+		setPBit(1, value: (X == 0))
 	}
 	
 	/**
 	 Increment Y
 	*/
 	func INY() {
-		ppuStep();
+		ppuStep()
 		
-		self.Y = self.Y &+ 1;
+		Y = Y &+ 1
 		
 		// Set negative flag
-		setPBit(7, value: (self.Y >> 7) == 1);
+		setPBit(7, value: (Y >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (self.Y == 0));
+		setPBit(1, value: (Y == 0))
 	}
 	
 	/**
 	 Increment Memory then SBC (unofficial)
 	*/
 	func ISC(_ mode: AddressingMode) {
-		let address = addressUsingAddressingMode(mode);
-		var value = Int(readCycle(address));
+		let address = addressUsingAddressingMode(mode)
+		var value = Int(readCycle(address))
 		
 		// Ignore page cross
 		
-		ppuStep();
+		ppuStep()
 		
-		value = value + 1;
+		value = value + 1
 		
-		let temp = Int(self.A) - Int(value & 0xFF) - (getPBit(0) ? 0 : 1);
+		let temp = Int(A) - Int(value & 0xFF) - (getPBit(0) ? 0 : 1)
 		
 		// Set overflow flag
-		setPBit(6, value: ((self.A ^ UInt8(value & 0x80)) & (self.A ^ UInt8(temp & 0xFF)) & 0x80) == 0x80);
+		setPBit(6, value: ((A ^ UInt8(value & 0x80)) & (A ^ UInt8(temp & 0xFF)) & 0x80) == 0x80)
 		
 		// Set carry flag
-		setPBit(0, value: temp >= 0);
+		setPBit(0, value: temp >= 0)
 		
 		// Set negative flag
-		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (temp & 0xFF) == 0);
+		setPBit(1, value: (temp & 0xFF) == 0)
 		
-		self.A = UInt8(temp & 0xFF);
+		A = UInt8(temp & 0xFF)
 		
-		if(mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY) {
-			let _ = readCycle(address);
+		if mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY {
+			_ = readCycle(address)
 		}
 		
-		writeCycle(address, data: UInt8(value & 0xFF));
+		writeCycle(address, data: UInt8(value & 0xFF))
 	}
 	
 	/**
 	 Decrement Memory then CMP (unofficial)
 	*/
 	func DCP(_ mode: AddressingMode) {
-		let address = addressUsingAddressingMode(mode);
-		var value = Int(readCycle(address));
+		let address = addressUsingAddressingMode(mode)
+		var value = Int(readCycle(address))
 		
 		// Ignore page cross
 		
-		ppuStep();
+		ppuStep()
 		
-		value = value - 1;
+		value = value - 1
 		
-		let temp = Int(self.A) - value;
+		let temp = Int(A) - value
 		
 		// Set negative flag
-		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: ((temp & 0xFF) == 0));
+		setPBit(1, value: ((temp & 0xFF) == 0))
 		
 		// Set carry flag
-		setPBit(0, value: (UInt8(self.A & 0xFF) >= UInt8(value & 0xFF)));
+		setPBit(0, value: (UInt8(A & 0xFF) >= UInt8(value & 0xFF)))
 		
-		if(mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY) {
-			let _ = readCycle(address);
+		if mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY {
+			let _ = readCycle(address)
 		}
 		
-		writeCycle(address, data: UInt8(value & 0xFF));
+		writeCycle(address, data: UInt8(value & 0xFF))
 	}
 	
 	/**
 	 Decrement Memory
 	*/
 	func DEC(_ mode: AddressingMode) {
-		let address = addressUsingAddressingMode(mode);
+		let address = addressUsingAddressingMode(mode)
 		
 		// Ignore page cross
 		
-		var value = Int(readCycle(address));
+		var value = Int(readCycle(address))
 		
-		ppuStep();
+		ppuStep()
 		
-		value = value - 1;
+		value = value - 1
 		
 		// Set negative flag
-		setPBit(7, value: (value >> 7) & 0x1 == 1);
+		setPBit(7, value: (value >> 7) & 0x1 == 1)
 		
 		// Set zero flag
-		setPBit(1, value: ((value & 0xFF) == 0));
+		setPBit(1, value: ((value & 0xFF) == 0))
 		
-		if(mode == .absoluteIndexedX) {
-			let _ = readCycle(self.dummyReadAddress);
+		if mode == .absoluteIndexedX {
+			_ = readCycle(dummyReadAddress)
 		}
 		
-		writeCycle(address, data: UInt8(value & 0xFF));
+		writeCycle(address, data: UInt8(value & 0xFF))
 	}
 	
 	/**
 	 Decrement X
 	*/
 	func DEX() {
-		ppuStep();
+		ppuStep()
 		
-		self.X = UInt8((Int(self.X) - 1) & 0xFF);
+		X = UInt8((Int(X) - 1) & 0xFF)
 		
 		// Set negative flag
-		setPBit(7, value: (self.X >> 7) == 1);
+		setPBit(7, value: (X >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (self.X == 0));
+		setPBit(1, value: (X == 0))
 	}
 	
 	/**
 	 Decrement Y
 	*/
 	func DEY() {
-		ppuStep();
+		ppuStep()
 		
-		self.Y = UInt8((Int(self.Y) - 1) & 0xFF);
+		Y = UInt8((Int(Y) - 1) & 0xFF)
 		
 		// Set negative flag
-		setPBit(7, value: (self.Y >> 7) == 1);
+		setPBit(7, value: (Y >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (self.Y == 0));
+		setPBit(1, value: (Y == 0))
 	}
 	
     /**
      Arithmetic Shift Left
     */
     func ASL(_ mode: AddressingMode) {
-        if(mode == .accumulator) {
+        if mode == .accumulator {
 			// Dummy read
-			let _ = readCycle(Int(getPC()));
+			let _ = readCycle(Int(getPC()))
 			
 			// Set carry flag
-            setPBit(0, value: (self.A >> 7) == 1);
+            setPBit(0, value: (A >> 7) == 1)
             
-            self.A = (self.A << 1) & 0xFE;
+            A = (A << 1) & 0xFE
             
             // Set negative flag
-            setPBit(7, value: (self.A >> 7) == 1);
+            setPBit(7, value: (A >> 7) == 1)
             
             // Set zero flag
-            setPBit(1, value: (self.A == 0));
+            setPBit(1, value: (A == 0))
         } else {
-            let address = addressUsingAddressingMode(mode);
+            let address = addressUsingAddressingMode(mode)
 			
 			// Ignore page cross
 			
-            let value = readCycle(address);
+            let value = readCycle(address)
 			
-			ppuStep();
+			ppuStep()
             
             // Set carry flag
-            setPBit(0, value: (value >> 7) == 1);
+            setPBit(0, value: (value >> 7) == 1)
             
-            let temp = (value << 1) & 0xFE;
+            let temp = (value << 1) & 0xFE
             
             // Set negative flag
-            setPBit(7, value: (temp >> 7) == 1);
+            setPBit(7, value: (temp >> 7) == 1)
             
             // Set zero flag
-            setPBit(1, value: (temp == 0));
+            setPBit(1, value: (temp == 0))
 			
-			if(mode == .absoluteIndexedX) {
-				let _ = readCycle(self.dummyReadAddress);
+			if mode == .absoluteIndexedX {
+				let _ = readCycle(dummyReadAddress)
 			}
             
-            writeCycle(address, data: temp);
+            writeCycle(address, data: temp)
         }
     }
 	
@@ -1907,78 +1895,78 @@ final class CPU: NSObject {
 	 Shift Left and ORA (unofficial)
 	*/
 	func SLO(_ mode: AddressingMode) {
-		let address = addressUsingAddressingMode(mode);
-		let value = readCycle(address);
+		let address = addressUsingAddressingMode(mode)
+		let value = readCycle(address)
 		
 		// Ignore page cross
 		
-		ppuStep();
+		ppuStep()
 		
 		// Set carry flag
-		setPBit(0, value: (value >> 7) == 1);
+		setPBit(0, value: (value >> 7) == 1)
 		
-		let temp = (value << 1) & 0xFE;
+		let temp = (value << 1) & 0xFE
 		
-		self.A = self.A | temp;
+		A = A | temp
 		
 		// Set negative flag
-		setPBit(7, value: (self.A >> 7) == 1);
+		setPBit(7, value: (A >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (self.A == 0));
+		setPBit(1, value: (A == 0))
 		
-		if(mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY) {
-			let _ = readCycle(address);
+		if mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY {
+			_ = readCycle(address)
 		}
 		
-		writeCycle(address, data: temp);
+		writeCycle(address, data: temp)
 	}
 	
     /**
      Logical Shift Right
     */
 	func LSR(_ mode: AddressingMode, dummyRead: Bool) {
-        if(mode == .accumulator) {
+        if mode == .accumulator {
 			// Dummy read
-			if(dummyRead) {
-				let _ = readCycle(Int(getPC()));
+			if dummyRead {
+				_ = readCycle(Int(getPC()))
 			}
 			
 			// Set negative flag
-            setPBit(7, value: false);
+            setPBit(7, value: false)
             
             // Set carry flag
-            setPBit(0, value: (self.A & 0x1) == 1);
+            setPBit(0, value: (A & 0x1) == 1)
             
-            self.A = (self.A >> 1) & 0x7F;
+            A = (A >> 1) & 0x7F
             
             // Set zero flag
-            setPBit(1, value: (self.A == 0));
+            setPBit(1, value: (A == 0))
         } else {
-            let address = addressUsingAddressingMode(mode);
+            let address = addressUsingAddressingMode(mode)
 			
 			// Ignore page cross
 			
-            let value = readCycle(address);
+            let value = readCycle(address)
 			
-			ppuStep();
+			ppuStep()
             
             // Set negative flag
-            setPBit(7, value: false);
+            setPBit(7, value: false)
             
             // Set carry flag
-            setPBit(0, value: (value & 0x1) == 1);
+            setPBit(0, value: (value & 0x1) == 1)
             
-            let temp = (value >> 1) & 0x7F;
+            let temp = (value >> 1) & 0x7F
             
             // Set zero flag
-            setPBit(1, value: (temp == 0));
+            setPBit(1, value: (temp == 0))
 			
-			if(mode == .absoluteIndexedX) {
-				let _ = readCycle(self.dummyReadAddress);
+			if mode == .absoluteIndexedX {
+				_ = readCycle(dummyReadAddress)
 			}
             
-            writeCycle(address, data: temp);
+            writeCycle(address, data: temp)
         }
     }
 	
@@ -1986,82 +1974,82 @@ final class CPU: NSObject {
 	 Logical Shift Right and EOR (unofficial)
 	*/
 	func SRE(_ mode: AddressingMode) {
-		let address = addressUsingAddressingMode(mode);
-		let value = readCycle(address);
+		let address = addressUsingAddressingMode(mode)
+		let value = readCycle(address)
 		
-		ppuStep();
+		ppuStep()
 		
 		// Ignore page cross
 		
 		// Set carry flag
-		setPBit(0, value: (value & 0x1) == 1);
+		setPBit(0, value: (value & 0x1) == 1)
 		
         // TODO: Possibly incorrect (seems to pass tests though)
-		let temp = (value >> 1) & 0x7F;
+		let temp = (value >> 1) & 0x7F
 		
-		self.A = self.A ^ temp;
+		A = A ^ temp
 		
 		// Set negative flag
-		setPBit(7, value: (self.A >> 7) == 1);
+		setPBit(7, value: (A >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (self.A == 0));
+		setPBit(1, value: (A == 0))
 		
-		if(mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY) {
-			let _ = readCycle(address);
+		if mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY {
+			_ = readCycle(address)
 		}
 		
-		writeCycle(address, data: temp);
+		writeCycle(address, data: temp)
 	}
 	
     /**
      ROtate Left
     */
     func ROL(_ mode: AddressingMode) {
-        if(mode == .accumulator) {
+        if mode == .accumulator {
 			// Dummy read
-			let _ = readCycle(Int(getPC()));
+			_ = readCycle(Int(getPC()))
 			
-			let carry = (self.A >> 7) & 0x1;
+			let carry = (A >> 7) & 0x1
             
-            self.A = (self.A << 1) & 0xFE;
-            self.A = self.A | (getPBit(0) ? 1:0);
+            A = (A << 1) & 0xFE
+            A = A | (getPBit(0) ? 1:0)
 			
 			// Set carry flag
-			setPBit(0, value: carry == 1);
+			setPBit(0, value: carry == 1)
 			
 			// Set zero flag
-			setPBit(1, value: (self.A == 0));
+			setPBit(1, value: (A == 0))
 			
             // Set negative flag
-            setPBit(7, value: (self.A >> 7) & 0x1 == 1);
+            setPBit(7, value: (A >> 7) & 0x1 == 1)
         } else {
-            let address = addressUsingAddressingMode(mode);
+            let address = addressUsingAddressingMode(mode)
 			
-			if(mode == .absoluteIndexedX) {
-				let _ = readCycle(self.dummyReadAddress);
+			if mode == .absoluteIndexedX {
+				_ = readCycle(dummyReadAddress)
 			}
 			
-			var value = readCycle(address);
+			var value = readCycle(address)
 			
 			// Ignore page cross
 			
-			ppuStep();
+			ppuStep()
 			
-			let carry = (value >> 7) & 0x1;
-			value = (value << 1) & 0xFE;
-			value = value | (getPBit(0) ? 1:0);
+			let carry = (value >> 7) & 0x1
+			value = (value << 1) & 0xFE
+			value = value | (getPBit(0) ? 1:0)
             
 			// Set carry flag
-			setPBit(0, value: carry == 1);
+			setPBit(0, value: carry == 1)
 			
 			// Set zero flag
-			setPBit(1, value: (value == 0));
+			setPBit(1, value: (value == 0))
 			
 			// Set negative flag
-			setPBit(7, value: (value >> 7) & 0x1 == 1);
+			setPBit(7, value: (value >> 7) & 0x1 == 1)
 			
-            writeCycle(address, data: value);
+            writeCycle(address, data: value)
         }
     }
 	
@@ -2069,52 +2057,52 @@ final class CPU: NSObject {
 	 ROtate Right
 	*/
 	func ROR(_ mode: AddressingMode, dummyRead: Bool) {
-		if(mode == .accumulator) {
+		if mode == .accumulator {
 			// Dummy read
-			if(dummyRead) {
-				let _ = readCycle(Int(getPC()));
+			if dummyRead {
+				_ = readCycle(Int(getPC()))
 			}
 			
-			let carry = self.A & 0x1;
+			let carry = A & 0x1
 			
-			self.A = (self.A >> 1) & 0x7F;
-			self.A = self.A | (getPBit(0) ? 0x80 : 0);
+			A = (A >> 1) & 0x7F
+			A = A | (getPBit(0) ? 0x80 : 0)
 			
 			// Set carry flag
-			setPBit(0, value: carry == 1);
+			setPBit(0, value: carry == 1)
 			
 			// Set zero flag
-			setPBit(1, value: (self.A == 0));
+			setPBit(1, value: (A == 0))
 			
 			// Set negative flag
-			setPBit(7, value: (self.A >> 7) & 0x1 == 1);
+			setPBit(7, value: (A >> 7) & 0x1 == 1)
 		} else {
-			let address = addressUsingAddressingMode(mode);
+			let address = addressUsingAddressingMode(mode)
 			
-			var value = readCycle(address);
+			var value = readCycle(address)
 			
-			if(mode == .absoluteIndexedX) {
-				let _ = readCycle(self.dummyReadAddress);
+			if mode == .absoluteIndexedX {
+				_ = readCycle(dummyReadAddress)
 			}
 			
 			// Ignore page cross
 			
-			ppuStep();
+			ppuStep()
 			
-			let carry = value & 0x1;
-			value = (value >> 1) & 0x7F;
-			value = value | (getPBit(0) ? 0x80 : 0);
+			let carry = value & 0x1
+			value = (value >> 1) & 0x7F
+			value = value | (getPBit(0) ? 0x80 : 0)
 			
 			// Set carry flag
-			setPBit(0, value: carry == 1);
+			setPBit(0, value: carry == 1)
 			
 			// Set zero flag
-			setPBit(1, value: (value == 0));
+			setPBit(1, value: (value == 0))
 			
 			// Set negative flag
-			setPBit(7, value: (value >> 7) & 0x1 == 1);
+			setPBit(7, value: (value >> 7) & 0x1 == 1)
 			
-			writeCycle(address, data: value);
+			writeCycle(address, data: value)
 		}
 	}
 	
@@ -2122,71 +2110,71 @@ final class CPU: NSObject {
 	 ROtate Left and AND (unofficial)
 	*/
 	func RLA(_ mode: AddressingMode) {
-		let address = addressUsingAddressingMode(mode);
-		var value = readCycle(address);
+		let address = addressUsingAddressingMode(mode)
+		var value = readCycle(address)
 		
 		// Ignore page cross
 		
-		if(mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY) {
-			let _ = readCycle(self.dummyReadAddress);
+		if mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY {
+			_ = readCycle(dummyReadAddress)
 		}
 		
-		ppuStep();
+		ppuStep()
 		
-		let carry = (value >> 7) & 0x1;
-		value = (value << 1) & 0xFE;
-		value = value | (getPBit(0) ? 1:0);
+		let carry = (value >> 7) & 0x1
+		value = (value << 1) & 0xFE
+		value = value | (getPBit(0) ? 1:0)
 		
 		// Set carry flag
-		setPBit(0, value: carry == 1);
+		setPBit(0, value: carry == 1)
 		
-		self.A = self.A & value;
+		A = A & value
 		
 		// Set negative flag
-		setPBit(7, value: (self.A >> 7) == 1);
+		setPBit(7, value: (A >> 7) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (self.A == 0));
+		setPBit(1, value: (A == 0))
 		
-		writeCycle(address, data: value);
+		writeCycle(address, data: value)
 	}
     
     /**
      ROtate Right and Add (unofficial)
     */
     func RRA(_ mode: AddressingMode) {
-        let address = addressUsingAddressingMode(mode);
-        var value = readCycle(address);
+        let address = addressUsingAddressingMode(mode)
+        var value = readCycle(address)
 		
 		// Ignore page cross
 		
-		if(mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY) {
-			let _ = readCycle(self.dummyReadAddress);
+		if mode == .absoluteIndexedX || mode == .absoluteIndexedY || mode == .indirectY {
+			let _ = readCycle(dummyReadAddress)
 		}
 		
-		ppuStep();
+		ppuStep()
         
-        let carry = value & 0x1;
-        value = (value >> 1) & 0x7F;
-        value = value | (getPBit(0) ? 0x80 : 0);
+        let carry = value & 0x1
+        value = (value >> 1) & 0x7F
+        value = value | (getPBit(0) ? 0x80 : 0)
         
-        let temp = UInt16(self.A) + UInt16(value) + UInt16(carry);
+        let temp = UInt16(A) + UInt16(value) + UInt16(carry)
         
         // Set overflow flag
-        setPBit(6, value: (~(self.A ^ value) & (self.A ^ UInt8(temp & 0xFF)) & 0x80) == 0x80);
+        setPBit(6, value: (~(A ^ value) & (A ^ UInt8(temp & 0xFF)) & 0x80) == 0x80)
         
         // Set negative flag
-        setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+        setPBit(7, value: ((temp >> 7) & 0x1) == 1)
         
         // Set zero flag
-        setPBit(1, value: (temp & 0xFF) == 0);
+        setPBit(1, value: (temp & 0xFF) == 0)
         
         // Set carry flag
-        setPBit(0, value: temp > 255);
+        setPBit(0, value: temp > 255)
         
-        self.A = UInt8(temp & 0xFF);
+        A = UInt8(temp & 0xFF)
 		        
-        writeCycle(address, data: value);
+        writeCycle(address, data: value)
     }
 	
     // MARK: Logical
@@ -2195,16 +2183,16 @@ final class CPU: NSObject {
      Bitwise XOR A with Memory
     */
     func EOR(_ mode: AddressingMode) {
-        self.A = self.A ^ readFromMemoryUsingAddressingMode(mode);
+        A = A ^ readFromMemoryUsingAddressingMode(mode)
         
         // Set negative flag
-        setPBit(7, value: (self.A >> 7) == 1);
+        setPBit(7, value: (A >> 7) == 1)
         
         // Set zero flag
-        setPBit(1, value: (self.A == 0));
+        setPBit(1, value: (A == 0))
 		
-		if(self.pageCrossed) {
-			let _ = readCycle(self.dummyReadAddress);
+		if(pageCrossed) {
+			_ = readCycle(dummyReadAddress)
 		}
     }
     
@@ -2212,16 +2200,16 @@ final class CPU: NSObject {
      Bitwise AND A with Memory
     */
     func AND(_ mode: AddressingMode) {
-        self.A = self.A & readFromMemoryUsingAddressingMode(mode);
+        A = A & readFromMemoryUsingAddressingMode(mode)
 		
         // Set negative flag
-        setPBit(7, value: (self.A >> 7) == 1);
+        setPBit(7, value: (A >> 7) == 1)
         
         // Set zero flag
-        setPBit(1, value: (self.A == 0));
+        setPBit(1, value: (A == 0))
         
-		if(self.pageCrossed) {
-			let _ = readCycle(self.dummyReadAddress);
+		if pageCrossed {
+			_ = readCycle(dummyReadAddress)
 		}
     }
     
@@ -2229,16 +2217,16 @@ final class CPU: NSObject {
      Bitwise OR A with Memory
     */
     func ORA(_ mode: AddressingMode) {
-        self.A = self.A | readFromMemoryUsingAddressingMode(mode);
+        A = A | readFromMemoryUsingAddressingMode(mode)
         
         // Set negative flag
-        setPBit(7, value: (self.A >> 7) == 1);
+        setPBit(7, value: (A >> 7) == 1)
         
         // Set zero flag
-        setPBit(1, value: (self.A == 0));
+        setPBit(1, value: (A == 0))
         
-		if(self.pageCrossed) {
-			let _ = readCycle(self.dummyReadAddress);
+		if pageCrossed {
+			_ = readCycle(dummyReadAddress)
 		}
     }
 	
@@ -2246,20 +2234,20 @@ final class CPU: NSObject {
 	 AND immediate with A (unofficial)
 	*/
 	func ANC() {
-		self.A = self.A & readFromMemoryUsingAddressingMode(.immediate);
+		A = A & readFromMemoryUsingAddressingMode(.immediate)
 		
 		// Set negative flag
-		let negative = (self.A >> 7) & 0x1 == 1;
-		setPBit(7, value: negative);
+		let negative = (A >> 7) & 0x1 == 1
+		setPBit(7, value: negative)
 		
 		// Set zero flag
-		setPBit(1, value: (self.A == 0));
+		setPBit(1, value: (A == 0))
 		
 		// Set carry flag (if negative)
-		setPBit(0, value: negative);
+		setPBit(0, value: negative)
 		
-		if(self.pageCrossed) {
-			ppuStep();
+		if pageCrossed {
+			ppuStep()
 		}
 	}
 	
@@ -2267,46 +2255,46 @@ final class CPU: NSObject {
 	 AND immediate with A, then shift right 1 (unofficial)
 	*/
 	func ALR() {
-		AND(.immediate);
-		LSR(.accumulator, dummyRead: false);
+		AND(.immediate)
+		LSR(.accumulator, dummyRead: false)
 	}
 	
 	/**
 	 AND immediate with A, then rotate right 1 (unofficial)
 	*/
 	func ARR() {
-		AND(.immediate);
-		ROR(.accumulator, dummyRead: false);
+		AND(.immediate)
+		ROR(.accumulator, dummyRead: false)
 		
-		let bit5 = (self.A >> 5) & 0x1 == 1;
-		let bit6 = (self.A >> 6) & 0x1 == 1;
+		let bit5 = (A >> 5) & 0x1 == 1
+		let bit6 = (A >> 6) & 0x1 == 1
 		
 		if(bit5) {
 			if(bit6) {
 				// Set carry flag
-				setPBit(0, value: true);
+				setPBit(0, value: true)
 				
 				// Clear overflow flag
-				setPBit(6, value: false);
+				setPBit(6, value: false)
 			} else {
 				// Clear carry flag
-				setPBit(0, value: false);
+				setPBit(0, value: false)
 				
 				// Set overflow flag
-				setPBit(6, value: true);
+				setPBit(6, value: true)
 			}
 		} else if(bit6) {
 			// Set carry flag
-			setPBit(0, value: true);
+			setPBit(0, value: true)
 			
 			// Set overflow flag
-			setPBit(6, value: true);
+			setPBit(6, value: true)
 		} else {
 			// Clear carry flag
-			setPBit(0, value: false);
+			setPBit(0, value: false)
 			
 			// Clear overflow flag
-			setPBit(6, value: false);
+			setPBit(6, value: false)
 		}
 	}
 	
@@ -2314,64 +2302,64 @@ final class CPU: NSObject {
 	 AND immediate with A, then transfer A to X (unofficial)
 	*/
 	func LXA() {
-		let immediate = readFromMemoryUsingAddressingMode(.immediate);
+		let immediate = readFromMemoryUsingAddressingMode(.immediate)
 		
-		self.A = immediate;
-		self.X = immediate;
+		A = immediate
+		X = immediate
 		
 		// Set zero flag
-		setPBit(1, value: (self.A == 0));
+		setPBit(1, value: (A == 0))
 		
 		// Set negative flag
-		setPBit(7, value: (self.A >> 7) & 0x1 == 1);
+		setPBit(7, value: (A >> 7) & 0x1 == 1)
 	}
 	
 	/**
 	 AND X with A, then subtract immediate from X (unofficial)
 	*/
 	func AXS() {
-		self.X = self.A & self.X;
+		X = A & X
 		
-		let memoryValue = readFromMemoryUsingAddressingMode(.immediate);
+		let memoryValue = readFromMemoryUsingAddressingMode(.immediate)
 		
-		let temp = Int(self.X) - Int(memoryValue);
+		let temp = Int(X) - Int(memoryValue)
 		
 		// Set carry flag
-		setPBit(0, value: temp >= 0);
+		setPBit(0, value: temp >= 0)
 		
 		// Set negative flag
-		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1)
 		
 		// Set zero flag
-		setPBit(1, value: (temp & 0xFF) == 0);
+		setPBit(1, value: (temp & 0xFF) == 0)
 		
-		self.X = UInt8(temp & 0xFF);
+		X = UInt8(temp & 0xFF)
 	}
 	
 	/**
 	 AND X with high byte from Memory (unofficial)
 	*/
 	func SXA() {
-		let address = addressUsingAddressingMode(.absoluteIndexedY);
+		let address = addressUsingAddressingMode(.absoluteIndexedY)
 		
-		let high = self.X & UInt8(((address >> 8) + Int(1)) & 0xFF);
+		let high = X & UInt8(((address >> 8) + Int(1)) & 0xFF)
 		
-		ppuStep();
+		ppuStep()
 		
-		writeCycle((Int(high) << 8) | (address & 0xFF), data: self.X);
+		writeCycle((Int(high) << 8) | (address & 0xFF), data: X)
 	}
 	
 	/**
 	 AND Y with high byte from Memory (unofficial)
 	*/
 	func SYA() {
-		let address = addressUsingAddressingMode(.absoluteIndexedX);
+		let address = addressUsingAddressingMode(.absoluteIndexedX)
 		
-		let high = self.Y & UInt8(((address >> 8) + Int(1)) & 0xFF);
+		let high = Y & UInt8(((address >> 8) + Int(1)) & 0xFF)
 		
-		ppuStep();
+		ppuStep()
 		
-		writeCycle((Int(high) << 8) | (address & 0xFF), data: self.Y);
+		writeCycle((Int(high) << 8) | (address & 0xFF), data: Y)
 	}
 	
     // MARK: Flow Control
@@ -2380,20 +2368,20 @@ final class CPU: NSObject {
      Compare A with Memory
     */
     func CMP(_ mode: AddressingMode) {
-        let mem = readFromMemoryUsingAddressingMode(mode);
-        let temp = Int(self.A) - Int(mem);
+        let mem = readFromMemoryUsingAddressingMode(mode)
+        let temp = Int(A) - Int(mem)
         
         // Set negative flag
-        setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+        setPBit(7, value: ((temp >> 7) & 0x1) == 1)
         
         // Set zero flag
-        setPBit(1, value: (temp == 0));
+        setPBit(1, value: (temp == 0))
         
         // Set carry flag
-        setPBit(0, value: (self.A >= mem));
+        setPBit(0, value: (A >= mem))
         
-		if(self.pageCrossed) {
-			let _ = readCycle(self.dummyReadAddress);
+		if pageCrossed {
+			_ = readCycle(dummyReadAddress)
 		}
     }
     
@@ -2401,35 +2389,35 @@ final class CPU: NSObject {
      Test bits in A with Memory
     */
     func BIT(_ mode: AddressingMode) {
-        let mem = readFromMemoryUsingAddressingMode(mode);
-        let temp = self.A & mem;
+        let mem = readFromMemoryUsingAddressingMode(mode)
+        let temp = A & mem
 		
         // Set negative flag
-        setPBit(7, value: (mem >> 7) == 1);
+        setPBit(7, value: (mem >> 7) == 1)
         
         // Set overflow flag
-        setPBit(6, value: ((mem >> 6) & 0x1) == 1);
+        setPBit(6, value: ((mem >> 6) & 0x1) == 1)
 		
         // Set zero flag
-        setPBit(1, value: (temp == 0));
+        setPBit(1, value: (temp == 0))
     }
 	
 	/**
 	 Branch if Carry flag is Clear
 	*/
 	func BCC() {
-		ppuStep();
-        let relative = UInt16(fetchPC());
+		ppuStep()
+        let relative = UInt16(fetchPC())
 		
-		if(!getPBit(0)) {
-			ppuStep();
-			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
+		if !getPBit(0) {
+			ppuStep()
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80
 			
-			if(!checkPage(newPC)) {
-				ppuStep();
+			if !checkPage(newPC) {
+				ppuStep()
 			}
 			
-			setPC(newPC);
+			setPC(newPC)
 		}
 	}
 	
@@ -2437,18 +2425,18 @@ final class CPU: NSObject {
 	 Branch if Carry flag is Set
 	*/
 	func BCS() {
-		ppuStep();
-		let relative = UInt16(fetchPC());
+		ppuStep()
+		let relative = UInt16(fetchPC())
 		
-		if(getPBit(0)) {
-			ppuStep();
-			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
+		if getPBit(0) {
+			ppuStep()
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80
 			
-			if(!checkPage(newPC)) {
-				ppuStep();
+			if !checkPage(newPC) {
+				ppuStep()
 			}
 			
-			setPC(newPC);
+			setPC(newPC)
 		}
 	}
 	
@@ -2456,18 +2444,18 @@ final class CPU: NSObject {
 	 Branch if Zero flag is Set
 	*/
 	func BEQ() {
-		ppuStep();
-		let relative = UInt16(fetchPC());
+		ppuStep()
+		let relative = UInt16(fetchPC())
 		
-		if(getPBit(1)) {
-			ppuStep();
-			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
+		if getPBit(1) {
+			ppuStep()
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80
 			
-			if(!checkPage(newPC)) {
-				ppuStep();
+			if !checkPage(newPC) {
+				ppuStep()
 			}
 			
-			setPC(newPC);
+			setPC(newPC)
 		}
 	}
 	
@@ -2475,18 +2463,18 @@ final class CPU: NSObject {
 	 Branch if negative flag is set
 	*/
 	func BMI() {
-		ppuStep();
-		let relative = UInt16(fetchPC());
+		ppuStep()
+		let relative = UInt16(fetchPC())
 		
-		if(getPBit(7)) {
-			ppuStep();
-			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
+		if getPBit(7) {
+			ppuStep()
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80
 			
-			if(!checkPage(newPC)) {
-				ppuStep();
+			if !checkPage(newPC) {
+				ppuStep()
 			}
 			
-			setPC(newPC);
+			setPC(newPC)
 		}
 	}
 	
@@ -2494,18 +2482,18 @@ final class CPU: NSObject {
 	 Branch if zero flag is clear
 	*/
 	func BNE() {
-		ppuStep();
-		let relative = UInt16(fetchPC());
+		ppuStep()
+		let relative = UInt16(fetchPC())
 		
 		if(!getPBit(1)) {
-			ppuStep();
-			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
+			ppuStep()
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80
 			
 			if(!checkPage(newPC)) {
-				ppuStep();
+				ppuStep()
 			}
 			
-			setPC(newPC);
+			setPC(newPC)
 		}
 	}
 	
@@ -2513,18 +2501,18 @@ final class CPU: NSObject {
 	 Branch if negative flag is clear
 	*/
 	func BPL() {
-		ppuStep();
-		let relative = UInt16(fetchPC());
+		ppuStep()
+		let relative = UInt16(fetchPC())
 		
 		if(!getPBit(7)) {
-			ppuStep();
-			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
+			ppuStep()
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80
 			
 			if(!checkPage(newPC)) {
-				ppuStep();
+				ppuStep()
 			}
 			
-			setPC(newPC);
+			setPC(newPC)
 		}
 	}
 	
@@ -2532,18 +2520,18 @@ final class CPU: NSObject {
 	 Branch if oVerflow flag is Clear
 	*/
 	func BVC() {
-		ppuStep();
-		let relative = UInt16(fetchPC());
+		ppuStep()
+		let relative = UInt16(fetchPC())
 		
 		if(!getPBit(6)) {
-			ppuStep();
-			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
+			ppuStep()
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80
 			
 			if(!checkPage(newPC)) {
-				ppuStep();
+				ppuStep()
 			}
 			
-			setPC(newPC);
+			setPC(newPC)
 		}
 	}
 	
@@ -2551,18 +2539,18 @@ final class CPU: NSObject {
 	 Branch if oVerflow flag is Set
 	*/
 	func BVS() {
-		ppuStep();
-		let relative = UInt16(fetchPC());
+		ppuStep()
+		let relative = UInt16(fetchPC())
 		
 		if(getPBit(6)) {
-			ppuStep();
-			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80;
+			ppuStep()
+			let newPC = getPC() &+ (relative ^ 0x80) &- 0x80
 			
 			if(!checkPage(newPC)) {
-				ppuStep();
+				ppuStep()
 			}
 			
-			setPC(newPC);
+			setPC(newPC)
 		}
 	}
 	
@@ -2570,41 +2558,41 @@ final class CPU: NSObject {
 	 ComPare X with Memory
 	*/
 	func CPX(_ mode: AddressingMode) {
-		let mem = readFromMemoryUsingAddressingMode(mode);
-		let temp = Int(self.X) - Int(mem);
+		let mem = readFromMemoryUsingAddressingMode(mode)
+		let temp = Int(X) - Int(mem)
 		
 		// Set negative flag
-		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1)
 		
 		// Set carry flag
-		setPBit(0, value: self.X >= mem);
+		setPBit(0, value: X >= mem)
 		
 		// Set zero flag
-		setPBit(1, value: (temp == 0));
+		setPBit(1, value: (temp == 0))
 	}
 	
 	/**
 	 ComPare Y with Memory
 	*/
 	func CPY(_ mode: AddressingMode) {
-		let mem = readFromMemoryUsingAddressingMode(mode);
-		let temp = Int(self.Y) - Int(mem);
+		let mem = readFromMemoryUsingAddressingMode(mode)
+		let temp = Int(Y) - Int(mem)
 		
 		// Set negative flag
-		setPBit(7, value: ((temp >> 7) & 0x1) == 1);
+		setPBit(7, value: ((temp >> 7) & 0x1) == 1)
 		
 		// Set carry flag
-		setPBit(0, value: self.Y >= mem);
+		setPBit(0, value: Y >= mem)
 		
 		// Set zero flag
-		setPBit(1, value: (temp == 0));
+		setPBit(1, value: (temp == 0))
 	}
 	
     /**
      No OPeration
     */
     func NOP() {
-		ppuStep();
+		ppuStep()
     }
 	
 	/**
@@ -2613,10 +2601,10 @@ final class CPU: NSObject {
 	 NOP here
 	*/
 	func IGN(_ mode: AddressingMode) {
-		let _ = readFromMemoryUsingAddressingMode(mode);
+		_ = readFromMemoryUsingAddressingMode(mode)
 		
-		if(self.pageCrossed) {
-			ppuStep();
+		if pageCrossed {
+			ppuStep()
 		}
 	}
 	
@@ -2624,8 +2612,8 @@ final class CPU: NSObject {
 	 Does nothing.  A NOP that reads the immediate byte
 	*/
 	func SKB() {
-		ppuStep();
-		let _ = fetchPC();
+		ppuStep()
+		_ = fetchPC()
 	}
 	
 	// MARK: P Register
@@ -2634,56 +2622,56 @@ final class CPU: NSObject {
 	 Clear Carry flag
 	*/
 	func CLC() {
-		ppuStep();
-		setPBit(0, value: false);
+		ppuStep()
+		setPBit(0, value: false)
 	}
 	
 	/**
 	 Clear Decimal flag
 	*/
 	func CLD() {
-		ppuStep();
-		setPBit(3, value: false);
+		ppuStep()
+		setPBit(3, value: false)
 	}
 	
 	/**
 	 Clear Interrupt flag
 	*/
 	func CLI() {
-		ppuStep();
-		setPBit(2, value: false);
-		self.interruptDelay = true;
+		ppuStep()
+		setPBit(2, value: false)
+		interruptDelay = true
 	}
 	
 	/**
 	 Clear oVerflow flag
 	*/
 	func CLV() {
-		ppuStep();
-		setPBit(6, value: false);
+		ppuStep()
+		setPBit(6, value: false)
 	}
 	
 	/**
 	 Set Carry flag
 	*/
 	func SEC() {
-		ppuStep();
-		setPBit(0, value: true);
+		ppuStep()
+		setPBit(0, value: true)
 	}
 	
 	/**
 	 Set Decimal flag
 	*/
 	func SED() {
-		ppuStep();
-		setPBit(3, value: true);
+		ppuStep()
+		setPBit(3, value: true)
 	}
 	
 	/**
 	 Set Interrupt flag
 	*/
 	func SEI() {
-		ppuStep();
-		setPBit(2, value: true);
+		ppuStep()
+		setPBit(2, value: true)
 	}
 }

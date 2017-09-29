@@ -10,41 +10,41 @@ import Foundation
 
 final class Mapper3: Mapper {
 	
-	private var chrBankOffset: Int;
+	private var chrBankOffset: Int
 	
 	override init() {
-		self.chrBankOffset = 0;
+		self.chrBankOffset = 0
 	}
 	
 	override func read(_ address: Int) -> UInt8 {
-		switch(address) {
+		switch address {
 			case 0x0000 ..< 0x2000:
-				return self.ppuMemory!.banks[self.chrBankOffset + address];
+				return ppuMemory.banks[chrBankOffset + address]
 			case 0x2000 ..< 0x8000:
-				print("Invalid mapper 3 address \(address)");
+				print("Invalid mapper 3 address \(address)")
 			case 0x8000 ..< 0x10000:
-				return self.cpuMemory!.banks[address - 0x8000];
+				return cpuMemory.banks[address - 0x8000]
 			default:
-				break;
+				break
 		}
 		
-		return 0;
+		return 0
 	}
 	
 	override func write(_ address: Int, data: UInt8) {
-		switch(address) {
+		switch address {
 			case 0x0000 ..< 0x2000:
-				self.ppuMemory!.banks[self.chrBankOffset + address] = data;
+				ppuMemory.banks[chrBankOffset + address] = data
 			case 0x2000 ..< 0x8000:
-				print("Invalid mapper 3 address \(address)");
+				print("Invalid mapper 3 address \(address)")
 			case 0x8000 ..< 0x10000:
-				bankSelect(data);
+				bankSelect(data)
 			default:
-				break;
+				break
 		}
 	}
 	
 	func bankSelect(_ data: UInt8) {
-		self.chrBankOffset = Int(data) * 0x2000;
+		chrBankOffset = Int(data) * 0x2000
 	}
 }

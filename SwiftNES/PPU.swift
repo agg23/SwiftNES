@@ -9,19 +9,19 @@
 import Foundation
 
 struct Sprite {
-	var patternTableLow: UInt8;
-	var patternTableHigh: UInt8;
-	var attribute: UInt8;
-	var xCoord: UInt8;
-	var yCoord: UInt8;
+	var patternTableLow: UInt8
+	var patternTableHigh: UInt8
+	var attribute: UInt8
+	var xCoord: UInt8
+	var yCoord: UInt8
 }
 
 struct Tile {
-	var nameTable: UInt8;
-	var attributeTable: UInt8;
-	var patternTableLow: UInt8;
-	var patternTableHigh: UInt8;
-	var vramAddress: UInt16;
+	var nameTable: UInt8
+	var attributeTable: UInt8
+	var patternTableLow: UInt8
+	var patternTableHigh: UInt8
+	var vramAddress: UInt16
 }
 
 private let colors: [UInt32] = [0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940084, 0xA80020, 0xA81000,
@@ -33,7 +33,7 @@ private let colors: [UInt32] = [0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940084
 				0x58D854, 0x58F898, 0x00E8D8, 0x787878, 0x000000, 0x000000, 0xFCFCFC,
 				0xA4E4FC, 0xB8B8F8, 0xD8B8F8, 0xF8B8F8, 0xF8A4C0, 0xF0D0B0, 0xFCE0A8,
 				0xF8D878, 0xD8F878, 0xB8F8B8, 0xB8F8D8, 0x00FCFC, 0xF8D8F8, 0x000000,
-				0x000000];
+				0x000000]
 
 final class PPU: NSObject {
 	/**
@@ -41,17 +41,17 @@ final class PPU: NSObject {
 	*/
 	var PPUCTRL: UInt8 {
 		didSet {
-			self.vramIncrement = (PPUCTRL & 0x4) == 0x4;
-			self.spritePatternTableAddress = (PPUCTRL & 0x8) == 0x8;
-			self.backgroundPatternTableAddress = (PPUCTRL & 0x10) == 0x10;
-			self.spriteSize = (PPUCTRL & 0x20) == 0x20;
-			self.ppuMasterSlave = (PPUCTRL & 0x40) == 0x40;
-			self.generateNMI = (PPUCTRL & 0x80) == 0x80;
+			vramIncrement = (PPUCTRL & 0x4) == 0x4
+			spritePatternTableAddress = (PPUCTRL & 0x8) == 0x8
+			backgroundPatternTableAddress = (PPUCTRL & 0x10) == 0x10
+			spriteSize = (PPUCTRL & 0x20) == 0x20
+			ppuMasterSlave = (PPUCTRL & 0x40) == 0x40
+			generateNMI = (PPUCTRL & 0x80) == 0x80
 			
 			// Update tempVramAddress
-			self.tempVramAddress = (self.tempVramAddress & 0xF3FF) | ((UInt16(PPUCTRL) & 0x03) << 10);
+			tempVramAddress = (tempVramAddress & 0xF3FF) | ((UInt16(PPUCTRL) & 0x03) << 10)
 			
-			nmiChange();
+			nmiChange()
 		}
 	}
 	
@@ -60,48 +60,48 @@ final class PPU: NSObject {
 	*/
 	var PPUMASK: UInt8 {
 		didSet {
-			self.greyscale = (PPUMASK & 0x1) == 0x1;
-			self.backgroundClipping = (PPUMASK & 0x2) == 0x2;
-			self.spriteClipping = (PPUMASK & 0x4) == 0x4;
-			self.renderBackground = (PPUMASK & 0x8) == 0x8;
-			self.renderSprites = (PPUMASK & 0x10) == 0x10;
-			self.emphasizeRed = (PPUMASK & 0x20) == 0x20;
-			self.emphasizeGreen = (PPUMASK & 0x40) == 0x40;
-			self.emphasizeBlue = (PPUMASK & 0x80) == 0x80;
+			greyscale = (PPUMASK & 0x1) == 0x1
+			backgroundClipping = (PPUMASK & 0x2) == 0x2
+			spriteClipping = (PPUMASK & 0x4) == 0x4
+			renderBackground = (PPUMASK & 0x8) == 0x8
+			renderSprites = (PPUMASK & 0x10) == 0x10
+			emphasizeRed = (PPUMASK & 0x20) == 0x20
+			emphasizeGreen = (PPUMASK & 0x40) == 0x40
+			emphasizeBlue = (PPUMASK & 0x80) == 0x80
 			
-			self.shouldRender = (self.renderBackground || self.renderSprites);
+			shouldRender = (renderBackground || renderSprites)
 		}
 	}
 
 	/**
 	 PPU Status Register
 	*/
-	var PPUSTATUS: UInt8;
+	var PPUSTATUS: UInt8
 	
 	/**
 	 OAM Address Port
 	*/
-	var OAMADDR: UInt8;
+	var OAMADDR: UInt8
 
 	/**
 	 OAM Data Port
 	*/
 	var OAMDATA: UInt8 {
 		didSet {
-			var value = OAMDATA;
+			var value = OAMDATA
 			
-			if((self.renderBackground || self.renderSprites) && self.scanline > 239) {
-				value = 0xFF;
+			if (renderBackground || renderSprites) && scanline > 239 {
+				value = 0xFF
 			}
 			
-			if(self.OAMADDR % 4 == 2) {
-				value = value & 0xE3;
+			if OAMADDR % 4 == 2 {
+				value = value & 0xE3
 			}
 			
-//			self.oamMemory.writeMemory(Int(self.OAMADDR), data: value);
-			self.oamMemory[Int(self.OAMADDR)] = value;
+//			self.oamMemory.writeMemory(Int(self.OAMADDR), data: value)
+			oamMemory[Int(OAMADDR)] = value
 			
-			self.OAMADDR = UInt8((Int(self.OAMADDR) + 1) & 0xFF);
+			OAMADDR = UInt8((Int(OAMADDR) + 1) & 0xFF)
 		}
 	}
 	
@@ -110,16 +110,16 @@ final class PPU: NSObject {
 	*/
 	var PPUSCROLL: UInt8 {
 		didSet {
-			if(self.writeToggle) {
+			if writeToggle {
 				// Second write
-				self.tempVramAddress = (self.tempVramAddress & 0x8FFF) | ((UInt16(PPUSCROLL) & 0x7) << 12);
-				self.tempVramAddress = (self.tempVramAddress & 0xFC1F) | ((UInt16(PPUSCROLL) & 0xF8) << 2);
+				tempVramAddress = (tempVramAddress & 0x8FFF) | ((UInt16(PPUSCROLL) & 0x7) << 12)
+				tempVramAddress = (tempVramAddress & 0xFC1F) | ((UInt16(PPUSCROLL) & 0xF8) << 2)
 			} else {
-				self.tempVramAddress = (self.tempVramAddress & 0xFFE0) | (UInt16(PPUSCROLL) >> 3);
-				self.fineXScroll = PPUSCROLL & 0x7;
+				tempVramAddress = (tempVramAddress & 0xFFE0) | (UInt16(PPUSCROLL) >> 3)
+				fineXScroll = PPUSCROLL & 0x7
 			}
 			
-			self.writeToggle = !self.writeToggle;
+			writeToggle = !writeToggle
 		}
 	}
 	
@@ -128,20 +128,20 @@ final class PPU: NSObject {
 	*/
 	var PPUADDR: UInt8 {
 		didSet {
-			if(self.writeToggle) {
+			if writeToggle {
 				// Second write
-				self.tempVramAddress = (self.tempVramAddress & 0xFF00) | UInt16(PPUADDR);
-				self.currentVramAddress = self.tempVramAddress;
+				tempVramAddress = (tempVramAddress & 0xFF00) | UInt16(PPUADDR)
+				currentVramAddress = tempVramAddress
 				
-				a12(self.tempVramAddress, old: self.currentPPUADDRAddress);
+				a12(tempVramAddress, old: currentPPUADDRAddress)
 
 				// TODO: Fix hack
-				self.currentPPUADDRAddress = self.tempVramAddress;
+				currentPPUADDRAddress = tempVramAddress
 			} else {
-				self.tempVramAddress = (self.tempVramAddress & 0x80FF) | ((UInt16(PPUADDR) & 0x3F) << 8);
+				tempVramAddress = (tempVramAddress & 0x80FF) | ((UInt16(PPUADDR) & 0x3F) << 8)
 			}
 			
-			self.writeToggle = !self.writeToggle;
+			writeToggle = !writeToggle
 		}
 	}
 	
@@ -150,22 +150,22 @@ final class PPU: NSObject {
 	*/
 	var PPUDATA: UInt8 {
 		didSet {
-			self.ppuMemory.writeMemory(Int(self.currentPPUADDRAddress), data: PPUDATA);
+			ppuMemory.writeMemory(Int(currentPPUADDRAddress), data: PPUDATA)
 			
-			let temp = self.currentPPUADDRAddress;
+			let temp = currentPPUADDRAddress
 			
 			// Increment VRAM address
-			if(self.vramIncrement) {
-				self.currentVramAddress += 32;
-				self.currentPPUADDRAddress += 32;
+			if vramIncrement {
+				currentVramAddress += 32
+				currentPPUADDRAddress += 32
 			} else {
-				self.currentVramAddress += 1;
-				self.currentPPUADDRAddress += 1;
+				currentVramAddress += 1
+				currentPPUADDRAddress += 1
 			}
 			
-			a12(self.currentPPUADDRAddress, old: temp);
+			a12(currentPPUADDRAddress, old: temp)
 			
-			self.currentVramAddress = self.currentVramAddress & 0x7FFF;
+			currentVramAddress = currentVramAddress & 0x7FFF
 		}
 	}
 	
@@ -174,7 +174,7 @@ final class PPU: NSObject {
 	*/
 	var OAMDMA: UInt8 {
 		didSet {
-			self.cpu!.startOAMTransfer();
+			cpu.startOAMTransfer()
 		}
 	}
 	
@@ -183,203 +183,203 @@ final class PPU: NSObject {
 	/*
 		PPUCTRL Bits
 	*/
-	private var vramIncrement: Bool;
-	private var spritePatternTableAddress: Bool;
-	private var backgroundPatternTableAddress: Bool;
-	private var spriteSize: Bool;
-	private var ppuMasterSlave: Bool;
-	private var generateNMI: Bool;
+	private var vramIncrement: Bool
+	private var spritePatternTableAddress: Bool
+	private var backgroundPatternTableAddress: Bool
+	private var spriteSize: Bool
+	private var ppuMasterSlave: Bool
+	private var generateNMI: Bool
 	
 	/*
 		PPUMASK Bits
 	*/
-	private var greyscale: Bool;
-	private var backgroundClipping: Bool;
-	private var spriteClipping: Bool;
-	private var renderBackground: Bool;
-	private var renderSprites: Bool;
-	private var emphasizeRed: Bool;
-	private var emphasizeGreen: Bool;
-	private var emphasizeBlue: Bool;
+	private var greyscale: Bool
+	private var backgroundClipping: Bool
+	private var spriteClipping: Bool
+	private var renderBackground: Bool
+	private var renderSprites: Bool
+	private var emphasizeRed: Bool
+	private var emphasizeGreen: Bool
+	private var emphasizeBlue: Bool
 	
 	/*
 		PPUSTATUS Bits
 	*/
-	private var spriteOverflow: Bool;
-	private var sprite0Hit: Bool;
-	private var vblank: Bool;
+	private var spriteOverflow: Bool
+	private var sprite0Hit: Bool
+	private var vblank: Bool
 	
 	// MARK: - Other Variables
 	
-	private var shouldRender: Bool;
+	private var shouldRender: Bool
 	
 	/**
 	 Used to indicate whether OAMDATA needs to be written
 	*/
-	private var writeOAMDATA: Bool;
+	private var writeOAMDATA: Bool
 	
 	/**
 	 Stores the current scanline of the PPU
 	*/
-	private var scanline: Int;
+	private var scanline: Int
 	
 	/**
 	 Stores the current pixel of the PPU
 	*/
-	private var pixelIndex: Int;
+	private var pixelIndex: Int
 	
-	private var pixelSize: Int = 2;
-	private var totalPixelCount = 256 * 240 * 2 * 2;
+	private var pixelSize: Int = 2
+	private var totalPixelCount = 256 * 240 * 2 * 2
 	
 	/**
 	 Stores the current frame data to be drawn to the screen
 	*/
-	var frame: [UInt32];
+	var frame: [UInt32]
 	
-	private var cycle: Int;
+	private var cycle: Int
 	
-	var frameReady = false;
+	var frameReady = false
 	
-	private var initFrame = true;
+	private var initFrame = true
 	
-	private var evenFrame = false;
+	private var evenFrame = false
 	
-	private var nmiPrevious = false;
-	private var nmiDelay: Int = 0;
+	private var nmiPrevious = false
+	private var nmiDelay: Int = 0
 	
-	private var suppressNMI = false;
-	private var suppressVBlankFlag = false;
+	private var suppressNMI = false
+	private var suppressVBlankFlag = false
 	
-	private var cyclesSinceNMI = -1;
+	private var cyclesSinceNMI = -1
 		
-	var cpu: CPU?;
-	private let cpuMemory: CPUMemory;
-	private let ppuMemory: PPUMemory;
-	private var oamMemory: [UInt8];
+	var cpu: CPU!
+	private let cpuMemory: CPUMemory
+	private let ppuMemory: PPUMemory
+	private var oamMemory: [UInt8]
 	
-	private var secondaryOAM = [UInt8](repeating: 0, count: 32);
-	private var spriteZeroWillBeInSecondaryOAM = false;
-	private var spriteZeroInSecondaryOAM = false;
+	private var secondaryOAM = [UInt8](repeating: 0, count: 32)
+	private var spriteZeroWillBeInSecondaryOAM = false
+	private var spriteZeroInSecondaryOAM = false
 	
 	/**
 	 Buffers PPUDATA reads
 	*/
-	private var ppuDataReadBuffer: UInt8;
+	private var ppuDataReadBuffer: UInt8
 	
 	/**
 	 Any write to a PPU register will set this value
 	*/
-	private var lastWrittenRegisterValue: UInt8;
-	private var lastWrittenRegisterDecayed = true;
-	private var lastWrittenRegisterSetCycle: Int;
+	private var lastWrittenRegisterValue: UInt8
+	private var lastWrittenRegisterDecayed = true
+	private var lastWrittenRegisterSetCycle: Int
 	
-	private var currentVramAddress: UInt16;
-	private var tempVramAddress: UInt16;
-	private var fineXScroll: UInt8;
-	private var writeToggle: Bool;
+	private var currentVramAddress: UInt16
+	private var tempVramAddress: UInt16
+	private var fineXScroll: UInt8
+	private var writeToggle: Bool
 	
-	private var currentPPUADDRAddress: UInt16;
+	private var currentPPUADDRAddress: UInt16
 	
 	
 	// MARK: Stored Values Between Cycles -
-	private var nameTable: UInt8;
-	private var attributeTable: UInt8;
-	private var patternTableLow: UInt8;
-	private var patternTableHigh: UInt8;
+	private var nameTable: UInt8
+	private var attributeTable: UInt8
+	private var patternTableLow: UInt8
+	private var patternTableHigh: UInt8
 	
-	private var currentTileData = [Tile](repeating: Tile(nameTable: 0, attributeTable: 0, patternTableLow: 0, patternTableHigh: 0, vramAddress: 0), count: 34);
-	private var currentSpriteData = [Sprite](repeating: Sprite(patternTableLow: 0xFF, patternTableHigh: 0xFF, attribute: 0, xCoord: 0, yCoord: 0), count: 8);
+	private var currentTileData = [Tile](repeating: Tile(nameTable: 0, attributeTable: 0, patternTableLow: 0, patternTableHigh: 0, vramAddress: 0), count: 34)
+	private var currentSpriteData = [Sprite](repeating: Sprite(patternTableLow: 0xFF, patternTableHigh: 0xFF, attribute: 0, xCoord: 0, yCoord: 0), count: 8)
 	
-	private var spriteYCoord: UInt8;
-	private var spriteTileNumber: UInt8;
-	private var spriteAttributes: UInt8;
-	private var spriteXCoord: UInt8;
-	private var spriteBaseAddress: Int;
-	private var spriteYShift: Int;
+	private var spriteYCoord: UInt8
+	private var spriteTileNumber: UInt8
+	private var spriteAttributes: UInt8
+	private var spriteXCoord: UInt8
+	private var spriteBaseAddress: Int
+	private var spriteYShift: Int
 	
-	private var oamByte: UInt8;
+	private var oamByte: UInt8
 	
-	private var oamStage = 0;
-	private var oamIndex = 0;
-	private var oamIndexOverflow = 0;
-	private var secondaryOAMIndex = 0;
+	private var oamStage = 0
+	private var oamIndex = 0
+	private var oamIndexOverflow = 0
+	private var secondaryOAMIndex = 0
 	
 	// MARK: Methods -
 	
 	init(cpuMemory: CPUMemory, ppuMemory: PPUMemory) {
-		self.cpu = nil;
+		cpu = nil
 		
-		self.cpuMemory = cpuMemory;
-		self.ppuMemory = ppuMemory;
-		self.oamMemory = [UInt8](repeating: 0, count: 0x100);
+		self.cpuMemory = cpuMemory
+		self.ppuMemory = ppuMemory
+		oamMemory = [UInt8](repeating: 0, count: 0x100)
 		
-		self.writeOAMDATA = false;
+		writeOAMDATA = false
 		
-		self.currentVramAddress = 0;
-		self.tempVramAddress = 0;
-		self.fineXScroll = 0;
-		self.writeToggle = false;
+		currentVramAddress = 0
+		tempVramAddress = 0
+		fineXScroll = 0
+		writeToggle = false
 		
-		self.currentPPUADDRAddress = 0;
+		currentPPUADDRAddress = 0
 		
-		self.PPUCTRL = 0;
-		self.PPUMASK = 0;
-		//self.PPUSTATUS = 0xA0;
-		self.PPUSTATUS = 0;
-		self.OAMADDR = 0;
-		self.OAMDATA = 0;
-		self.PPUSCROLL = 0;
-		self.PPUADDR = 0;
-		self.PPUDATA = 0;
-		self.OAMDMA = 0;
+		PPUCTRL = 0
+		PPUMASK = 0
+		//self.PPUSTATUS = 0xA0
+		PPUSTATUS = 0
+		OAMADDR = 0
+		OAMDATA = 0
+		PPUSCROLL = 0
+		PPUADDR = 0
+		PPUDATA = 0
+		OAMDMA = 0
 		
-		self.vramIncrement = false;
-		self.spritePatternTableAddress = false;
-		self.backgroundPatternTableAddress = false;
-		self.spriteSize = false;
-		self.ppuMasterSlave = false;
-		self.generateNMI = false;
+		vramIncrement = false
+		spritePatternTableAddress = false
+		backgroundPatternTableAddress = false
+		spriteSize = false
+		ppuMasterSlave = false
+		generateNMI = false
 		
-		self.greyscale = false;
-		self.backgroundClipping = false;
-		self.spriteClipping = false;
-		self.renderBackground = false;
-		self.renderSprites = false;
-		self.emphasizeRed = false;
-		self.emphasizeGreen = false;
-		self.emphasizeBlue = false;
+		greyscale = false
+		backgroundClipping = false
+		spriteClipping = false
+		renderBackground = false
+		renderSprites = false
+		emphasizeRed = false
+		emphasizeGreen = false
+		emphasizeBlue = false
 		
-		self.spriteOverflow = false;
-		self.sprite0Hit = false;
-		self.vblank = false;
+		spriteOverflow = false
+		sprite0Hit = false
+		vblank = false
 		
-		self.shouldRender = false;
+		shouldRender = false
 		
-		self.scanline = 241;
-		self.pixelIndex = 0;
+		scanline = 241
+		pixelIndex = 0
 		
-		self.cycle = 0;
+		cycle = 0
 		
-		self.ppuDataReadBuffer = 0;
-		self.lastWrittenRegisterValue = 0;
+		ppuDataReadBuffer = 0
+		lastWrittenRegisterValue = 0
 		
-		self.lastWrittenRegisterSetCycle = 0;
+		lastWrittenRegisterSetCycle = 0
 		
-		self.nameTable = 0;
-		self.attributeTable = 0;
-		self.patternTableLow = 0;
-		self.patternTableHigh = 0;
+		nameTable = 0
+		attributeTable = 0
+		patternTableLow = 0
+		patternTableHigh = 0
 		
-		self.spriteYCoord = 0;
-		self.spriteTileNumber = 0;
-		self.spriteAttributes = 0;
-		self.spriteXCoord = 0;
-		self.spriteBaseAddress = 0;
-		self.spriteYShift = 0;
+		spriteYCoord = 0
+		spriteTileNumber = 0
+		spriteAttributes = 0
+		spriteXCoord = 0
+		spriteBaseAddress = 0
+		spriteYShift = 0
 		
-		self.oamByte = 0;
+		oamByte = 0
 		
-		self.frame = [UInt32](repeating: 0, count: self.totalPixelCount);
+		frame = [UInt32](repeating: 0, count: totalPixelCount)
 	}
 	
 	func reset() {
@@ -387,287 +387,287 @@ final class PPU: NSObject {
 	}
 	
 	func setVBlank() {
-		if(!self.suppressVBlankFlag) {
-			self.vblank = true;
+		if !suppressVBlankFlag {
+			vblank = true
 		}
 
-		self.suppressVBlankFlag = false;
+		suppressVBlankFlag = false
 		
-		nmiChange();
+		nmiChange()
 	}
 	
 	func clearVBlank() {
-		self.vblank = false;
-		nmiChange();
+		vblank = false
+		nmiChange()
 	}
 	
 	func nmiChange() {
-		let nmi = self.generateNMI && self.vblank;
+		let nmi = generateNMI && vblank
 		
-		if(nmi && !self.nmiPrevious) {
-			self.nmiDelay = 2;
+		if nmi && !nmiPrevious {
+			nmiDelay = 2
 		}
 		
-		self.nmiPrevious = nmi;
+		nmiPrevious = nmi
 	}
 	
 	func step() {
-		self.cycle += 1;
+		cycle += 1
 		
-		if(self.cycle == 341) {
-			self.cycle = 0;
+		if cycle == 341 {
+			cycle = 0
 			
-			if(self.scanline == 260) {
+			if scanline == 260 {
 				// Frame completed
-				self.scanline = -1;
+				scanline = -1
 				
-				self.evenFrame = !self.evenFrame;
+				evenFrame = !evenFrame
 				
-				self.frameReady = true;
+				frameReady = true
 			} else {
-				scanline += 1;
+				scanline += 1
 			}
 		}
 		
-		if(self.ppuMemory.a12Timer > 0) {
-			self.ppuMemory.a12Timer -= 1;
+		if ppuMemory.a12Timer > 0 {
+			ppuMemory.a12Timer -= 1
 		}
 		
-		if(self.nmiDelay > 0) {
-			self.nmiDelay -= 1;
-			if(self.nmiDelay == 0 && self.generateNMI && self.vblank) {
-				self.cpu!.queueNMI();
-				self.cyclesSinceNMI = 0;
+		if nmiDelay > 0 {
+			nmiDelay -= 1
+			if nmiDelay == 0 && generateNMI && vblank {
+				cpu.queueNMI()
+				cyclesSinceNMI = 0
 			}
 		}
 		
-		if(self.cyclesSinceNMI > 0) {
-			self.cyclesSinceNMI += 1;
+		if cyclesSinceNMI > 0 {
+			cyclesSinceNMI += 1
 			
-			if(self.cyclesSinceNMI > 3) {
-				self.cyclesSinceNMI = -1;
+			if cyclesSinceNMI > 3 {
+				cyclesSinceNMI = -1
 			}
 		}
 		
-		if(self.cycle == 0) {
-			self.OAMADDR = 0;
-		} else if(self.cycle == 256 && self.shouldRender) {
-			incrementY();
-		} else if(self.cycle == 257 && self.shouldRender) {
-			copyX();
+		if cycle == 0 {
+			OAMADDR = 0
+		} else if cycle == 256 && shouldRender {
+			incrementY()
+		} else if cycle == 257 && shouldRender {
+			copyX()
 			
 			// Set in order to optimize the below else if
-			self.OAMADDR = 0;
-		} else if(self.cycle > 256 && self.scanline < 240) {
-			self.OAMADDR = 0;
+			OAMADDR = 0
+		} else if cycle > 256 && scanline < 240 {
+			OAMADDR = 0
 		}
 		
-		if(self.scanline >= 240) {
+		if scanline >= 240 {
 			// VBlank period
 			
-			if(self.scanline == 241 && self.cycle == 1) {
-				if(!self.initFrame) {
-					setVBlank();
+			if scanline == 241 && cycle == 1 {
+				if !initFrame {
+					setVBlank()
 				} else {
-					self.initFrame = false;
+					initFrame = false
 				}
 			}
 			
 			// TODO: Handle glitchy increment on non-VBlank scanlines as referenced:
 			// http://wiki.nesdev.com/w/index.php/PPU_registers
-		} else if(self.scanline == -1) {
-			if(self.cycle == 1) {
+		} else if scanline == -1 {
+			if cycle == 1 {
 				// Clear sprite overflow flag
-				self.spriteOverflow = false;
+				spriteOverflow = false
 				
 				// Clear sprite 0 hit flag
-				self.sprite0Hit = false;
+				sprite0Hit = false
 				
 				// Clear VBlank flag
-				clearVBlank();
-			} else if(!self.evenFrame && self.cycle == 338 && self.shouldRender) {
+				clearVBlank()
+			} else if !evenFrame && cycle == 338 && shouldRender {
 				// Skip tick on odd frame
-				self.cycle = 339;
+				cycle = 339
 				
-				return;
-			} else if(self.cycle > 256) {
-				visibleScanlineTick();
+				return
+			} else if cycle > 256 {
+				visibleScanlineTick()
 			}
 			
-			if(self.cycle == 304 && self.shouldRender) {
-				copyY();
+			if cycle == 304 && shouldRender {
+				copyY()
 			}
 		} else {
 			// Visible scanlines
 			
-			visibleScanlineTick();
+			visibleScanlineTick()
 		}
 		
-		if(!self.lastWrittenRegisterDecayed) {
-			self.lastWrittenRegisterSetCycle += 1;
+		if !lastWrittenRegisterDecayed {
+			lastWrittenRegisterSetCycle += 1
 			
-			if(self.lastWrittenRegisterSetCycle > 5369318) {
-				self.lastWrittenRegisterDecayed = true;
-				self.lastWrittenRegisterSetCycle = 0;
-				self.lastWrittenRegisterValue = 0;
+			if lastWrittenRegisterSetCycle > 5369318 {
+				lastWrittenRegisterDecayed = true
+				lastWrittenRegisterSetCycle = 0
+				lastWrittenRegisterValue = 0
 			}
 		}
 		
 	}
 	
 	func visibleScanlineTick() {
-		let phaseIndex = self.cycle % 8;
+		let phaseIndex = self.cycle % 8
 		
-		if(self.cycle == 0) {
-			self.oamStage = 0;
-			self.oamIndex = 0;
-			self.oamIndexOverflow = 0;
-			self.secondaryOAMIndex = 0;
+		if cycle == 0 {
+			oamStage = 0
+			oamIndex = 0
+			oamIndexOverflow = 0
+			secondaryOAMIndex = 0
 			
 			// Do nothing
-		} else if(self.cycle <= 256) {
+		} else if cycle <= 256 {
 			// Do sprite calculations whether or not draw sprite bit is set
 			
-			if(self.cycle <= 64) {
+			if cycle <= 64 {
 				// Set secondary OAM to 0xFF
-				if(self.cycle % 2 == 0) {
-					self.secondaryOAM[self.cycle / 2 - 1] = 0xFF;
+				if cycle % 2 == 0 {
+					secondaryOAM[cycle / 2 - 1] = 0xFF
 				}
-				self.spriteZeroWillBeInSecondaryOAM = false;
+				spriteZeroWillBeInSecondaryOAM = false
 			} else {
-				if(self.oamStage == 0) {
-					fetchSprite();
+				if oamStage == 0 {
+					fetchSprite()
 				}
 			}
 			
-			let backgroundPixelIsTransparent: Bool;
+			let backgroundPixelIsTransparent: Bool
 			
-			if(self.renderBackground) {
+			if renderBackground {
 				// If rendering cycle and rendering background bit is set
-				let xCoord = (self.cycle - 1 + Int(self.fineXScroll));
+				let xCoord = (cycle - 1 + Int(fineXScroll))
 				
-				let tile = self.currentTileData[xCoord / 8];
+				let tile = currentTileData[xCoord / 8]
 				
-				backgroundPixelIsTransparent = renderBackgroundPixel(tile, tileXCoord: (xCoord / 8) * 8, pixelOffset: xCoord % 8);
+				backgroundPixelIsTransparent = renderBackgroundPixel(tile, tileXCoord: (xCoord / 8) * 8, pixelOffset: xCoord % 8)
 				
-				if(phaseIndex == 2) {
+				if phaseIndex == 2 {
 					// Fetch Name Table
-					fetchNameTable();
-				} else if(phaseIndex == 4) {
-					fetchAttributeTable();
-				} else if(phaseIndex == 6) {
-					fetchLowPatternTable();
-				} else if(phaseIndex == 0) {
-					fetchHighPatternTable();
+					fetchNameTable()
+				} else if phaseIndex == 4 {
+					fetchAttributeTable()
+				} else if phaseIndex == 6 {
+					fetchLowPatternTable()
+				} else if phaseIndex == 0 {
+					fetchHighPatternTable()
 					
-					self.currentTileData[(self.cycle - 1) / 8 + 2] =
-						Tile(nameTable: self.nameTable, attributeTable: self.attributeTable,
-						     patternTableLow: self.patternTableLow, patternTableHigh: self.patternTableHigh,
-						     vramAddress: self.currentVramAddress);
+					currentTileData[(cycle - 1) / 8 + 2] =
+						Tile(nameTable: nameTable, attributeTable: attributeTable,
+						     patternTableLow: patternTableLow, patternTableHigh: patternTableHigh,
+						     vramAddress: currentVramAddress)
 					
-					incrementX();
+					incrementX()
 				}
 			} else {
-				backgroundPixelIsTransparent = false;
+				backgroundPixelIsTransparent = false
 			}
 			
-			if(self.renderSprites) {
-				renderSpritePixel(self.cycle - 1, backgroundPixelTransparent: backgroundPixelIsTransparent);
+			if renderSprites {
+				renderSpritePixel(cycle - 1, backgroundPixelTransparent: backgroundPixelIsTransparent)
 			}
-		} else if(self.cycle <= 320) {
-			if(self.cycle == 257) {
-				self.secondaryOAMIndex = 0;
-				self.spriteZeroInSecondaryOAM = self.spriteZeroWillBeInSecondaryOAM;
+		} else if cycle <= 320 {
+			if cycle == 257 {
+				secondaryOAMIndex = 0
+				spriteZeroInSecondaryOAM = spriteZeroWillBeInSecondaryOAM
 			}
 			
-			if(self.secondaryOAMIndex < 32 && self.renderSprites) {
-				if(phaseIndex == 2) {
-					self.spriteYCoord = self.secondaryOAM[secondaryOAMIndex];
-					self.spriteTileNumber = self.secondaryOAM[secondaryOAMIndex + 1];
-					self.spriteAttributes = self.secondaryOAM[secondaryOAMIndex + 2];
-					self.spriteXCoord = self.secondaryOAM[secondaryOAMIndex + 3];
+			if secondaryOAMIndex < 32 && renderSprites {
+				if phaseIndex == 2 {
+					spriteYCoord = secondaryOAM[secondaryOAMIndex]
+					spriteTileNumber = secondaryOAM[secondaryOAMIndex + 1]
+					spriteAttributes = secondaryOAM[secondaryOAMIndex + 2]
+					spriteXCoord = secondaryOAM[secondaryOAMIndex + 3]
 					
-					self.spriteYShift = self.scanline - Int(self.spriteYCoord);
+					spriteYShift = scanline - Int(spriteYCoord)
 					
-					if(self.spriteYCoord == 0xFF) {
-						self.spriteYShift = 0;
+					if spriteYCoord == 0xFF {
+						spriteYShift = 0
 					}
 					
-					self.spriteBaseAddress = 0x0000;
+					spriteBaseAddress = 0x0000
 					
-					let verticalFlip = getBit(7, pointer: &self.spriteAttributes);
+					let verticalFlip = getBit(7, pointer: &spriteAttributes)
 					
-					if(self.spriteSize) {
+					if spriteSize {
 						// 8x16
-						if(self.spriteTileNumber & 0x1 == 1) {
-							self.spriteBaseAddress = 0x1000;
-							self.spriteTileNumber = self.spriteTileNumber - 1;
+						if spriteTileNumber & 0x1 == 1 {
+							spriteBaseAddress = 0x1000
+							spriteTileNumber = spriteTileNumber - 1
 						}
 						
-						if(self.spriteYShift > 7) {
+						if spriteYShift > 7 {
 							// Flip sprite vertically
-							if(verticalFlip) {
-								self.spriteYShift = 15 - self.spriteYShift;
+							if verticalFlip {
+								spriteYShift = 15 - spriteYShift
 							} else {
-								self.spriteTileNumber += 1;
-								self.spriteYShift -= 8;
+								spriteTileNumber += 1
+								spriteYShift -= 8
 							}
 							
-						} else if(verticalFlip) {
-							self.spriteTileNumber += 1;
-							self.spriteYShift = 7 - self.spriteYShift;
+						} else if verticalFlip {
+							spriteTileNumber += 1
+							spriteYShift = 7 - spriteYShift
 						}
 					} else {
 						// 8x8
-						if(self.spritePatternTableAddress) {
-							self.spriteBaseAddress = 0x1000;
+						if spritePatternTableAddress {
+							spriteBaseAddress = 0x1000
 						}
 						
 						// Flip sprite vertically
-						if(verticalFlip) {
-							self.spriteYShift = 7 - self.spriteYShift;
+						if verticalFlip {
+							spriteYShift = 7 - spriteYShift
 						}
 					}
 					
-					fetchNameTable();
-				} else if(phaseIndex == 4) {
-					fetchNameTable();
-				} else if(phaseIndex == 6) {
-					self.patternTableLow = self.ppuMemory.readMemory(self.spriteBaseAddress + (Int(self.spriteTileNumber) << 4) + self.spriteYShift);
-				} else if(phaseIndex == 0) {
-					self.patternTableHigh = self.ppuMemory.readMemory(self.spriteBaseAddress + (Int(self.spriteTileNumber) << 4) + self.spriteYShift + 8);
+					fetchNameTable()
+				} else if phaseIndex == 4 {
+					fetchNameTable()
+				} else if phaseIndex == 6 {
+					patternTableLow = ppuMemory.readMemory(spriteBaseAddress + (Int(spriteTileNumber) << 4) + spriteYShift)
+				} else if phaseIndex == 0 {
+					patternTableHigh = ppuMemory.readMemory(spriteBaseAddress + (Int(spriteTileNumber) << 4) + spriteYShift + 8)
 					
-					if(getBit(6, pointer: &self.spriteAttributes)) {
-						self.patternTableLow = reverseByte(self.patternTableLow);
-						self.patternTableHigh = reverseByte(self.patternTableHigh);
+					if getBit(6, pointer: &spriteAttributes) {
+						patternTableLow = reverseByte(patternTableLow)
+						patternTableHigh = reverseByte(patternTableHigh)
 					}
 					
-					currentSpriteData[self.secondaryOAMIndex / 4] = Sprite(patternTableLow: self.patternTableLow, patternTableHigh: self.patternTableHigh, attribute: self.spriteAttributes, xCoord: self.spriteXCoord, yCoord: self.spriteYCoord);
+					currentSpriteData[secondaryOAMIndex / 4] = Sprite(patternTableLow: patternTableLow, patternTableHigh: patternTableHigh, attribute: spriteAttributes, xCoord: spriteXCoord, yCoord: spriteYCoord)
 					
-					self.secondaryOAMIndex += 4;
+					secondaryOAMIndex += 4
 				}
 			}
-		} else if(self.cycle <= 336) {
-			if(phaseIndex == 2) {
+		} else if cycle <= 336 {
+			if phaseIndex == 2 {
 				// Fetch Name Table
-				fetchNameTable();
-			} else if(phaseIndex == 4) {
-				fetchAttributeTable();
-			} else if(phaseIndex == 6) {
-				fetchLowPatternTable();
-			} else if(phaseIndex == 0) {
-				fetchHighPatternTable();
+				fetchNameTable()
+			} else if phaseIndex == 4 {
+				fetchAttributeTable()
+			} else if phaseIndex == 6 {
+				fetchLowPatternTable()
+			} else if phaseIndex == 0 {
+				fetchHighPatternTable()
 				
-				let tile = Tile(nameTable: self.nameTable, attributeTable: self.attributeTable, patternTableLow: self.patternTableLow,
-				                patternTableHigh: self.patternTableHigh, vramAddress: self.currentVramAddress);
+				let tile = Tile(nameTable: nameTable, attributeTable: attributeTable, patternTableLow: patternTableLow,
+				                patternTableHigh: patternTableHigh, vramAddress: currentVramAddress)
 				
-				if(self.cycle == 328) {
-					self.currentTileData[0] = tile;
+				if cycle == 328 {
+					currentTileData[0] = tile
 				} else {
-					self.currentTileData[1] = tile;
+					currentTileData[1] = tile
 				}
 				
-				incrementX();
+				incrementX()
 			}
 		} else {
 			// TODO: Fetch garbage Name Table byte
@@ -675,277 +675,276 @@ final class PPU: NSObject {
 	}
 	
 	func renderSpritePixel(_ currentXCoord: Int, backgroundPixelTransparent: Bool) {
-		if(!self.spriteClipping && currentXCoord < 8) {
-			return;
+		if !spriteClipping && currentXCoord < 8 {
+			return
 		}
 		
 		for i in 0 ..< 8 {
-			var sprite = currentSpriteData[i];
-			let xCoord = Int(sprite.xCoord);
+			var sprite = currentSpriteData[i]
+			let xCoord = Int(sprite.xCoord)
 			
-			let xOffset = currentXCoord - xCoord;
+			let xOffset = currentXCoord - xCoord
 			
-			if(xOffset < 0 || xOffset > 7 || xCoord >= 0xFF) {
-				continue;
+			if xOffset < 0 || xOffset > 7 || xCoord >= 0xFF {
+				continue
 			}
 			
-			let lowBit = getBit(7 - xOffset, pointer: &sprite.patternTableLow) ? 1 : 0;
-			let highBit = getBit(7 - xOffset, pointer: &sprite.patternTableHigh) ? 1 : 0;
+			let lowBit = getBit(7 - xOffset, pointer: &sprite.patternTableLow) ? 1 : 0
+			let highBit = getBit(7 - xOffset, pointer: &sprite.patternTableHigh) ? 1 : 0
 			
-			let attributeBits = Int(sprite.attribute) & 0x3;
+			let attributeBits = Int(sprite.attribute) & 0x3
 			
-			let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
+			let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit
 			
-			let paletteIndex = Int(self.ppuMemory.readPaletteMemory(0x10 + patternValue)) & 0x3F;
+			let paletteIndex = Int(ppuMemory.readPaletteMemory(0x10 + patternValue)) & 0x3F
 			
 			// First color each section of sprite palette is transparent
-			if(patternValue & 0x3 == 0) {
-				continue;
+			if patternValue & 0x3 == 0 {
+				continue
 			}
 			
 			// TODO: X coordinate of sprites is off slightly
 			
-			let address = self.scanline * 256 + xCoord + xOffset;
+			let address = scanline * 256 + xCoord + xOffset
 			
-			if(address >= 256 * 240) {
+			guard address < 256 * 240 else {
 				// TODO: Fix
-				continue;
+				continue
 			}
 			
-			if(self.spriteZeroInSecondaryOAM && i == 0 && self.renderBackground && !backgroundPixelTransparent) {
+			if spriteZeroInSecondaryOAM && i == 0 && renderBackground && !backgroundPixelTransparent {
 				// Sprite 0 and Background is not transparent
 				
 				// If bits 1 or 2 in PPUMASK are clear and the x coordinate is between 0 and 7, don't hit
 				// If x coordinate is 255 or greater, don't hit
 				// If y coordinate is 239 or greater, don't hit
-				if(!((!self.backgroundClipping || !self.spriteClipping) && xCoord + xOffset < 8)
+				if !((!backgroundClipping || !spriteClipping) && xCoord + xOffset < 8
 					&& xCoord + xOffset < 255
 					&& sprite.yCoord < 239) {
-					self.sprite0Hit = true;
-					self.spriteZeroInSecondaryOAM = false;
+					sprite0Hit = true
+					spriteZeroInSecondaryOAM = false
 				}
 			}
 			
-			let backgroundSprite = getBit(5, pointer: &sprite.attribute);
+			let backgroundSprite = getBit(5, pointer: &sprite.attribute)
 			
-			if(!backgroundSprite || backgroundPixelTransparent) {
-				writePixel(xCoord + xOffset, y: self.scanline, color: colors[paletteIndex]);
-				return;
-			} else if(backgroundSprite) {
-				return;
+			if !backgroundSprite || backgroundPixelTransparent {
+				writePixel(xCoord + xOffset, y: scanline, color: colors[paletteIndex])
+				return
+			} else if backgroundSprite {
+				return
 			}
 		}
 	}
 	
 	func renderBackgroundPixel(_ tile: Tile, tileXCoord: Int, pixelOffset: Int) -> Bool {
-		let uPixelOffset = UInt8(pixelOffset);
+		let uPixelOffset = UInt8(pixelOffset)
 		
 		// Draw pixels from tile
-		let patternTableLow = tile.patternTableLow;
-		let patternTableHigh = tile.patternTableHigh;
+		let patternTableLow = tile.patternTableLow
+		let patternTableHigh = tile.patternTableHigh
 		
-		var pixelXCoord = tileXCoord + pixelOffset - Int(self.fineXScroll);
+		var pixelXCoord = tileXCoord + pixelOffset - Int(fineXScroll)
 		
-		if(pixelXCoord < 0) {
-			pixelXCoord += 256;
+		if pixelXCoord < 0 {
+			pixelXCoord += 256
 		}
 		
-//		let lowBit = getBit(7 - pixelOffset, pointer: &patternTableLow) ? 1 : 0;
-//		let highBit = getBit(7 - pixelOffset, pointer: &patternTableHigh) ? 1 : 0;
+//		let lowBit = getBit(7 - pixelOffset, pointer: &patternTableLow) ? 1 : 0
+//		let highBit = getBit(7 - pixelOffset, pointer: &patternTableHigh) ? 1 : 0
 		
-		let lowBit = Int((patternTableLow >> (7 - uPixelOffset)) & 0x1);
-		let highBit = Int((patternTableHigh >> (7 - uPixelOffset)) & 0x1);
+		let lowBit = Int((patternTableLow >> (7 - uPixelOffset)) & 0x1)
+		let highBit = Int((patternTableHigh >> (7 - uPixelOffset)) & 0x1)
 		
-		let attributeShift = Int(((tile.vramAddress >> 4) & 4) | (tile.vramAddress & 2));
+		let attributeShift = Int(((tile.vramAddress >> 4) & 4) | (tile.vramAddress & 2))
 		
-		let attributeBits = (Int(tile.attributeTable) >> attributeShift) & 0x3;
+		let attributeBits = (Int(tile.attributeTable) >> attributeShift) & 0x3
 		
-		var patternValue = (attributeBits << 2) | (highBit << 1) | lowBit;
+		var patternValue = (attributeBits << 2) | (highBit << 1) | lowBit
 		
-		if(patternValue & 0x3 == 0 || (!self.backgroundClipping && pixelXCoord < 8)) {
-			patternValue = 0;
+		if patternValue & 0x3 == 0 || (!backgroundClipping && pixelXCoord < 8) {
+			patternValue = 0
 		}
 		
-		let paletteIndex = Int(self.ppuMemory.readPaletteMemory(patternValue)) & 0x3F;
+		let paletteIndex = Int(ppuMemory.readPaletteMemory(patternValue)) & 0x3F
 		
-		let color = colors[paletteIndex];
+		let color = colors[paletteIndex]
 		
-		writePixel(pixelXCoord, y: self.scanline, color: color);
+		writePixel(pixelXCoord, y: scanline, color: color)
 		
-		return patternValue == 0;
+		return patternValue == 0
 	}
 	
 	func writePixel(_ x: Int, y: Int, color: UInt32) {
-		for i in 0 ..< self.pixelSize {
-			for k in 0 ..< self.pixelSize {
-				self.frame[(y * self.pixelSize + k) * 256 * self.pixelSize + x * self.pixelSize + i] = color;
+		for i in 0 ..< pixelSize {
+			for k in 0 ..< pixelSize {
+				frame[(y * pixelSize + k) * 256 * pixelSize + x * pixelSize + i] = color
 			}
 		}		
 	}
 	
 	func fetchNameTable() {
 		// Fetch Name Table
-		self.nameTable = self.ppuMemory.readMemory(0x2000 | (Int(self.currentVramAddress) & 0x0FFF));
+		nameTable = ppuMemory.readMemory(0x2000 | (Int(currentVramAddress) & 0x0FFF))
 	}
 	
 	func fetchAttributeTable() {
 		// Fetch Attribute Table
-		let currentVramAddress = Int(self.currentVramAddress);
-		self.attributeTable = self.ppuMemory.readMemory(0x23C0 | (currentVramAddress & 0x0C00) | ((currentVramAddress >> 4) & 0x38) | ((currentVramAddress >> 2) & 0x07));
+		let currentVramAddress = Int(self.currentVramAddress)
+		attributeTable = ppuMemory.readMemory(0x23C0 | (currentVramAddress & 0x0C00) | ((currentVramAddress >> 4) & 0x38) | ((currentVramAddress >> 2) & 0x07))
 	}
 	
 	func fetchLowPatternTable() {
 		// Fetch lower Pattern Table byte
-		var basePatternTableAddress = 0x0000;
+		var basePatternTableAddress = 0x0000
 		
-		if(self.backgroundPatternTableAddress) {
-			basePatternTableAddress = 0x1000;
+		if backgroundPatternTableAddress {
+			basePatternTableAddress = 0x1000
 		}
 		
-		let fineY = (Int(self.currentVramAddress) >> 12) & 7;
+		let fineY = (Int(currentVramAddress) >> 12) & 7
 		
-		self.patternTableLow = self.ppuMemory.readMemory(basePatternTableAddress + (Int(self.nameTable) << 4) + fineY);
+		patternTableLow = ppuMemory.readMemory(basePatternTableAddress + (Int(nameTable) << 4) + fineY)
 	}
 	
 	func fetchHighPatternTable() {
 		// Fetch upper Pattern Table byte
-		var basePatternTableAddress = 0x0008;
+		var basePatternTableAddress = 0x0008
 		
-		if(self.backgroundPatternTableAddress) {
-			basePatternTableAddress = 0x1008;
+		if backgroundPatternTableAddress {
+			basePatternTableAddress = 0x1008
 		}
 		
-		let fineY = (Int(self.currentVramAddress) >> 12) & 7;
+		let fineY = (Int(currentVramAddress) >> 12) & 7
 		
-		self.patternTableHigh = self.ppuMemory.readMemory(basePatternTableAddress + (Int(self.nameTable) << 4) + fineY);
+		patternTableHigh = ppuMemory.readMemory(basePatternTableAddress + (Int(nameTable) << 4) + fineY)
 	}
 	
 	func fetchSprite() {
-		if(self.cycle % 2 == 0 && self.scanline != 239) {
+		if cycle % 2 == 0 && scanline != 239 {
 			
-			let intOAMByte = Int(self.oamByte);
-			let intScanline = Int(self.scanline);
+			let intOAMByte = Int(oamByte)
+			let intScanline = Int(scanline)
 			
-			var spriteHeight = 8;
+			var spriteHeight = 8
 			
-			if(self.spriteSize) {
-				spriteHeight = 16;
+			if spriteSize {
+				spriteHeight = 16
 			}
 			
-			if(intOAMByte < 240 && intOAMByte <= intScanline && intOAMByte + spriteHeight > intScanline) {
+			if intOAMByte < 240 && intOAMByte <= intScanline && intOAMByte + spriteHeight > intScanline {
 				
-				if(self.secondaryOAMIndex >= 32) {
-					if(self.renderSprites) {
+				if secondaryOAMIndex >= 32 {
+					if renderSprites {
 						// TODO: Handle overflow
-						self.spriteOverflow = true;
+						spriteOverflow = true
 					}
 				} else {
-					
 					// Sprite should be drawn on this line
-					self.secondaryOAM[self.secondaryOAMIndex] = self.oamByte;
-					self.secondaryOAM[self.secondaryOAMIndex + 1] = self.oamMemory[4 * self.oamIndex + 1];
-					self.secondaryOAM[self.secondaryOAMIndex + 2] = self.oamMemory[4 * self.oamIndex + 2];
-					self.secondaryOAM[self.secondaryOAMIndex + 3] = self.oamMemory[4 * self.oamIndex + 3];
+					secondaryOAM[secondaryOAMIndex] = oamByte
+					secondaryOAM[secondaryOAMIndex + 1] = oamMemory[4 * oamIndex + 1]
+					secondaryOAM[secondaryOAMIndex + 2] = oamMemory[4 * oamIndex + 2]
+					secondaryOAM[secondaryOAMIndex + 3] = oamMemory[4 * oamIndex + 3]
 					
-					if(self.oamIndex == 0) {
-						self.spriteZeroWillBeInSecondaryOAM = true;
+					if oamIndex == 0 {
+						spriteZeroWillBeInSecondaryOAM = true
 					}
 					
-					self.secondaryOAMIndex += 4;
+					secondaryOAMIndex += 4
 				}
-			} else if(self.secondaryOAMIndex >= 32) {
-				self.oamIndexOverflow += 1;
+			} else if secondaryOAMIndex >= 32 {
+				oamIndexOverflow += 1
 				
-				if(self.oamIndexOverflow >= 4) {
-					self.oamIndexOverflow = 0;
+				if oamIndexOverflow >= 4 {
+					oamIndexOverflow = 0
 				}
 			}
 			
-			self.oamIndex += 1;
+			oamIndex += 1
 			
-			if(self.oamIndex >= 64) {
-				self.oamIndex = 0;
-				self.oamStage = 1;
+			if oamIndex >= 64 {
+				oamIndex = 0
+				oamStage = 1
 				
-				while(self.secondaryOAMIndex < 32) {
-					self.secondaryOAM[self.secondaryOAMIndex] = 0xFF;
-					self.secondaryOAM[self.secondaryOAMIndex + 1] = 0xFF;
-					self.secondaryOAM[self.secondaryOAMIndex + 2] = 0xFF;
-					self.secondaryOAM[self.secondaryOAMIndex + 3] = 0xFF;
+				while secondaryOAMIndex < 32 {
+					secondaryOAM[secondaryOAMIndex] = 0xFF
+					secondaryOAM[secondaryOAMIndex + 1] = 0xFF
+					secondaryOAM[secondaryOAMIndex + 2] = 0xFF
+					secondaryOAM[secondaryOAMIndex + 3] = 0xFF
 					
-					self.secondaryOAMIndex += 4;
+					secondaryOAMIndex += 4
 				}
 			}
 			
 		} else {
-			self.oamByte = self.oamMemory[4 * self.oamIndex + self.oamIndexOverflow];
+			oamByte = oamMemory[4 * oamIndex + oamIndexOverflow]
 		}
 	}
 	
 	func incrementY() {
 		// If fine Y < 7
-		if((self.currentVramAddress & 0x7000) != 0x7000) {
+		if (currentVramAddress & 0x7000) != 0x7000 {
 			// Increment fine Y
-			self.currentVramAddress = UInt16((Int(self.currentVramAddress) + 0x1000) & 0xFFFF);
+			currentVramAddress = UInt16((Int(currentVramAddress) + 0x1000) & 0xFFFF)
 		} else {
 			// Fine Y = 0
-			self.currentVramAddress &= 0x8FFF;
+			currentVramAddress &= 0x8FFF
 			// var y = coarse Y
-			var y = (self.currentVramAddress & 0x03E0) >> 5;
-			if(y == 29) {
+			var y = (currentVramAddress & 0x03E0) >> 5
+			if y == 29 {
 				// Coarse Y = 0
-				y = 0;
+				y = 0
 				// Switch vertical nametable
-				self.currentVramAddress ^= 0x0800;
-			} else if(y == 31) {
+				self.currentVramAddress ^= 0x0800
+			} else if y == 31 {
 				// Coarse Y = 0, nametable not switched
-				y = 0;
+				y = 0
 			} else {
 				// Increment coarse Y
-				y += 1;
+				y += 1
 			}
 			
 			// Put coarse Y back into v
-			self.currentVramAddress = (self.currentVramAddress & 0xFC1F) | (y << 5);
+			currentVramAddress = (currentVramAddress & 0xFC1F) | (y << 5)
 		}
 
 	}
 	
 	func incrementX() {
 		// If coarse X == 31
-		if((self.currentVramAddress & 0x001F) == 31) {
+		if (currentVramAddress & 0x001F) == 31 {
 			// Coarse X = 0
-			self.currentVramAddress &= 0xFFE0;
+			currentVramAddress &= 0xFFE0
 			
 			// Switch horizontal nametable
-			self.currentVramAddress ^= 0x0400;
+			currentVramAddress ^= 0x0400
 		} else {
 			// Increment coarse X
-			self.currentVramAddress += 1;
+			currentVramAddress += 1
 		}
 	}
 	
 	func copyY() {
-		self.currentVramAddress = (self.currentVramAddress & 0x841F) | (self.tempVramAddress & 0x7BE0);
+		currentVramAddress = (currentVramAddress & 0x841F) | (tempVramAddress & 0x7BE0)
 	}
 	
 	func copyX() {
-		self.currentVramAddress = (self.currentVramAddress & 0xFBE0) | (self.tempVramAddress & 0x041F);
+		currentVramAddress = (currentVramAddress & 0xFBE0) | (tempVramAddress & 0x041F)
 	}
 	
 	func writeDMA(_ address: Int, data: UInt8) {
-		self.oamMemory[address] = data;
+		oamMemory[address] = data
 	}
 	
 	// MARK - Registers
 	
 	func setBit(_ index: Int, value: Bool, pointer: UnsafeMutablePointer<UInt8>) {
-		let bit: UInt8 = value ? 0xFF : 0;
-		pointer.pointee ^= (bit ^ pointer.pointee) & (1 << UInt8(index));
+		let bit: UInt8 = value ? 0xFF : 0
+		pointer.pointee ^= (bit ^ pointer.pointee) & (1 << UInt8(index))
 	}
 	
 	func getBit(_ index: Int, pointer: UnsafePointer<UInt8>) -> Bool {
-		return ((pointer.pointee >> UInt8(index)) & 0x1) == 1;
+		return ((pointer.pointee >> UInt8(index)) & 0x1) == 1
 	}
 	
 	/**
@@ -953,144 +952,150 @@ final class PPU: NSObject {
 	 From http://stackoverflow.com/a/2602885
 	*/
 	func reverseByte(_ value: UInt8) -> UInt8 {
-		var b = (value & 0xF0) >> 4 | (value & 0x0F) << 4;
-		b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
-		b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
-		return b;
+		var b = (value & 0xF0) >> 4 | (value & 0x0F) << 4
+		b = (b & 0xCC) >> 2 | (b & 0x33) << 2
+		b = (b & 0xAA) >> 1 | (b & 0x55) << 1
+		return b
 	}
 	
 	func cpuWrite(_ index: Int, data: UInt8) {
-		switch (index) {
+		switch index {
 			case 0:
-				self.PPUCTRL = data;
+				PPUCTRL = data
 			case 1:
-				self.PPUMASK = data;
+				PPUMASK = data
 			case 2:
-				break;
+				break
 			case 3:
-				self.OAMADDR = data;
+				OAMADDR = data
 			case 4:
-				self.OAMDATA = data;
+				OAMDATA = data
 			case 5:
-				self.PPUSCROLL = data;
+				PPUSCROLL = data
 			case 6:
-				self.PPUADDR = data;
+				PPUADDR = data
 			case 7:
-				self.PPUDATA = data;
+				PPUDATA = data
 			default:
-				print("ERROR: Invalid CPU write index");
+				print("ERROR: Invalid CPU write index")
 		}
 		
 		// Update decay register
-		self.lastWrittenRegisterValue = data;
-		self.lastWrittenRegisterDecayed = false;
-		self.lastWrittenRegisterSetCycle = 0;
+		lastWrittenRegisterValue = data
+		lastWrittenRegisterDecayed = false
+		lastWrittenRegisterSetCycle = 0
 	}
 	
 	func readPPUSTATUS() -> UInt8 {
-		var temp = (self.lastWrittenRegisterValue & 0x1F);
+		var temp = (lastWrittenRegisterValue & 0x1F)
 		
-		temp |= self.spriteOverflow ? 0x20 : 0;
-		temp |= self.sprite0Hit ? 0x40: 0;
-		temp |= self.vblank ? 0x80: 0;
+		temp |= spriteOverflow ? 0x20 : 0
+		temp |= sprite0Hit ? 0x40: 0
+		temp |= vblank ? 0x80: 0
 		
 		// Clear VBlank flag
-		self.vblank = false;
+		vblank = false
 		
-		self.writeToggle = false;
+		writeToggle = false
 		
-		nmiChange();
+		nmiChange()
 		
-		if(self.scanline == 241) {
-			if(self.cycle + 1 == 1) {
-				self.suppressVBlankFlag = true;
-			} else if(self.cycle + 1 == 2 && self.cyclesSinceNMI != -1) {
-				self.cpu!.clearNMI();
+		if scanline == 241 {
+			if cycle == 0 {
+				suppressVBlankFlag = true
+			} else if cycle == 1 && cyclesSinceNMI != -1 {
+				cpu.clearNMI()
 			}
 		}
 		
-		return temp;
+		return temp
 	}
 	
 	func readWriteOnlyRegister() -> UInt8 {
 		// Reading any write only register should return last written value to a PPU register
-		return self.lastWrittenRegisterValue;
+		return lastWrittenRegisterValue
 	}
 	
 	func readOAMDATA() -> UInt8 {
-		var value = self.oamMemory[Int(self.OAMADDR)];
+		var value = oamMemory[Int(OAMADDR)]
 		
-		if(self.OAMADDR % 4 == 2) {
-			value = value & 0xE3;
+		if OAMADDR % 4 == 2 {
+			value = value & 0xE3
 			
-			self.lastWrittenRegisterValue = value;
-			self.lastWrittenRegisterDecayed = false;
-			self.lastWrittenRegisterSetCycle = 0;
+			lastWrittenRegisterValue = value
+			lastWrittenRegisterDecayed = false
+			lastWrittenRegisterSetCycle = 0
 		}
 		
-		return value;
+		return value
 	}
 	
 	func readPPUDATA() -> UInt8 {
 		// TODO: Switch back to currentVramAddress
-		var value = self.ppuMemory.readMemory(Int(self.currentPPUADDRAddress));
+		var value = ppuMemory.readMemory(Int(currentPPUADDRAddress))
 		
-		if (self.currentPPUADDRAddress % 0x4000 < 0x3F00) {
-			let buffered = self.ppuDataReadBuffer;
-			self.ppuDataReadBuffer = value;
-			value = buffered;
+		if currentPPUADDRAddress % 0x4000 < 0x3F00 {
+			let buffered = ppuDataReadBuffer
+			ppuDataReadBuffer = value
+			value = buffered
 		} else {
-			self.ppuDataReadBuffer = self.ppuMemory.readMemory(Int(self.currentPPUADDRAddress) - 0x1000);
-//			value = (self.ppuDataReadBuffer & 0x3F) | (self.lastWrittenRegisterValue & 0xC0);
+			ppuDataReadBuffer = ppuMemory.readMemory(Int(currentPPUADDRAddress) - 0x1000)
+//			value = (self.ppuDataReadBuffer & 0x3F) | (self.lastWrittenRegisterValue & 0xC0)
 		}
 		
-		let temp = self.currentPPUADDRAddress;
+		let temp = currentPPUADDRAddress
 		
-		if(self.vramIncrement) {
-			self.currentPPUADDRAddress += 32;
+		if vramIncrement {
+			currentPPUADDRAddress += 32
 		} else {
-			self.currentPPUADDRAddress += 1;
+			currentPPUADDRAddress += 1
 		}
 		
-		a12(self.currentPPUADDRAddress, old: temp);
+		a12(currentPPUADDRAddress, old: temp)
 		
 		// Update decay register
-		self.lastWrittenRegisterValue = value;
-		self.lastWrittenRegisterDecayed = false;
+		lastWrittenRegisterValue = value
+		lastWrittenRegisterDecayed = false
 		
-		return value;
+		return value
 	}
-	
+
+	/**
+		Exists as an optimization over having a standard public field
+	*/
 	func getScanline() -> Int {
-		return self.scanline;
+		return scanline
 	}
-	
+
+	/**
+		Exists as an optimization over having a standard public field
+	*/
 	func getCycle() -> Int {
-		return self.cycle;
+		return cycle
 	}
 	
 	func getRenderingEnabled() -> Bool {
-		return self.renderBackground || self.renderSprites;
+		return renderBackground || renderSprites
 	}
 	
 	private func a12(_ new: UInt16, old: UInt16) {
-		if(new & 0x1000 == 0x1000 && old & 0x1000 == 0) {
-			if(self.ppuMemory.a12Timer == 0) {
-				self.ppuMemory.mapper!.step();
+		if new & 0x1000 == 0x1000 && old & 0x1000 == 0 {
+			if ppuMemory.a12Timer == 0 {
+				ppuMemory.mapper.step()
 			}
 			
-			self.ppuMemory.a12Timer = 16;
+			ppuMemory.a12Timer = 16
 		}
 	}
 	
 	func dumpMemory() {
-		self.ppuMemory.dumpMemory();
+		ppuMemory.dumpMemory()
 	}
 	
 	func setRenderScale(_ scale: Int) {
-		self.pixelSize = scale;
-		self.totalPixelCount = 256 * 240 * scale * scale;
+		pixelSize = scale
+		totalPixelCount = 256 * 240 * scale * scale
 		
-		self.frame = [UInt32](repeating: 0, count: self.totalPixelCount);
+		frame = [UInt32](repeating: 0, count: totalPixelCount)
 	}
 }

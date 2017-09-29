@@ -45,43 +45,38 @@ class Memory {
 		case fourScreen
 	}
 	
-	var mapper: Mapper?;
+	var mapper: Mapper
 	
-	var banks: [UInt8];
+	var banks: [UInt8]
 	
-	var mirrorPRGROM = false;
+	var mirrorPRGROM = false
 	
-	/**
-	 Initializes memory with the given type
-
-	 - Parameter memoryType: The type of memory to create, represented as a Bool.
-		True represents PPU memory (VRAM) and false CPU memory
-	*/
-	init() {
+	init(mapper: Mapper) {
 		// Dummy initialization
-		self.banks = [UInt8](repeating: 0, count: 1);
-		self.mapper = nil;
+		banks = [UInt8](repeating: 0, count: 1)
+		self.mapper = mapper
+		setMapper(mapper)
 	}
 	
 	func readMemory(_ address: Int) -> UInt8 {
-		return 0;
+		return 0
 	}
 	
 	final func readTwoBytesMemory(_ address: Int) -> UInt16 {
-		return UInt16(self.readMemory(address + 1)) << 8 | UInt16(self.readMemory(address));
+		return UInt16(readMemory(address + 1)) << 8 | UInt16(readMemory(address))
 	}
 	
 	func writeMemory(_ address: Int, data: UInt8) {
-		
+		fatalError("writeMemory function not overriden")
 	}
 	
     final func writeTwoBytesMemory(_ address: Int, data: UInt16) {
-        writeMemory(address, data: UInt8(data & 0xFF));
-        writeMemory(address + 1, data: UInt8((data & 0xFF00) >> 8));
+        writeMemory(address, data: UInt8(data & 0xFF))
+        writeMemory(address + 1, data: UInt8((data & 0xFF00) >> 8))
     }
 	
 	func setMapper(_ mapper: Mapper) {
-		
+		fatalError("setMapper function not overriden")
 	}
 }
 
@@ -118,131 +113,130 @@ final class PPUMemory: Memory {
 	-- $0000 --
 	*/
 	
-	var nametable: [UInt8];
+	var nametable: [UInt8]
 	
-	var nametableMirroring: NametableMirroringType = .oneScreen;
-	var oneScreenUpper: Bool;
+	var nametableMirroring: NametableMirroringType = .oneScreen
+	var oneScreenUpper: Bool
 	
-	private var previousAddress: Int;
-	var a12Timer: Int;
+	private var previousAddress: Int
+	var a12Timer: Int
 	
-	init(mapper: Mapper) {
-		self.nametable = [UInt8](repeating: 0, count: 0x2000);
-		self.oneScreenUpper = false;
+	override init(mapper: Mapper) {
+		nametable = [UInt8](repeating: 0, count: 0x2000)
+		oneScreenUpper = false
 		
-		self.previousAddress = 0;
-		self.a12Timer = 0;
-		super.init();
-		setMapper(mapper);
+		previousAddress = 0
+		a12Timer = 0
+		super.init(mapper: mapper)
 	}
 	
 	final override func setMapper(_ mapper: Mapper) {
-		mapper.ppuMemory = self;
-		self.mapper = mapper;
+		mapper.ppuMemory = self
+		self.mapper = mapper
 	}
 	
 	final override func readMemory(_ address: Int) -> UInt8 {
-		var address = address % 0x4000;
+		var address = address % 0x4000
 		
-		if(address & 0x1000 == 0x1000 && self.previousAddress & 0x1000 == 0) {
-			if(self.a12Timer == 0) {
-				self.mapper!.step();
+		if address & 0x1000 == 0x1000 && previousAddress & 0x1000 == 0 {
+			if a12Timer == 0 {
+				mapper.step()
 			}
-			self.a12Timer = 16;
+			a12Timer = 16
 		}
 		
-		self.previousAddress = address;
+		previousAddress = address
 		
-		if(address < 0x2000) {
-			return self.mapper!.read(address);
-		} else if((address >= 0x2000) && (address < 0x3000)) {
-			if(self.nametableMirroring == .oneScreen) {
-				address = 0x2000 | (address % 0x400);
-				if(self.oneScreenUpper) {
-					address += 0x400;
+		if address < 0x2000 {
+			return mapper.read(address)
+		} else if (address >= 0x2000) && (address < 0x3000) {
+			if nametableMirroring == .oneScreen {
+				address = 0x2000 | (address % 0x400)
+				if oneScreenUpper {
+					address += 0x400
 				}
-			} else if(self.nametableMirroring == .horizontal) {
-				if(address >= 0x2C00) {
-					address -= 0x800;
-				} else if(address >= 0x2400) {
-					address -= 0x400;
+			} else if nametableMirroring == .horizontal {
+				if address >= 0x2C00 {
+					address -= 0x800
+				} else if address >= 0x2400 {
+					address -= 0x400
 				}
-			} else if(self.nametableMirroring == .vertical) {
-				if(address >= 0x2800) {
-					address -= 0x800;
+			} else if nametableMirroring == .vertical {
+				if address >= 0x2800 {
+					address -= 0x800
 				}
 			} else {
-				print("ERROR: Nametable mirroring type not implemented");
+				print("ERROR: Nametable mirroring type not implemented")
 			}
-		} else if((address > 0x2FFF) && (address < 0x3F00)) {
-			address -= 0x1000;
+		} else if (address > 0x2FFF) && (address < 0x3F00) {
+			address -= 0x1000
 		}
 		
-		return self.nametable[address - 0x2000];
+		return nametable[address - 0x2000]
 	}
 	
 	final override func writeMemory(_ address: Int, data: UInt8) {
-		var address = address % 0x4000;
+		var address = address % 0x4000
 		
-		if(address & 0x1000 == 0x1000 && self.previousAddress & 0x1000 == 0) {
-			if(self.a12Timer == 0) {
-				self.mapper!.step();
+		if address & 0x1000 == 0x1000 && previousAddress & 0x1000 == 0 {
+			if a12Timer == 0 {
+				mapper.step()
 			}
-			self.a12Timer = 16;
+			a12Timer = 16
 		}
 		
-		self.previousAddress = address;
+		previousAddress = address
 		
-		if(address < 0x2000) {
-			self.mapper!.write(address, data: data);
-			return;
-		} else if((address >= 0x2000) && (address < 0x3000)) {
-			if(self.nametableMirroring == .oneScreen) {
-				address = 0x2000 | (address % 0x400);
-				if(self.oneScreenUpper) {
-					address += 0x400;
+		if address < 0x2000 {
+			mapper.write(address, data: data)
+			return
+		} else if (address >= 0x2000) && (address < 0x3000) {
+			if nametableMirroring == .oneScreen {
+				address = 0x2000 | (address % 0x400)
+				if oneScreenUpper {
+					address += 0x400
 				}
-			} else if(self.nametableMirroring == .horizontal) {
-				if(address >= 0x2C00) {
-					address -= 0x800;
-				} else if(address >= 0x2400) {
-					address -= 0x400;
+			} else if nametableMirroring == .horizontal {
+				if address >= 0x2C00 {
+					address -= 0x800
+				} else if address >= 0x2400 {
+					address -= 0x400
 				}
-			} else if(self.nametableMirroring == .vertical) {
-				if(address >= 0x2800) {
-					address -= 0x800;
+			} else if nametableMirroring == .vertical {
+				if address >= 0x2800 {
+					address -= 0x800
 				}
 			} else {
-				print("ERROR: Nametable mirroring type not implemented");
+				print("ERROR: Nametable mirroring type not implemented")
 			}
-		} else if((address > 0x2FFF) && (address < 0x3F00)) {
-			address -= 0x1000;
-		} else if(address >= 0x3F10) {
-			address = 0x3F00 + address % 0x20;
+		} else if (address > 0x2FFF) && (address < 0x3F00) {
+			address -= 0x1000
+		} else if address >= 0x3F10 {
+			address = 0x3F00 + address % 0x20
 			
-			if((address >= 0x3F10) && (address < 0x3F20) && (address & 0x3 == 0)) {
-				address -= 0x10;
+			if (address >= 0x3F10) && (address < 0x3F20) && (address & 0x3 == 0) {
+				address -= 0x10
 			}
 		}
 		
-		self.nametable[address - 0x2000] = data;
+		nametable[address - 0x2000] = data
 	}
 	
 	func readPaletteMemory(_ address: Int) -> UInt8 {
-		var address = address % 0x20;
+		var address = address % 0x20
 		
-		if(address >= 0x10 && address < 0x20 && address & 0x3 == 0) {
-			address -= 0x10;
+		if address >= 0x10 && address < 0x20 && address & 0x3 == 0 {
+			address -= 0x10
 		}
 		
-		return self.nametable[0x1F00 + address];
+		return nametable[0x1F00 + address]
 	}
 	
 	
 	func dumpMemory() {
-		let logger = Logger(path: "/Users/adam/memory.dump");
-		logger.dumpMemory(self.banks);
-		logger.endLogging();
+		let logger = Logger(path: "/Users/adam/memory.dump")
+		logger.dumpMemory(banks)
+		logger.endLogging()
 	}
 }
 
@@ -273,92 +267,93 @@ final class CPUMemory: Memory {
 	-- $0000 --
 	*/
 	
-	var ram: [UInt8];
+	var ram: [UInt8]
 	
-	var sram: [UInt8];
+	var sram: [UInt8]
 	
-	var ppu: PPU?;
-	var apu: APU?;
-	var controllerIO: ControllerIO?;
+	var ppu: PPU?
+	var apu: APU?
+	var controllerIO: ControllerIO?
 	
-	init(mapper: Mapper) {
-		self.ram = [UInt8](repeating: 0, count: 0x800);
+	override init(mapper: Mapper) {
+		ram = [UInt8](repeating: 0, count: 0x800)
+		sram = [UInt8](repeating: 0, count: 0x2000)
 		
-		self.sram = [UInt8](repeating: 0, count: 0x2000);
-		
-		super.init();
-		setMapper(mapper);
+		super.init(mapper: mapper)
 	}
 	
 	final override func setMapper(_ mapper: Mapper) {
-		mapper.cpuMemory = self;
-		self.mapper = mapper;
+		mapper.cpuMemory = self
+		self.mapper = mapper
 	}
 	
 	final override func readMemory(_ address: Int) -> UInt8 {
-		if(address < 0x2000) {
-			return self.ram[address % 0x800];
-		} else if(address < 0x4000) {
-			switch (address % 8) {
+		if address < 0x2000 {
+			return ram[address % 0x800]
+		} else if address < 0x4000 {
+			guard let ppu = ppu else {
+				fatalError("PPU does not exist for memory read")
+			}
+
+			switch address % 8 {
 			case 0:
-				return (self.ppu?.readWriteOnlyRegister())!;
+				return ppu.readWriteOnlyRegister()
 			case 1:
-				return (self.ppu?.readWriteOnlyRegister())!;
+				return ppu.readWriteOnlyRegister()
 			case 2:
-				return (self.ppu?.readPPUSTATUS())!;
+				return ppu.readPPUSTATUS()
 			case 3:
-				return (self.ppu?.readWriteOnlyRegister())!;
+				return ppu.readWriteOnlyRegister()
 			case 4:
-				return (self.ppu?.readOAMDATA())!;
+				return ppu.readOAMDATA()
 			case 5:
-				return (self.ppu?.readWriteOnlyRegister())!;
+				return ppu.readWriteOnlyRegister()
 			case 6:
-				return (self.ppu?.readWriteOnlyRegister())!;
+				return ppu.readWriteOnlyRegister()
 			case 7:
-				return (self.ppu?.readPPUDATA())!;
+				return ppu.readPPUDATA()
 			default: break
 			}
-		} else if(address == 0x4016) {
-			return self.controllerIO!.readState();
-		} else if(address == 0x4017) {
+		} else if address == 0x4016 {
+			return controllerIO!.readState()
+		} else if address == 0x4017 {
 			// TODO: Add second controller support
-			return 0x40;
-		} else if(address > 0x3FFF && address < 0x4018) {
-			return (self.apu?.cpuRead(address))!;
-		} else if(self.mirrorPRGROM && address >= 0xC000) {
-			return self.mapper!.read(address - 0x4000);
+			return 0x40
+		} else if address > 0x3FFF && address < 0x4018 {
+			guard let apu = apu else {
+				fatalError("APU does not exist for memory read")
+			}
+
+			return apu.cpuRead(address)
+		} else if mirrorPRGROM && address >= 0xC000 {
+			return mapper.read(address - 0x4000)
 		}
 		
-		return self.mapper!.read(address);
+		return mapper.read(address)
 	}
 	
 	final override func writeMemory(_ address: Int, data: UInt8) {
-		var address = address;
+		var address = address
 		
-		if(address < 0x2000) {
-			self.ram[address % 0x800] = data;
-			return;
-		} else if(address < 0x4000) {
-			self.ppu?.cpuWrite(address % 8, data: data);
-			return;
-		} else if(address == 0x4014) {
-			self.ppu?.OAMDMA = data;
-			return;
-		} else if(address == 0x4016) {
-			if(data & 0x1 == 1) {
-				self.controllerIO?.strobeHigh = true;
-			} else {
-				self.controllerIO?.strobeHigh = false;
-			}
-			
-			return;
-		} else if(address > 0x3FFF && address < 0x4018) {
-			self.apu?.cpuWrite(address, data: data);
-			return;
-		} else if(self.mirrorPRGROM && address >= 0xC000) {
-			address = address - 0x4000;
+		if address < 0x2000 {
+			ram[address % 0x800] = data
+			return
+		} else if address < 0x4000 {
+			ppu?.cpuWrite(address % 8, data: data)
+			return
+		} else if address == 0x4014 {
+			ppu?.OAMDMA = data
+			return
+		} else if address == 0x4016 {
+			controllerIO?.strobeHigh = data & 0x1 == 1
+			return
+		} else if address > 0x3FFF && address < 0x4018 {
+			apu?.cpuWrite(address, data: data)
+			return
+		} else if mirrorPRGROM && address >= 0xC000 {
+			address = address - 0x4000
 		}
 		
-		self.mapper!.write(address, data: data);
+		mapper.write(address, data: data)
 	}
 }

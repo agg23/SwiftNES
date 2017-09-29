@@ -12,46 +12,46 @@ final class iOSControllerIO: ControllerIO {
 	func buttonPressEvent(_ value: Int) {
 		switch(value) {
 		case 0:
-			upPressed = true;
+			upPressed = true
 		case 1:
-			leftPressed = true;
+			leftPressed = true
 		case 2:
-			rightPressed = true;
+			rightPressed = true
 		case 3:
-			downPressed = true;
+			downPressed = true
 		case 4:
-			selectPressed = true;
+			selectPressed = true
 		case 5:
-			startPressed = true;
+			startPressed = true
 		case 6:
-			bPressed = true;
+			bPressed = true
 		case 7:
-			aPressed = true;
+			aPressed = true
 		default:
-			break;
+			break
 		}
 	}
 	
 	func buttonUpEvent(_ value: Int) {
 		switch(value) {
 		case 0:
-			upPressed = false;
+			upPressed = false
 		case 1:
-			leftPressed = false;
+			leftPressed = false
 		case 2:
-			rightPressed = false;
+			rightPressed = false
 		case 3:
-			downPressed = false;
+			downPressed = false
 		case 4:
-			selectPressed = false;
+			selectPressed = false
 		case 5:
-			startPressed = false;
+			startPressed = false
 		case 6:
-			bPressed = false;
+			bPressed = false
 		case 7:
-			aPressed = false;
+			aPressed = false
 		default:
-			break;
+			break
 		}
 	}
 }

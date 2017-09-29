@@ -9,43 +9,43 @@
 import Foundation
 
 final class Mapper7: Mapper {
-	private var prgBankOffset: Int;
+	private var prgBankOffset: Int
 	
 	override init() {
-		self.prgBankOffset = 0;
+		prgBankOffset = 0
 	}
 	
 	override func read(_ address: Int) -> UInt8 {
-		switch(address) {
+		switch address {
 			case 0x0000 ..< 0x2000:
-				return self.ppuMemory!.banks[address];
+				return ppuMemory.banks[address]
 			case 0x2000 ..< 0x8000:
-				print("Invalid mapper 7 address \(address)");
+				print("Invalid mapper 7 address \(address)")
 			case 0x8000 ..< 0x10000:
-				return self.cpuMemory!.banks[self.prgBankOffset + address - 0x8000];
+				return cpuMemory.banks[prgBankOffset + address - 0x8000]
 			default:
-				break;
+				break
 		}
 		
-		return 0;
+		return 0
 	}
 	
 	override func write(_ address: Int, data: UInt8) {
-		switch(address) {
+		switch address {
 			case 0x0000 ..< 0x2000:
-				self.ppuMemory!.banks[address] = data;
+				ppuMemory.banks[address] = data
 			case 0x2000 ..< 0x8000:
-				print("Invalid mapper 7 address \(address)");
+				print("Invalid mapper 7 address \(address)")
 			case 0x8000 ..< 0x10000:
-				bankSelect(data);
+				bankSelect(data)
 			default:
-				break;
+				break
 		}
 	}
 	
 	func bankSelect(_ data: UInt8) {
-		self.prgBankOffset = (Int(data) & 0x7) * 0x8000;
+		prgBankOffset = (Int(data) & 0x7) * 0x8000
 		
-		self.ppuMemory!.oneScreenUpper = data & 0x10 == 0x10;
+		ppuMemory.oneScreenUpper = data & 0x10 == 0x10
 	}
 }

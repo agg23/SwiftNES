@@ -9,59 +9,59 @@
 import Foundation
 
 class Mapper {
-	var cpuMemory: CPUMemory?;
-	var ppuMemory: PPUMemory?;
+	var cpuMemory: CPUMemory!
+	var ppuMemory: PPUMemory!
 	
-	var chrBankCount: UInt8;
-	var prgBankCount: UInt8;
+	var chrBankCount: UInt8
+	var prgBankCount: UInt8
 	
 	init() {
-		self.cpuMemory = nil;
-		self.ppuMemory = nil;
+		cpuMemory = nil
+		ppuMemory = nil
 		
-		self.chrBankCount = 0;
-		self.prgBankCount = 0;
+		chrBankCount = 0
+		prgBankCount = 0
 	}
 	
 	func read(_ address: Int) -> UInt8 {
-		switch(address) {
+		switch address {
 			case 0x0000 ..< 0x1000:
-				return self.ppuMemory!.banks[address];
+				return ppuMemory.banks[address]
 			case 0x1000 ..< 0x2000:
-				return self.ppuMemory!.banks[address];
+				return ppuMemory.banks[address]
 			case 0x2000 ..< 0x6000:
-//				print("Invalid mapper 0 address \(address)");
-				break;
+//				print("Invalid mapper 0 address \(address)")
+				break
 			case 0x6000 ..< 0x8000:
-				return self.cpuMemory!.sram[address - 0x6000];
+				return cpuMemory.sram[address - 0x6000]
 			case 0x8000 ..< 0xC000:
-				return self.cpuMemory!.banks[address - 0x8000];
+				return cpuMemory.banks[address - 0x8000]
 			case 0xC000 ..< 0x10000:
-				return self.cpuMemory!.banks[address - 0x8000];
+				return cpuMemory.banks[address - 0x8000]
 			default:
-				break;
+				break
 		}
 		
-		return 0;
+		return 0
 	}
 	
 	func write(_ address: Int, data: UInt8) {
 		switch(address) {
 			case 0x0000 ..< 0x1000:
-				self.ppuMemory!.banks[address] = data;
+				ppuMemory.banks[address] = data
 			case 0x1000 ..< 0x2000:
-				self.ppuMemory!.banks[address] = data;
+				ppuMemory.banks[address] = data
 			case 0x2000 ..< 0x6000:
-//				print("Invalid mapper 0 address \(address)");
-				break;
+//				print("Invalid mapper 0 address \(address)")
+				break
 			case 0x6000 ..< 0x8000:
-				self.cpuMemory!.sram[address - 0x6000] = data;
+				cpuMemory.sram[address - 0x6000] = data
 			case 0x8000 ..< 0xC000:
-				self.cpuMemory!.banks[address - 0x8000] = data;
+				cpuMemory.banks[address - 0x8000] = data
 			case 0xC000 ..< 0x10000:
-				self.cpuMemory!.banks[address - 0x8000] = data;
+				cpuMemory.banks[address - 0x8000] = data
 			default:
-				break;
+				break
 		}
 	}
 	

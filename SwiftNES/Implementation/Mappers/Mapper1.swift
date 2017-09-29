@@ -12,182 +12,182 @@ final class Mapper1: Mapper {
 	
 	// MARK: - Internal Registers
 	
-	private var shiftRegister: UInt8;
+	private var shiftRegister: UInt8
 	private var control: UInt8 {
 		didSet {
-			let mirroring = control & 0x3;
+			let mirroring = control & 0x3
 			
-			switch(mirroring) {
+			switch mirroring {
 				case 0:
-					self.ppuMemory!.nametableMirroring = .oneScreen;
-					self.ppuMemory!.oneScreenUpper = false;
+					ppuMemory.nametableMirroring = .oneScreen
+					ppuMemory.oneScreenUpper = false
 				case 1:
-					self.ppuMemory!.nametableMirroring = .oneScreen;
-					self.ppuMemory!.oneScreenUpper = true;
+					ppuMemory.nametableMirroring = .oneScreen
+					ppuMemory.oneScreenUpper = true
 				case 2:
-					self.ppuMemory!.nametableMirroring = .vertical;
+					ppuMemory.nametableMirroring = .vertical
 				case 3:
-					self.ppuMemory!.nametableMirroring = .horizontal;
+					ppuMemory.nametableMirroring = .horizontal
 				default:
-					break;
+					break
 			}
 			
-			self.prgRomBankMode = (control & 0xC) >> 2;
-			self.chrRomBankMode = control & 0x10 == 0x10;
+			prgRomBankMode = (control & 0xC) >> 2
+			chrRomBankMode = control & 0x10 == 0x10
 			
-			updateOffsets();
-		}
-	};
-	
-	private var prgRomBankMode: UInt8;
-	private var chrRomBankMode: Bool;
-	
-	private var chrBank0: UInt8;
-	private var chrBank1: UInt8;
-	
-	private var prgBank: UInt8;
-	private var prgRAMEnabled: Bool;
-	
-	private var chrBank0Offset: Int;
-	private var chrBank1Offset: Int;
-	private var prgBank0Offset: Int;
-	private var prgBank1Offset: Int;
-	
-	override var cpuMemory: CPUMemory? {
-		didSet {
-			self.prgBank1Offset = cpuMemory!.banks.count - 0x4000;
+			updateOffsets()
 		}
 	}
 	
-	override var ppuMemory: PPUMemory? {
+	private var prgRomBankMode: UInt8
+	private var chrRomBankMode: Bool
+	
+	private var chrBank0: UInt8
+	private var chrBank1: UInt8
+	
+	private var prgBank: UInt8
+	private var prgRAMEnabled: Bool
+	
+	private var chrBank0Offset: Int
+	private var chrBank1Offset: Int
+	private var prgBank0Offset: Int
+	private var prgBank1Offset: Int
+	
+	override var cpuMemory: CPUMemory! {
 		didSet {
-			let count = ppuMemory!.banks.count;
+			prgBank1Offset = cpuMemory.banks.count - 0x4000
+		}
+	}
+	
+	override var ppuMemory: PPUMemory! {
+		didSet {
+			let count = ppuMemory.banks.count
 			
-			if(count == 0) {
-				self.chrBank1Offset = 0x1000;
+			if count == 0 {
+				chrBank1Offset = 0x1000
 			} else {
-				self.chrBank1Offset = ppuMemory!.banks.count - 0x4000;
+				chrBank1Offset = ppuMemory.banks.count - 0x4000
 			}
 		}
 	}
 	
 	override init() {
-		self.shiftRegister = 0x10;
-		self.control = 0;
+		shiftRegister = 0x10
+		control = 0
 		
-		self.prgRomBankMode = 0;
-		self.chrRomBankMode = false;
+		prgRomBankMode = 0
+		chrRomBankMode = false
 		
-		self.chrBank0 = 0;
-		self.chrBank1 = 1;
+		chrBank0 = 0
+		chrBank1 = 1
 		
-		self.prgBank = 0;
-		self.prgRAMEnabled = true;
+		prgBank = 0
+		prgRAMEnabled = true
 		
-		self.chrBank0Offset = 0;
-		self.chrBank1Offset = 0x1000;
-		self.prgBank0Offset = 0;
-		self.prgBank1Offset = 0;
+		chrBank0Offset = 0
+		chrBank1Offset = 0x1000
+		prgBank0Offset = 0
+		prgBank1Offset = 0
 	}
 	
 	override func read(_ address: Int) -> UInt8 {
-		switch(address) {
+		switch address {
 			case 0x0000 ..< 0x1000:
-				return self.ppuMemory!.banks[self.chrBank0Offset + address];
+				return ppuMemory.banks[chrBank0Offset + address]
 			case 0x1000 ..< 0x2000:
-				return self.ppuMemory!.banks[self.chrBank1Offset + address - 0x1000];
+				return ppuMemory.banks[chrBank1Offset + address - 0x1000]
 			case 0x2000 ..< 0x6000:
-				print("Invalid mapper 1 address \(address)");
+				print("Invalid mapper 1 address \(address)")
 			case 0x6000 ..< 0x8000:
-				if(self.prgRAMEnabled) {
-					return self.cpuMemory!.sram[address - 0x6000];
+				if prgRAMEnabled {
+					return cpuMemory!.sram[address - 0x6000]
 				} else {
-					return 0;
+					return 0
 				}
 			case 0x8000 ..< 0xC000:
-				return self.cpuMemory!.banks[self.prgBank0Offset + address - 0x8000];
+				return self.cpuMemory.banks[prgBank0Offset + address - 0x8000]
 			case 0xC000 ..< 0x10000:
-				return self.cpuMemory!.banks[self.prgBank1Offset + address - 0xC000];
+				return self.cpuMemory.banks[prgBank1Offset + address - 0xC000]
 			default:
-				break;
+				break
 		}
 		
-		return 0;
+		return 0
 	}
 	
 	override func write(_ address: Int, data: UInt8) {
 		switch(address) {
 			case 0x0000 ..< 0x1000:
-				self.ppuMemory!.banks[self.chrBank0Offset + address] = data;
+				ppuMemory.banks[chrBank0Offset + address] = data
 			case 0x1000 ..< 0x2000:
-				self.ppuMemory!.banks[self.chrBank1Offset + address - 0x1000] = data;
+				ppuMemory.banks[chrBank1Offset + address - 0x1000] = data
 			case 0x2000 ..< 0x6000:
-				print("Invalid mapper 1 address \(address)");
+				print("Invalid mapper 1 address \(address)")
 			case 0x6000 ..< 0x8000:
-				self.cpuMemory!.sram[address - 0x6000] = data;
+				cpuMemory.sram[address - 0x6000] = data
 			case 0x8000 ..< 0x10000:
-				updateShiftRegister(address, data: data);
+				updateShiftRegister(address, data: data)
 			default:
-				break;
+				break
 		}
 	}
 	
 	private func updateShiftRegister(_ address: Int, data: UInt8) {
-		if(data & 0x80 == 0x80) {
-			self.shiftRegister = 0x10;
-			self.control = self.control | 0x0C;
+		if data & 0x80 == 0x80 {
+			shiftRegister = 0x10
+			control = control | 0x0C
 		} else {
-			let writeComplete = self.shiftRegister & 0x1 == 0x1;
-			self.shiftRegister = self.shiftRegister >> 1;
-			self.shiftRegister = self.shiftRegister | ((data & 0x1) << 4);
+			let writeComplete = shiftRegister & 0x1 == 0x1
+			shiftRegister = shiftRegister >> 1
+			shiftRegister = shiftRegister | ((data & 0x1) << 4)
 			
-			if(writeComplete) {
-				writeInternalRegister(address, data: data);
-				self.shiftRegister = 0x10;
+			if writeComplete {
+				writeInternalRegister(address, data: data)
+				shiftRegister = 0x10
 			}
 		}
 	}
 	
 	private func writeInternalRegister(_ address: Int, data: UInt8) {
-		if(address < 0xA000) {
+		if address < 0xA000 {
 			// Control
-			self.control = self.shiftRegister;
-		} else if(address < 0xC000) {
+			control = shiftRegister
+		} else if address < 0xC000 {
 			// CHR bank 0
-			self.chrBank0 = self.shiftRegister & (self.chrBankCount - 1);
-		} else if(address < 0xE000) {
+			chrBank0 = shiftRegister & (chrBankCount - 1)
+		} else if address < 0xE000 {
 			// CHR bank 1
-			self.chrBank1 = self.shiftRegister & (self.chrBankCount - 1);
+			chrBank1 = shiftRegister & (chrBankCount - 1)
 		} else {
 			// PRG bank
-			self.prgBank = self.shiftRegister & 0xF & (self.prgBankCount - 1);
-			self.prgRAMEnabled = self.shiftRegister & 0x10 == 0;
+			prgBank = shiftRegister & 0xF & (prgBankCount - 1)
+			prgRAMEnabled = shiftRegister & 0x10 == 0
 		}
 		
-		updateOffsets();
+		updateOffsets()
 	}
 	
 	private func updateOffsets() {
-		if(self.chrRomBankMode) {
-			self.chrBank0Offset = Int(self.chrBank0) * 0x1000;
-			self.chrBank1Offset = Int(self.chrBank1) * 0x1000;
+		if chrRomBankMode {
+			chrBank0Offset = Int(chrBank0) * 0x1000
+			chrBank1Offset = Int(chrBank1) * 0x1000
 		} else {
-			self.chrBank0Offset = Int(self.chrBank0 & 0xFE) * 0x1000;
-			self.chrBank1Offset = self.chrBank0Offset + 0x1000;
+			chrBank0Offset = Int(chrBank0 & 0xFE) * 0x1000
+			chrBank1Offset = chrBank0Offset + 0x1000
 		}
 		
-		switch(self.prgRomBankMode) {
+		switch prgRomBankMode {
 			case 0, 1:
-				self.prgBank0Offset = Int(self.prgBank & 0xFE) * 0x4000;
-				self.prgBank1Offset = self.prgBank0Offset + 0x4000;
+				prgBank0Offset = Int(prgBank & 0xFE) * 0x4000
+				prgBank1Offset = prgBank0Offset + 0x4000
 			case 2:
-				self.prgBank0Offset = 0;
-				self.prgBank1Offset = Int(self.prgBank) * 0x4000;
+				prgBank0Offset = 0
+				prgBank1Offset = Int(prgBank) * 0x4000
 			case 3:
-				self.prgBank0Offset = Int(self.prgBank) * 0x4000;
-				self.prgBank1Offset = self.cpuMemory!.banks.count - 0x4000;
+				prgBank0Offset = Int(prgBank) * 0x4000
+				prgBank1Offset = cpuMemory.banks.count - 0x4000
 			default:
-				break;
+				break
 		}
 	}
 }

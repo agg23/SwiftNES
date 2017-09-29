@@ -13,46 +13,46 @@ final class MacControllerIO: ControllerIO {
 	func buttonPressEvent(_ value: Int) {
 		switch(value) {
 		case kVK_ANSI_X:
-			aPressed = true;
+			aPressed = true
 		case kVK_ANSI_Z:
-			bPressed = true;
+			bPressed = true
 		case kVK_ANSI_A:
-			selectPressed = true;
+			selectPressed = true
 		case kVK_ANSI_S:
-			startPressed = true;
+			startPressed = true
 		case kVK_UpArrow:
-			upPressed = true;
+			upPressed = true
 		case kVK_DownArrow:
-			downPressed = true;
+			downPressed = true
 		case kVK_LeftArrow:
-			leftPressed = true;
+			leftPressed = true
 		case kVK_RightArrow:
-			rightPressed = true;
+			rightPressed = true
 		default:
-			break;
+			break
 		}
 	}
 	
 	func buttonUpEvent(_ value: Int) {
 		switch(value) {
 		case kVK_ANSI_X:
-			aPressed = false;
+			aPressed = false
 		case kVK_ANSI_Z:
-			bPressed = false;
+			bPressed = false
 		case kVK_ANSI_A:
-			selectPressed = false;
+			selectPressed = false
 		case kVK_ANSI_S:
-			startPressed = false;
+			startPressed = false
 		case kVK_UpArrow:
-			upPressed = false;
+			upPressed = false
 		case kVK_DownArrow:
-			downPressed = false;
+			downPressed = false
 		case kVK_LeftArrow:
-			leftPressed = false;
+			leftPressed = false
 		case kVK_RightArrow:
-			rightPressed = false;
+			rightPressed = false
 		default:
-			break;
+			break
 		}
 	}
 }

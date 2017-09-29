@@ -11,7 +11,7 @@ import MetalKit
 import AudioToolbox
 
 func bridge<T : AnyObject>(_ obj : T) -> UnsafeRawPointer {
-	return UnsafeRawPointer(Unmanaged.passUnretained(obj).toOpaque());
+	return UnsafeRawPointer(Unmanaged.passUnretained(obj).toOpaque())
 	// return unsafeAddressOf(obj) // ***
 }
 
@@ -20,14 +20,12 @@ func bridge<T : AnyObject>(_ ptr : UnsafeRawPointer) -> T {
 	// return unsafeBitCast(ptr, T.self) // ***
 }
 
-var count = 0;
-
 func outputCallback(_ data: UnsafeMutableRawPointer?, inAudioQueue: AudioQueueRef, inBuffer: AudioQueueBufferRef) {
-	let apu: APU = bridge(UnsafeRawPointer(data)!);
+	let apu: APU = bridge(UnsafeRawPointer(data)!)
 	
-	apu.buffer.loadBuffer(inBuffer);
+	apu.buffer.loadBuffer(inBuffer)
 	
-	AudioQueueEnqueueBuffer(inAudioQueue, inBuffer, 0, nil);
+	AudioQueueEnqueueBuffer(inAudioQueue, inBuffer, 0, nil)
 }
 
 @NSApplicationMain
@@ -39,262 +37,302 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	
 	@IBOutlet weak var playPauseEmulationButton: NSMenuItem!
 	
-	private var device: MTLDevice!;
+	private var device: MTLDevice!
 	private var commandQueue: MTLCommandQueue! = nil
 	private var pipeline: MTLComputePipelineState! = nil
 	
-	var sizingRect: NSRect? = nil;
+	var sizingRect: NSRect? = nil
 	
-	private var texture: MTLTexture! = nil;
-	private var textureOptions = [MTKTextureLoaderOptionTextureUsage: Int(MTLTextureUsage.renderTarget.rawValue) as NSNumber];
-	private var textureDescriptor: MTLTextureDescriptor? = nil;
+	private var texture: MTLTexture! = nil
+	private var textureOptions = [MTKTextureLoaderOptionTextureUsage: Int(MTLTextureUsage.renderTarget.rawValue) as NSNumber]
+	private var textureDescriptor: MTLTextureDescriptor? = nil
 	
-	private let threadGroupCount = MTLSizeMake(8, 8, 1);
-	private var threadGroups: MTLSize?;
+	private let threadGroupCount = MTLSizeMake(8, 8, 1)
+	private var threadGroups: MTLSize?
 	
-	private var textureLoader: MTKTextureLoader?;
+	private var textureLoader: MTKTextureLoader?
 	
-	private let controllerIO: MacControllerIO;
-	private var cpu: CPU?;
-	private var ppu: PPU?;
-	private var apu: APU?;
-	private let logger: Logger?;
+	private let controllerIO: MacControllerIO
+	private var cpu: CPU?
+	private var ppu: PPU?
+	private var apu: APU?
+	private let logger: Logger?
 	
-	private var frameCount = 0;
-	private var lastFrameUpdate: Double = 0;
+	private var frameCount = 0
+	private var lastFrameUpdate: Double = 0
 	
-	private var fileLoaded: Bool;
-	private var paused: Bool;
+	private var fileLoaded: Bool
+	private var paused: Bool
 	
-	private var scalingFactor:CGFloat = 2.0;
+	private var scalingFactor:CGFloat = 2.0
 	
-	var dataFormat: AudioStreamBasicDescription;
-	var queue: AudioQueueRef?;
-	var buffer: AudioQueueBufferRef?;
-	var buffer2: AudioQueueBufferRef?;
-	var bufferByteSize: UInt32;
-	var numPacketsToRead: UInt32;
-	var packetsToPlay: Int64;
+	var dataFormat: AudioStreamBasicDescription
+	var queue: AudioQueueRef?
+	var buffer: AudioQueueBufferRef?
+	var buffer2: AudioQueueBufferRef?
+	var bufferByteSize: UInt32
+	var numPacketsToRead: UInt32
+	var packetsToPlay: Int64
 	
 	override init() {
-		self.dataFormat = AudioStreamBasicDescription(mSampleRate: 0, mFormatID: 0, mFormatFlags: 0, mBytesPerPacket: 0, mFramesPerPacket: 0, mBytesPerFrame: 0, mChannelsPerFrame: 0, mBitsPerChannel: 0, mReserved: 0);
-		self.queue = nil;
-		self.buffer = nil;
-		self.buffer2 = nil;
-		self.bufferByteSize = 0x700;
-		self.numPacketsToRead = 0;
-		self.packetsToPlay = 1;
+		dataFormat = AudioStreamBasicDescription(mSampleRate: 0, mFormatID: 0, mFormatFlags: 0, mBytesPerPacket: 0, mFramesPerPacket: 0, mBytesPerFrame: 0, mChannelsPerFrame: 0, mBitsPerChannel: 0, mReserved: 0)
+		queue = nil
+		buffer = nil
+		buffer2 = nil
+		bufferByteSize = 0x700
+		numPacketsToRead = 0
+		packetsToPlay = 1
 		
-		self.fileLoaded = false;
-		self.paused = true;
+		fileLoaded = false
+		paused = true
 		
-		self.logger = Logger(path: "/Users/adam/nes.log");
+		logger = Logger(path: "/Users/adam/nes.log")
 		
-		self.controllerIO = MacControllerIO();
+		controllerIO = MacControllerIO()
 		
-		dataFormat.mSampleRate = 44100;
-		dataFormat.mFormatID = kAudioFormatLinearPCM;
+		dataFormat.mSampleRate = 44100
+		dataFormat.mFormatID = kAudioFormatLinearPCM
 		
 		// Sort out endianness
 		if (NSHostByteOrder() == NS_BigEndian) {
-			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsBigEndian | kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
+			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsBigEndian | kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked
 		} else {
-			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
+			dataFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked
 		}
 		
-		dataFormat.mFramesPerPacket = 1;
-		dataFormat.mBytesPerFrame = 2;
-		dataFormat.mBytesPerPacket = dataFormat.mBytesPerFrame * dataFormat.mFramesPerPacket;
-		dataFormat.mChannelsPerFrame = 1;
-		dataFormat.mBitsPerChannel = 16;
+		dataFormat.mFramesPerPacket = 1
+		dataFormat.mBytesPerFrame = 2
+		dataFormat.mBytesPerPacket = dataFormat.mBytesPerFrame * dataFormat.mFramesPerPacket
+		dataFormat.mChannelsPerFrame = 1
+		dataFormat.mBitsPerChannel = 16
 	}
 	
 	func windowSetup() {
-		var rect = self.window.frameRect(forContentRect: NSMakeRect(0, 0, 256 * self.scalingFactor, 240 * self.scalingFactor));
+		guard let device = device else {
+			// Should never occur
+			print("ERROR: No device")
+			return
+		}
+
+		var rect = window.frameRect(forContentRect: NSMakeRect(0, 0, 256 * scalingFactor, 240 * scalingFactor))
 		
-		rect.origin = self.window.frame.origin;
+		rect.origin = window.frame.origin
 		
-		self.window.setFrame(rect, display: false);
+		window.setFrame(rect, display: false)
 		
-		let width = 256 * self.scalingFactor;
-		let height = 240 * self.scalingFactor;
+		let width = 256 * scalingFactor
+		let height = 240 * scalingFactor
 		
-		let windowSize = NSMakeSize(width, height);
+		let windowSize = NSMakeSize(width, height)
 		
-		self.window.contentMinSize = windowSize;
-		self.window.contentMaxSize = windowSize;
+		window.contentMinSize = windowSize
+		window.contentMaxSize = windowSize
 		
-        self.textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: MTLPixelFormat.bgra8Unorm, width: Int(width), height: Int(height), mipmapped: false);
-        self.texture = self.device!.makeTexture(descriptor: self.textureDescriptor!);
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: MTLPixelFormat.bgra8Unorm, width: Int(width), height: Int(height), mipmapped: false)
+		textureDescriptor = descriptor
+        texture = device.makeTexture(descriptor: descriptor)
 		
-		self.metalView.colorPixelFormat = MTLPixelFormat.bgra8Unorm;
+		metalView.colorPixelFormat = MTLPixelFormat.bgra8Unorm
 	}
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-		self.sizingRect = self.window.convertToBacking(NSMakeRect(0, 0, 256 * self.scalingFactor, 240 * self.scalingFactor));
+		let rect = window.convertToBacking(NSMakeRect(0, 0, 256 * scalingFactor, 240 * scalingFactor))
+		self.sizingRect = rect
 		
-		let width = Int(self.sizingRect!.width);
-		let height = Int(self.sizingRect!.height);
+		let width = Int(rect.width)
+		let height = Int(rect.height)
 		
-		self.window.controllerIO = self.controllerIO;
+		window.controllerIO = controllerIO
 		
 		// Set up Metal
-		self.device = MTLCreateSystemDefaultDevice();
+		device = MTLCreateSystemDefaultDevice()
+
+		guard let device = device else {
+			// Should never occur
+			print("ERROR: No device")
+			return
+		}
 		
-		self.metalView.device = self.device;
-		self.metalView.preferredFramesPerSecond = 60;
-		self.metalView.delegate = self;
+		metalView.device = device
+		metalView.preferredFramesPerSecond = 60
+		metalView.delegate = self
 		
-		self.metalView.drawableSize = CGSize(width: self.metalView.frame.size.width, height: self.metalView.frame.size.height);
+		metalView.drawableSize = metalView.frame.size
 		
-        self.commandQueue = self.device!.makeCommandQueue();
+        commandQueue = device.makeCommandQueue()
 		
-		self.textureLoader = MTKTextureLoader(device: self.device!);
+		textureLoader = MTKTextureLoader(device: device)
 		
-		self.threadGroups = MTLSizeMake((width+threadGroupCount.width)/threadGroupCount.width, (height+threadGroupCount.height)/threadGroupCount.height, 1);
+		threadGroups = MTLSizeMake((width + threadGroupCount.width)/threadGroupCount.width, (height + threadGroupCount.height)/threadGroupCount.height, 1)
 		
-		windowSetup();
+		windowSetup()
 		
-		self.metalView.draw();
+		metalView.draw()
     }
 	
 	func application(_ sender: NSApplication, openFile filename: String) -> Bool {
-		return loadROM(URL(fileURLWithPath: filename));
+		return loadROM(URL(fileURLWithPath: filename))
 	}
 	
 	// MARK: - Menu Controls
 	
 	@IBAction func openROM(_ sender: AnyObject) {
-		let openDialog = NSOpenPanel();
+		let openDialog = NSOpenPanel()
 		
-		self.paused = true;
+		paused = true
 		
 		if(openDialog.runModal() == NSFileHandlingPanelOKButton) {
-			let _ = loadROM(openDialog.url!);
+			let _ = loadROM(openDialog.url!)
 		}
 		
-		self.paused = !self.fileLoaded;
+		paused = !fileLoaded
 	}
 	
 	
 	@IBAction func playPauseEmulation(_ sender: AnyObject) {
-		if(!self.fileLoaded) {
-			return;
+		if(!fileLoaded) {
+			return
 		}
 		
-		self.paused = !self.paused;
+		paused = !paused
 		
 		// TODO: Handle AudioQueue when paused
-		if(self.paused) {
-			self.playPauseEmulationButton.title = "Resume Emulation";
+		if(paused) {
+			playPauseEmulationButton.title = "Resume Emulation"
 		} else {
-			self.playPauseEmulationButton.title = "Pause Emulation";
+			playPauseEmulationButton.title = "Pause Emulation"
 		}
 	}
 	
 	@IBAction func setRenderScale(_ sender: AnyObject) {
-		var tag = sender.tag;
-		
-		if(tag == nil || tag! < 1 || tag! > 3) {
-			tag = 1;
+		var tag = sender.tag
+		let scaleTag: Int
+
+		if let unwrappedTag = tag,
+			unwrappedTag > 1,
+			unwrappedTag < 3 {
+			scaleTag = unwrappedTag
+		} else {
+			scaleTag = 1
 		}
-		
-		self.scalingFactor = CGFloat(tag!);
-		if(self.ppu != nil) {
-			self.ppu!.setRenderScale(tag!);
-		}
-		
-		windowSetup();
+
+		scalingFactor = CGFloat(scaleTag)
+		ppu?.setRenderScale(scaleTag)
+
+		windowSetup()
 	}
 	
 	@IBAction func dumpPPUMemory(_ sender: AnyObject) {
-		self.ppu!.dumpMemory();
+		ppu?.dumpMemory()
 	}
 	
 	
 	override func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-		if(menuItem == self.playPauseEmulationButton) {
-			return self.fileLoaded;
+		if(menuItem == playPauseEmulationButton) {
+			return fileLoaded
 		}
 		
-		return true;
+		return true
 	}
 	
 	func loadROM(_ url: URL) -> Bool {
-		let mapper = Mapper();
+		guard let logger = logger else {
+			print("ERROR: Set up logger before attempting to load ROM")
+			return false
+		}
+
+		let mapper = Mapper()
 		
-		let mainMemory = CPUMemory(mapper: mapper);
-		mainMemory.controllerIO = controllerIO;
+		let mainMemory = CPUMemory(mapper: mapper)
+		mainMemory.controllerIO = controllerIO
 		
-		let ppuMemory = PPUMemory(mapper: mapper);
-		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory);
-		self.fileLoaded = fileIO.loadFile(url.path);
+		let ppuMemory = PPUMemory(mapper: mapper)
+		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory)
+		fileLoaded = fileIO.loadFile(url.path)
 		
-		if(!self.fileLoaded) {
-			return false;
+		if(!fileLoaded) {
+			return false
 		}
 		
-		NSDocumentController.shared().noteNewRecentDocumentURL(url);
+		NSDocumentController.shared().noteNewRecentDocumentURL(url)
 		
-		self.playPauseEmulationButton.isEnabled = true;
+		playPauseEmulationButton.isEnabled = true
 		
-		self.apu = APU(memory: mainMemory);
+		let apu = APU(memory: mainMemory)
+		self.apu = apu
 		
-		self.ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory);
-		self.ppu!.setRenderScale(Int(self.scalingFactor));
+		let ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory)
+		self.ppu = ppu
+		ppu.setRenderScale(Int(scalingFactor))
 		
-		mainMemory.ppu = self.ppu;
-		mainMemory.apu = self.apu;
+		mainMemory.ppu = ppu
+		mainMemory.apu = apu
 		
-		self.cpu = CPU(mainMemory: mainMemory, ppu: self.ppu!, apu: self.apu!, logger: self.logger!);
-		self.apu!.cpu = self.cpu!;
-		self.ppu!.cpu = self.cpu!;
+		let cpu = CPU(mainMemory: mainMemory, ppu: ppu, apu: apu, logger: logger)
+		self.cpu = cpu
+		apu.cpu = cpu
+		ppu.cpu = cpu
 		
-		self.cpu!.reset();
+		cpu.reset()
 		
-		initializeAudio();
+		initializeAudio(with: apu)
+
+		guard let queue = queue else {
+			return false
+		}
 		
-		AudioQueueStart(queue!, nil);
+		AudioQueueStart(queue, nil)
 		
-		self.paused = false;
+		paused = false
 		
-		return true;
+		return true
 	}
 	
 	// MARK: - Audio
 	
-	func initializeAudio() {
-		if(self.queue != nil) {
-			if(self.buffer != nil) {
-				AudioQueueFreeBuffer(self.queue!, self.buffer!);
+	func initializeAudio(with apu: APU) {
+		if let queue = queue {
+			if let buffer = buffer {
+				AudioQueueFreeBuffer(queue, buffer)
 			}
 			
-			if(self.buffer2 != nil) {
-				AudioQueueFreeBuffer(self.queue!, self.buffer2!);
+			if let buffer = buffer2 {
+				AudioQueueFreeBuffer(queue, buffer)
 			}
 			
-			AudioQueueDispose(self.queue!, true);
+			AudioQueueDispose(queue, true)
 		}
 		
-		AudioQueueNewOutput(&self.dataFormat, outputCallback, UnsafeMutableRawPointer(mutating: bridge(self.apu!)), CFRunLoopGetCurrent(), CFRunLoopMode.commonModes.rawValue, 0, &self.queue);
+		AudioQueueNewOutput(&dataFormat, outputCallback, UnsafeMutableRawPointer(mutating: bridge(apu)), CFRunLoopGetCurrent(), CFRunLoopMode.commonModes.rawValue, 0, &queue)
+
+		guard let queue = queue else {
+			print("ERROR: Failed to initialize queue")
+			return
+		}
 		
-		AudioQueueAllocateBuffer(self.queue!, self.bufferByteSize, &self.buffer);
-		AudioQueueAllocateBuffer(self.queue!, self.bufferByteSize, &self.buffer2);
+		AudioQueueAllocateBuffer(queue, bufferByteSize, &buffer)
+		AudioQueueAllocateBuffer(queue, bufferByteSize, &buffer2)
+
+		guard let buffer = buffer,
+			let buffer2 = buffer2 else {
+			print("ERROR: Failed to initialize buffers")
+			return
+		}
 		
-		outputCallback(UnsafeMutableRawPointer(mutating: bridge(self.apu!)), inAudioQueue: self.queue!, inBuffer: self.buffer!);
-		outputCallback(UnsafeMutableRawPointer(mutating: bridge(self.apu!)), inAudioQueue: self.queue!, inBuffer: self.buffer2!);
+		outputCallback(UnsafeMutableRawPointer(mutating: bridge(apu)), inAudioQueue: queue, inBuffer: buffer)
+		outputCallback(UnsafeMutableRawPointer(mutating: bridge(apu)), inAudioQueue: queue, inBuffer: buffer2)
 	}
 	
 	// MARK: - Graphics
 	
 	func render(_ screen: inout [UInt32]) {
-		let width = Int(256 * self.scalingFactor);
-		let height = Int(240 * self.scalingFactor);
+		let width = Int(256 * scalingFactor)
+		let height = Int(240 * scalingFactor)
 		
-		let bytesPerPixel = 4;
-		let bytesPerRow = width * bytesPerPixel;
+		let bytesPerPixel = 4
+		let bytesPerRow = width * bytesPerPixel
 		
-        self.metalView.currentDrawable!.texture.replace(region: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: UnsafeRawPointer(screen), bytesPerRow: bytesPerRow);
+        metalView.currentDrawable!.texture.replace(region: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: UnsafeRawPointer(screen), bytesPerRow: bytesPerRow)
 		
         let commandBuffer = commandQueue.makeCommandBuffer()
 		
@@ -304,9 +342,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 	
 	func applicationWillTerminate(_ aNotification: Notification) {
-		if(self.ppu != nil) {
-			self.logger!.endLogging();
-		}
+		logger?.endLogging()
     }
 
 	// MARK: - MTKViewDelegate
@@ -316,25 +352,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 
 	func draw(in view: MTKView) {
-		self.frameCount += 1;
-		let now  = getTimestamp();
-		let diff = now - self.lastFrameUpdate;
+		frameCount += 1
+		let now  = getTimestamp()
+		let diff = now - lastFrameUpdate
 		if diff >= 1000 {
-			let fps = (Double(self.frameCount) / diff) * 1000;
+			let fps = (Double(frameCount) / diff) * 1000
 			
-			self.window.title = String(format: "SwiftNES [%.0f]", fps);
+			window.title = String(format: "SwiftNES [%.0f]", fps)
 			
-			self.frameCount = 0;
-			self.lastFrameUpdate = now;
+			frameCount = 0
+			lastFrameUpdate = now
 		}
 		
-		if(!self.paused) {
-			while(self.cpu!.step()) {
-				if(self.ppu!.frameReady) {
-					self.ppu!.frameReady = false;
+		if(!paused) {
+			while cpu?.step() == true {
+				guard let ppu = ppu else {
+					break
+				}
+
+				if ppu.frameReady == true {
+					ppu.frameReady = false
 					
-					self.render(&self.ppu!.frame);
-					return;
+					render(&ppu.frame)
+					return
 				}
 			}
 		}
