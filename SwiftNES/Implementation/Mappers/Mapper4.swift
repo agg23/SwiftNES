@@ -12,7 +12,7 @@ final class Mapper4: Mapper {
 	
 	override var cpuMemory: CPUMemory! {
 		didSet {
-			prgBankLastOffset = cpuMemory.banks.count - 0x2000
+			prgBankLastOffset = UInt16(cpuMemory.banks.count - 0x2000)
 			
 			updateOffsets()
 		}
@@ -37,19 +37,19 @@ final class Mapper4: Mapper {
 	private var prgBank1: UInt8
 	private var prgBank2: UInt8
 	
-	private var prgBank0Offset: Int
-	private var prgBank1Offset: Int
-	private var prgBank2Offset: Int
-	private var prgBankLastOffset: Int
+	private var prgBank0Offset: UInt16
+	private var prgBank1Offset: UInt16
+	private var prgBank2Offset: UInt16
+	private var prgBankLastOffset: UInt16
 	
-	private var chrBank0Offset: Int
-	private var chrBank1Offset: Int
-	private var chrBank2Offset: Int
-	private var chrBank3Offset: Int
-	private var chrBank4Offset: Int
-	private var chrBank5Offset: Int
-	private var chrBank6Offset: Int
-	private var chrBank7Offset: Int
+	private var chrBank0Offset: UInt16
+	private var chrBank1Offset: UInt16
+	private var chrBank2Offset: UInt16
+	private var chrBank3Offset: UInt16
+	private var chrBank4Offset: UInt16
+	private var chrBank5Offset: UInt16
+	private var chrBank6Offset: UInt16
+	private var chrBank7Offset: UInt16
 	
 	private var selectedBank: Int
 	private var prgBankMode: Bool
@@ -222,34 +222,34 @@ final class Mapper4: Mapper {
 	
 	private func updateOffsets() {
 		if chrBankMode {
-			chrBank0Offset = Int(register2) * 0x400
-			chrBank1Offset = Int(register3) * 0x400
-			chrBank2Offset = Int(register4) * 0x400
-			chrBank3Offset = Int(register5) * 0x400
-			chrBank4Offset = Int(register0 & 0xFE) * 0x400
-			chrBank5Offset = Int(register0 | 0x1) * 0x400
-			chrBank6Offset = Int(register1 & 0xFE) * 0x400
-			chrBank7Offset = Int(register1 | 0x1) * 0x400
+			chrBank0Offset = UInt16(register2) * 0x400
+			chrBank1Offset = UInt16(register3) * 0x400
+			chrBank2Offset = UInt16(register4) * 0x400
+			chrBank3Offset = UInt16(register5) * 0x400
+			chrBank4Offset = UInt16(register0 & 0xFE) * 0x400
+			chrBank5Offset = UInt16(register0 | 0x1) * 0x400
+			chrBank6Offset = UInt16(register1 & 0xFE) * 0x400
+			chrBank7Offset = UInt16(register1 | 0x1) * 0x400
 		} else {
-			chrBank0Offset = Int(register0 & 0xFE) * 0x400
-			chrBank1Offset = Int(register0 | 0x1) * 0x400
-			chrBank2Offset = Int(register1 & 0xFE) * 0x400
-			chrBank3Offset = Int(register1 | 0x1) * 0x400
-			chrBank4Offset = Int(register2) * 0x400
-			chrBank5Offset = Int(register3) * 0x400
-			chrBank6Offset = Int(register4) * 0x400
-			chrBank7Offset = Int(register5) * 0x400
+			chrBank0Offset = UInt16(register0 & 0xFE) * 0x400
+			chrBank1Offset = UInt16(register0 | 0x1) * 0x400
+			chrBank2Offset = UInt16(register1 & 0xFE) * 0x400
+			chrBank3Offset = UInt16(register1 | 0x1) * 0x400
+			chrBank4Offset = UInt16(register2) * 0x400
+			chrBank5Offset = UInt16(register3) * 0x400
+			chrBank6Offset = UInt16(register4) * 0x400
+			chrBank7Offset = UInt16(register5) * 0x400
 		}
 		
 		if prgBankMode {
 			prgBank0Offset = prgBankLastOffset - 0x2000
-			prgBank2Offset = Int(register6) * 0x2000
+			prgBank2Offset = UInt16(register6) * 0x2000
 		} else {
-			prgBank0Offset = Int(register6) * 0x2000
+			prgBank0Offset = UInt16(register6) * 0x2000
 			prgBank2Offset = prgBankLastOffset - 0x2000
 		}
 		
-		prgBank1Offset = Int(register7) * 0x2000
+		prgBank1Offset = UInt16(register7) * 0x2000
 	}
 	
 	// MARK: - IRQ Handling

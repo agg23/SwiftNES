@@ -10,12 +10,12 @@ import Foundation
 
 final class Mapper2: Mapper {
 	
-	private var prgBank0Offset: Int
-	private var prgBank1Offset: Int
+	private var prgBank0Offset: UInt16
+	private var prgBank1Offset: UInt16
 	
 	override var cpuMemory: CPUMemory! {
 		didSet {
-			prgBank1Offset = cpuMemory.banks.count - 0x4000 - 0xC000
+			prgBank1Offset = UInt16(cpuMemory.banks.count - 0x4000 - 0xC000)
 		}
 	}
 	
@@ -56,6 +56,6 @@ final class Mapper2: Mapper {
 	}
 	
 	func bankSelect(_ data: UInt8) {
-		prgBank0Offset = (Int(data) & 0xF) * 0x4000
+		prgBank0Offset = (UInt16(data) & 0xF) * 0x4000
 	}
 }

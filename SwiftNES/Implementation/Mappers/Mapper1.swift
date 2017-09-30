@@ -48,14 +48,14 @@ final class Mapper1: Mapper {
 	private var prgBank: UInt8
 	private var prgRAMEnabled: Bool
 	
-	private var chrBank0Offset: Int
-	private var chrBank1Offset: Int
-	private var prgBank0Offset: Int
-	private var prgBank1Offset: Int
+	private var chrBank0Offset: UInt16
+	private var chrBank1Offset: UInt16
+	private var prgBank0Offset: UInt16
+	private var prgBank1Offset: UInt16
 	
 	override var cpuMemory: CPUMemory! {
 		didSet {
-			prgBank1Offset = cpuMemory.banks.count - 0x4000
+			prgBank1Offset = UInt16(cpuMemory.banks.count - 0x4000)
 		}
 	}
 	
@@ -66,7 +66,7 @@ final class Mapper1: Mapper {
 			if count == 0 {
 				chrBank1Offset = 0x1000
 			} else {
-				chrBank1Offset = ppuMemory.banks.count - 0x4000
+				chrBank1Offset = UInt16(ppuMemory.banks.count - 0x4000)
 			}
 		}
 	}
@@ -169,23 +169,23 @@ final class Mapper1: Mapper {
 	
 	private func updateOffsets() {
 		if chrRomBankMode {
-			chrBank0Offset = Int(chrBank0) * 0x1000
-			chrBank1Offset = Int(chrBank1) * 0x1000
+			chrBank0Offset = UInt16(chrBank0) * 0x1000
+			chrBank1Offset = UInt16(chrBank1) * 0x1000
 		} else {
-			chrBank0Offset = Int(chrBank0 & 0xFE) * 0x1000
+			chrBank0Offset = UInt16(chrBank0 & 0xFE) * 0x1000
 			chrBank1Offset = chrBank0Offset + 0x1000
 		}
 		
 		switch prgRomBankMode {
 			case 0, 1:
-				prgBank0Offset = Int(prgBank & 0xFE) * 0x4000
+				prgBank0Offset = UInt16(prgBank & 0xFE) * 0x4000
 				prgBank1Offset = prgBank0Offset + 0x4000
 			case 2:
 				prgBank0Offset = 0
-				prgBank1Offset = Int(prgBank) * 0x4000
+				prgBank1Offset = UInt16(prgBank) * 0x4000
 			case 3:
-				prgBank0Offset = Int(prgBank) * 0x4000
-				prgBank1Offset = cpuMemory.banks.count - 0x4000
+				prgBank0Offset = UInt16(prgBank) * 0x4000
+				prgBank1Offset = UInt16(cpuMemory.banks.count - 0x4000)
 			default:
 				break
 		}

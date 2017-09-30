@@ -9,22 +9,22 @@
 import Foundation
 
 final class Mapper9: Mapper {
-	private var prgBankOffset: Int
-	private var prgBankLastOffset: Int
+	private var prgBankOffset: UInt16
+	private var prgBankLastOffset: UInt16
 	
-	private var chrBank0Offset: Int
-	private var chrBank1Offset: Int
+	private var chrBank0Offset: UInt16
+	private var chrBank1Offset: UInt16
 	
 	private var latch0: Bool
 	private var latch1: Bool
-	private var chrBank0FD: Int
-	private var chrBank0FE: Int
-	private var chrBank1FD: Int
-	private var chrBank1FE: Int
+	private var chrBank0FD: UInt16
+	private var chrBank0FE: UInt16
+	private var chrBank1FD: UInt16
+	private var chrBank1FE: UInt16
 	
 	override var cpuMemory: CPUMemory! {
 		didSet {
-			prgBankLastOffset = cpuMemory.banks.count - 0x2000
+			prgBankLastOffset = UInt16(cpuMemory.banks.count - 0x2000)
 		}
 	}
 	
@@ -102,16 +102,16 @@ final class Mapper9: Mapper {
 			case 0xA000 ..< 0xB000:
 				setPRGBank(data)
 			case 0xB000 ..< 0xC000:
-				chrBank0FD = Int(data) & 0x1F
+				chrBank0FD = UInt16(data) & 0x1F
 				updateCHRBanks()
 			case 0xC000 ..< 0xD000:
-				chrBank0FE = Int(data) & 0x1F
+				chrBank0FE = UInt16(data) & 0x1F
 				updateCHRBanks()
 			case 0xD000 ..< 0xE000:
-				chrBank1FD = Int(data) & 0x1F
+				chrBank1FD = UInt16(data) & 0x1F
 				updateCHRBanks()
 			case 0xE000 ..< 0xF000:
-				chrBank1FE = Int(data) & 0x1F
+				chrBank1FE = UInt16(data) & 0x1F
 				updateCHRBanks()
 			case 0xF000 ... 0xFFFF:
 				setMirroring(data)
@@ -121,7 +121,7 @@ final class Mapper9: Mapper {
 	}
 	
 	func setPRGBank(_ data: UInt8) {
-		prgBankOffset = (Int(data) & 0xF) * 0x2000
+		prgBankOffset = (UInt16(data) & 0xF) * 0x2000
 	}
 	
 	func updateCHRBanks() {

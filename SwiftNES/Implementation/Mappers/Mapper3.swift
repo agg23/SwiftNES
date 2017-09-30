@@ -10,7 +10,7 @@ import Foundation
 
 final class Mapper3: Mapper {
 	
-	private var chrBankOffset: Int
+	private var chrBankOffset: UInt16
 	
 	override init() {
 		self.chrBankOffset = 0
@@ -45,6 +45,6 @@ final class Mapper3: Mapper {
 	}
 	
 	func bankSelect(_ data: UInt8) {
-		chrBankOffset = Int(data) * 0x2000
+		chrBankOffset = UInt16(data) * 0x2000
 	}
 }

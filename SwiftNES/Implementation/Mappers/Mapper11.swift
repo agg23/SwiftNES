@@ -9,8 +9,8 @@
 import Foundation
 
 final class Mapper11: Mapper {
-	private var prgBankOffset: Int
-	private var chrBankOffset: Int
+	private var prgBankOffset: UInt16
+	private var chrBankOffset: UInt16
 	
 	override init() {
 		prgBankOffset = 0
@@ -46,7 +46,7 @@ final class Mapper11: Mapper {
 	}
 	
 	func bankSelect(_ data: UInt8) {
-		prgBankOffset = (Int(data) & 0x3) * 0x8000
-		chrBankOffset = ((Int(data) & 0xF0) >> 4) * 0x2000
+		prgBankOffset = (UInt16(data) & 0x3) * 0x8000
+		chrBankOffset = ((UInt16(data) & 0xF0) >> 4) * 0x2000
 	}
 }

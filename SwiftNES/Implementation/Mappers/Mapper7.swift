@@ -9,7 +9,7 @@
 import Foundation
 
 final class Mapper7: Mapper {
-	private var prgBankOffset: Int
+	private var prgBankOffset: UInt16
 	
 	override init() {
 		prgBankOffset = 0
@@ -44,7 +44,7 @@ final class Mapper7: Mapper {
 	}
 	
 	func bankSelect(_ data: UInt8) {
-		prgBankOffset = (Int(data) & 0x7) * 0x8000
+		prgBankOffset = (UInt16(data) & 0x7) * 0x8000
 		
 		ppuMemory.oneScreenUpper = data & 0x10 == 0x10
 	}

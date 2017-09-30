@@ -633,9 +633,9 @@ final class PPU: NSObject {
 				} else if phaseIndex == 4 {
 					fetchNameTable()
 				} else if phaseIndex == 6 {
-					patternTableLow = ppuMemory.readMemory(spriteBaseAddress + (Int(spriteTileNumber) << 4) + spriteYShift)
+					patternTableLow = ppuMemory.readMemory(spriteBaseAddress + (UInt16(spriteTileNumber) << 4) + spriteYShift)
 				} else if phaseIndex == 0 {
-					patternTableHigh = ppuMemory.readMemory(spriteBaseAddress + (Int(spriteTileNumber) << 4) + spriteYShift + 8)
+					patternTableHigh = ppuMemory.readMemory(spriteBaseAddress + (UInt16(spriteTileNumber) << 4) + spriteYShift + 8)
 					
 					if getBit(6, pointer: &spriteAttributes) {
 						patternTableLow = reverseByte(patternTableLow)
@@ -696,7 +696,7 @@ final class PPU: NSObject {
 			
 			let patternValue = (attributeBits << 2) | (highBit << 1) | lowBit
 			
-			let paletteIndex = Int(ppuMemory.readPaletteMemory(0x10 + patternValue)) & 0x3F
+			let paletteIndex = Int(ppuMemory.readPaletteMemory(0x10 + UInt16(patternValue))) & 0x3F
 			
 			// First color each section of sprite palette is transparent
 			if patternValue & 0x3 == 0 {
