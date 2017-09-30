@@ -15,6 +15,7 @@ class SwiftNESTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
+		continueAfterFailure = false
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }
     
@@ -36,7 +37,7 @@ class SwiftNESTests: XCTestCase {
 		let ppuMemory = PPUMemory(mapper: mapper)
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory)
 		XCTAssert(fileIO.loadFile(path))
-		
+
 		let ppu = PPU(cpuMemory: mainMemory, ppuMemory: ppuMemory)
 		
 		let apu = APU(memory: mainMemory)
@@ -55,16 +56,10 @@ class SwiftNESTests: XCTestCase {
 		var instructionCount = 0
 		
 		while(cpu.step()) {
-			if(instructionCount > maxInstructions) {
-				XCTAssertGreaterThan(maxInstructions, instructionCount)
-				return
-			}
-			
-			if(cpu.errorOccured) {
-				XCTAssert(!cpu.errorOccured)
-				return
-			}
-			
+			XCTAssertGreaterThan(maxInstructions, instructionCount)
+
+			XCTAssert(!cpu.errorOccured)
+
 			let result = mainMemory.readMemory(testAddress)
 			
 			if(result == intermediary) {
