@@ -24,7 +24,7 @@ final class Mapper2: Mapper {
 		prgBank1Offset = 0
 	}
 	
-	override func read(_ address: Int) -> UInt8 {
+	override func read(_ address: UInt16) -> UInt8 {
 		switch address {
 			case 0x0000 ..< 0x2000:
 				return ppuMemory.banks[address]
@@ -32,7 +32,7 @@ final class Mapper2: Mapper {
 				print("Invalid mapper 2 address \(address)")
 			case 0x8000 ..< 0xC000:
 				return cpuMemory.banks[prgBank0Offset + address - 0x8000]
-			case 0xC000 ..< 0x10000:
+			case 0xC000 ... 0xFFFF:
 				// - 0xC000 performed in cpuMemory setter for optimization
 				return cpuMemory.banks[prgBank1Offset + address]
 			default:
@@ -42,13 +42,13 @@ final class Mapper2: Mapper {
 		return 0
 	}
 	
-	override func write(_ address: Int, data: UInt8) {
+	override func write(_ address: UInt16, data: UInt8) {
 		switch address {
 			case 0x0000 ..< 0x2000:
 				ppuMemory.banks[address] = data
 			case 0x2000 ..< 0x8000:
 				print("Invalid mapper 2 address \(address)")
-			case 0x8000 ..< 0x10000:
+			case 0x8000 ... 0xFFFF:
 				bankSelect(data)
 			default:
 				break

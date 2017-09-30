@@ -43,7 +43,7 @@ final class Mapper9: Mapper {
 		chrBank1FE = 0
 	}
 	
-	override func read(_ address: Int) -> UInt8 {
+	override func read(_ address: UInt16) -> UInt8 {
 		switch address {
 			case 0x0000 ..< 0x1000:
 				let temp = ppuMemory.banks[chrBank0Offset + address]
@@ -78,7 +78,7 @@ final class Mapper9: Mapper {
 				return cpuMemory.banks[prgBankLastOffset + address - 0xE000]
 			case 0xC000 ..< 0xE000:
 				return cpuMemory.banks[prgBankLastOffset + address - 0xE000]
-			case 0xE000 ..< 0x10000:
+			case 0xE000 ... 0xFFFF:
 				return cpuMemory.banks[prgBankLastOffset + address - 0xE000]
 			default:
 				break
@@ -87,7 +87,7 @@ final class Mapper9: Mapper {
 		return 0
 	}
 	
-	override func write(_ address: Int, data: UInt8) {
+	override func write(_ address: UInt16, data: UInt8) {
 		switch address {
 			case 0x0000 ..< 0x1000:
 				ppuMemory.banks[chrBank0Offset + address] = data
@@ -113,7 +113,7 @@ final class Mapper9: Mapper {
 			case 0xE000 ..< 0xF000:
 				chrBank1FE = Int(data) & 0x1F
 				updateCHRBanks()
-			case 0xF000 ..< 0xA0000:
+			case 0xF000 ... 0xFFFF:
 				setMirroring(data)
 			default:
 				break

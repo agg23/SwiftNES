@@ -150,7 +150,7 @@ final class PPU: NSObject {
 	*/
 	var PPUDATA: UInt8 {
 		didSet {
-			ppuMemory.writeMemory(Int(currentPPUADDRAddress), data: PPUDATA)
+			ppuMemory.writeMemory(currentPPUADDRAddress, data: PPUDATA)
 			
 			let temp = currentPPUADDRAddress
 			
@@ -294,8 +294,8 @@ final class PPU: NSObject {
 	private var spriteTileNumber: UInt8
 	private var spriteAttributes: UInt8
 	private var spriteXCoord: UInt8
-	private var spriteBaseAddress: Int
-	private var spriteYShift: Int
+	private var spriteBaseAddress: UInt16
+	private var spriteYShift: UInt16
 	
 	private var oamByte: UInt8
 	
@@ -587,7 +587,7 @@ final class PPU: NSObject {
 					spriteAttributes = secondaryOAM[secondaryOAMIndex + 2]
 					spriteXCoord = secondaryOAM[secondaryOAMIndex + 3]
 					
-					spriteYShift = scanline - Int(spriteYCoord)
+					spriteYShift = UInt16(scanline) - UInt16(spriteYCoord)
 					
 					if spriteYCoord == 0xFF {
 						spriteYShift = 0
@@ -766,7 +766,7 @@ final class PPU: NSObject {
 			patternValue = 0
 		}
 		
-		let paletteIndex = Int(ppuMemory.readPaletteMemory(patternValue)) & 0x3F
+		let paletteIndex = Int(ppuMemory.readPaletteMemory(UInt16(patternValue))) & 0x3F
 		
 		let color = colors[paletteIndex]
 		
@@ -785,39 +785,38 @@ final class PPU: NSObject {
 	
 	func fetchNameTable() {
 		// Fetch Name Table
-		nameTable = ppuMemory.readMemory(0x2000 | (Int(currentVramAddress) & 0x0FFF))
+		nameTable = ppuMemory.readMemory(0x2000 | (currentVramAddress & 0x0FFF))
 	}
 	
 	func fetchAttributeTable() {
 		// Fetch Attribute Table
-		let currentVramAddress = Int(self.currentVramAddress)
 		attributeTable = ppuMemory.readMemory(0x23C0 | (currentVramAddress & 0x0C00) | ((currentVramAddress >> 4) & 0x38) | ((currentVramAddress >> 2) & 0x07))
 	}
 	
 	func fetchLowPatternTable() {
 		// Fetch lower Pattern Table byte
-		var basePatternTableAddress = 0x0000
+		var basePatternTableAddress: UInt16 = 0x0
 		
 		if backgroundPatternTableAddress {
 			basePatternTableAddress = 0x1000
 		}
 		
-		let fineY = (Int(currentVramAddress) >> 12) & 7
+		let fineY = (currentVramAddress >> 12) & 7
 		
-		patternTableLow = ppuMemory.readMemory(basePatternTableAddress + (Int(nameTable) << 4) + fineY)
+		patternTableLow = ppuMemory.readMemory(basePatternTableAddress + (UInt16(nameTable) << 4) + fineY)
 	}
 	
 	func fetchHighPatternTable() {
 		// Fetch upper Pattern Table byte
-		var basePatternTableAddress = 0x0008
+		var basePatternTableAddress: UInt16 = 0x8
 		
 		if backgroundPatternTableAddress {
 			basePatternTableAddress = 0x1008
 		}
 		
-		let fineY = (Int(currentVramAddress) >> 12) & 7
+		let fineY = (currentVramAddress >> 12) & 7
 		
-		patternTableHigh = ppuMemory.readMemory(basePatternTableAddress + (Int(nameTable) << 4) + fineY)
+		patternTableHigh = ppuMemory.readMemory(basePatternTableAddress + (UInt16(nameTable) << 4) + fineY)
 	}
 	
 	func fetchSprite() {
@@ -932,7 +931,7 @@ final class PPU: NSObject {
 		currentVramAddress = (currentVramAddress & 0xFBE0) | (tempVramAddress & 0x041F)
 	}
 	
-	func writeDMA(_ address: Int, data: UInt8) {
+	func writeDMA(_ address: UInt16, data: UInt8) {
 		oamMemory[address] = data
 	}
 	
@@ -1032,14 +1031,14 @@ final class PPU: NSObject {
 	
 	func readPPUDATA() -> UInt8 {
 		// TODO: Switch back to currentVramAddress
-		var value = ppuMemory.readMemory(Int(currentPPUADDRAddress))
+		var value = ppuMemory.readMemory(currentPPUADDRAddress)
 		
 		if currentPPUADDRAddress % 0x4000 < 0x3F00 {
 			let buffered = ppuDataReadBuffer
 			ppuDataReadBuffer = value
 			value = buffered
 		} else {
-			ppuDataReadBuffer = ppuMemory.readMemory(Int(currentPPUADDRAddress) - 0x1000)
+			ppuDataReadBuffer = ppuMemory.readMemory(currentPPUADDRAddress - 0x1000)
 //			value = (self.ppuDataReadBuffer & 0x3F) | (self.lastWrittenRegisterValue & 0xC0)
 		}
 		

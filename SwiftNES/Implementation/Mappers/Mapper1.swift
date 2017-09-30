@@ -90,7 +90,7 @@ final class Mapper1: Mapper {
 		prgBank1Offset = 0
 	}
 	
-	override func read(_ address: Int) -> UInt8 {
+	override func read(_ address: UInt16) -> UInt8 {
 		switch address {
 			case 0x0000 ..< 0x1000:
 				return ppuMemory.banks[chrBank0Offset + address]
@@ -106,7 +106,7 @@ final class Mapper1: Mapper {
 				}
 			case 0x8000 ..< 0xC000:
 				return self.cpuMemory.banks[prgBank0Offset + address - 0x8000]
-			case 0xC000 ..< 0x10000:
+			case 0xC000 ... 0xFFFF:
 				return self.cpuMemory.banks[prgBank1Offset + address - 0xC000]
 			default:
 				break
@@ -115,7 +115,7 @@ final class Mapper1: Mapper {
 		return 0
 	}
 	
-	override func write(_ address: Int, data: UInt8) {
+	override func write(_ address: UInt16, data: UInt8) {
 		switch(address) {
 			case 0x0000 ..< 0x1000:
 				ppuMemory.banks[chrBank0Offset + address] = data
@@ -125,14 +125,14 @@ final class Mapper1: Mapper {
 				print("Invalid mapper 1 address \(address)")
 			case 0x6000 ..< 0x8000:
 				cpuMemory.sram[address - 0x6000] = data
-			case 0x8000 ..< 0x10000:
+			case 0x8000 ... 0xFFFF:
 				updateShiftRegister(address, data: data)
 			default:
 				break
 		}
 	}
 	
-	private func updateShiftRegister(_ address: Int, data: UInt8) {
+	private func updateShiftRegister(_ address: UInt16, data: UInt8) {
 		if data & 0x80 == 0x80 {
 			shiftRegister = 0x10
 			control = control | 0x0C
@@ -148,7 +148,7 @@ final class Mapper1: Mapper {
 		}
 	}
 	
-	private func writeInternalRegister(_ address: Int, data: UInt8) {
+	private func writeInternalRegister(_ address: UInt16, data: UInt8) {
 		if address < 0xA000 {
 			// Control
 			control = shiftRegister

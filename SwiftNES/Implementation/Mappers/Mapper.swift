@@ -23,7 +23,7 @@ class Mapper {
 		prgBankCount = 0
 	}
 	
-	func read(_ address: Int) -> UInt8 {
+	func read(_ address: UInt16) -> UInt8 {
 		switch address {
 			case 0x0000 ..< 0x1000:
 				return ppuMemory.banks[address]
@@ -36,7 +36,7 @@ class Mapper {
 				return cpuMemory.sram[address - 0x6000]
 			case 0x8000 ..< 0xC000:
 				return cpuMemory.banks[address - 0x8000]
-			case 0xC000 ..< 0x10000:
+			case 0xC000 ... 0xFFFF:
 				return cpuMemory.banks[address - 0x8000]
 			default:
 				break
@@ -45,7 +45,7 @@ class Mapper {
 		return 0
 	}
 	
-	func write(_ address: Int, data: UInt8) {
+	func write(_ address: UInt16, data: UInt8) {
 		switch(address) {
 			case 0x0000 ..< 0x1000:
 				ppuMemory.banks[address] = data
@@ -58,7 +58,7 @@ class Mapper {
 				cpuMemory.sram[address - 0x6000] = data
 			case 0x8000 ..< 0xC000:
 				cpuMemory.banks[address - 0x8000] = data
-			case 0xC000 ..< 0x10000:
+			case 0xC000 ... 0xFFFF:
 				cpuMemory.banks[address - 0x8000] = data
 			default:
 				break

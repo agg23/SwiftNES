@@ -19,6 +19,7 @@
 		6653454C1CF5F56C0066550A /* Mapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6653454B1CF5F56C0066550A /* Mapper.swift */; };
 		6659408D1CC117D900BEA04C /* ControllerIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6659408C1CC117D900BEA04C /* ControllerIO.swift */; };
 		665940911CC11CD300BEA04C /* DisplayWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665940901CC11CD300BEA04C /* DisplayWindow.swift */; };
+		665F33E11F7FE01E00A24DAE /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665F33E01F7FE01E00A24DAE /* Utility.swift */; };
 		666146AE1CA347300022C10D /* Memory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AD1CA347300022C10D /* Memory.swift */; };
 		666146B01CA34BC40022C10D /* FileIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AF1CA34BC40022C10D /* FileIO.swift */; };
 		6675823B1D330E7F003C04D2 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6675823A1D330E7F003C04D2 /* QuartzCore.framework */; };
@@ -84,6 +85,7 @@
 		6653454B1CF5F56C0066550A /* Mapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper.swift; path = Implementation/Mappers/Mapper.swift; sourceTree = "<group>"; };
 		6659408C1CC117D900BEA04C /* ControllerIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ControllerIO.swift; path = Implementation/ControllerIO.swift; sourceTree = "<group>"; };
 		665940901CC11CD300BEA04C /* DisplayWindow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DisplayWindow.swift; sourceTree = "<group>"; };
+		665F33E01F7FE01E00A24DAE /* Utility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Utility.swift; path = Implementation/Utility.swift; sourceTree = "<group>"; };
 		666146AD1CA347300022C10D /* Memory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Memory.swift; path = Implementation/Memory.swift; sourceTree = "<group>"; };
 		666146AF1CA34BC40022C10D /* FileIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FileIO.swift; path = Implementation/FileIO.swift; sourceTree = "<group>"; };
 		6675823A1D330E7F003C04D2 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS10.0.sdk/System/Library/Frameworks/QuartzCore.framework; sourceTree = DEVELOPER_DIR; };
@@ -219,6 +221,7 @@
 				668B05F11CE1515600315BCD /* APUChannels.swift */,
 				668B05F31CE28D4500315BCD /* APUBuffer.swift */,
 				6653454A1CF5F53B0066550A /* Mappers */,
+				665F33E01F7FE01E00A24DAE /* Utility.swift */,
 			);
 			name = Implementation;
 			sourceTree = "<group>";
@@ -399,6 +402,7 @@
 				6613873F1CFCD80700564AE3 /* Mapper2.swift in Sources */,
 				66A9C4531CA2EF6F00936DBC /* CPU.swift in Sources */,
 				66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */,
+				665F33E11F7FE01E00A24DAE /* Utility.swift in Sources */,
 				665940911CC11CD300BEA04C /* DisplayWindow.swift in Sources */,
 				666146B01CA34BC40022C10D /* FileIO.swift in Sources */,
 				668B05F41CE28D4500315BCD /* APUBuffer.swift in Sources */,

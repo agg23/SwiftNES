@@ -474,11 +474,11 @@ final class DMC {
 	
 	var address: UInt8 {
 		didSet {
-			currentAddress = 0xC000 | (Int(address) << 6)
+			currentAddress = 0xC000 | (UInt16(address) << 6)
 		}
 	}
 	
-	private var currentAddress: Int
+	private var currentAddress: UInt16
 	
 	var sampleLength: UInt8 {
 		didSet {
@@ -525,7 +525,7 @@ final class DMC {
 	}
 	
 	func restart() {
-		currentAddress = 0xC000 | (Int(address) << 6)
+		currentAddress = 0xC000 | (UInt16(address) << 6)
 		sampleLengthRemaining = (UInt16(sampleLength) << 4) | 1
 	}
 	

@@ -24,7 +24,7 @@ class SwiftNESTests: XCTestCase {
         super.tearDown()
     }
 	
-	func romTest(_ path: String, testAddress: Int, desiredResult: UInt8, intermediary: UInt8, maxInstructions: Int) {
+	func romTest(_ path: String, testAddress: UInt16, desiredResult: UInt8, intermediary: UInt8, maxInstructions: Int) {
 		let logger = Logger(path: "/Users/adam/nestesting.log")
 		
 		let controllerIO = ControllerIO()

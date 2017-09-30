@@ -314,7 +314,7 @@ final class APU {
 	
 	// MARK: - APU Register Access
 	
-	func cpuWrite(_ address: Int, data: UInt8) {
+	func cpuWrite(_ address: UInt16, data: UInt8) {
 		switch(address) {
 			case 0x4000:
 				square1.control = data
@@ -373,7 +373,7 @@ final class APU {
 		}
 	}
 	
-	func cpuRead(_ address: Int) -> UInt8 {
+	func cpuRead(_ address: UInt16) -> UInt8 {
 		if address == 0x4015 {
 			var temp: UInt8 = (square1.lengthCounterLoad == 0 || !square1Enable) ? 0 : 1
 			temp |= (square2.lengthCounterLoad == 0 || !square2Enable) ? 0 : 0x2

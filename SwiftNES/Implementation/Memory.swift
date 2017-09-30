@@ -58,19 +58,19 @@ class Memory {
 		setMapper(mapper)
 	}
 	
-	func readMemory(_ address: Int) -> UInt8 {
+	func readMemory(_ address: UInt16) -> UInt8 {
 		return 0
 	}
 	
-	final func readTwoBytesMemory(_ address: Int) -> UInt16 {
+	final func readTwoBytesMemory(_ address: UInt16) -> UInt16 {
 		return UInt16(readMemory(address + 1)) << 8 | UInt16(readMemory(address))
 	}
 	
-	func writeMemory(_ address: Int, data: UInt8) {
+	func writeMemory(_ address: UInt16, data: UInt8) {
 		fatalError("writeMemory function not overriden")
 	}
 	
-    final func writeTwoBytesMemory(_ address: Int, data: UInt16) {
+    final func writeTwoBytesMemory(_ address: UInt16, data: UInt16) {
         writeMemory(address, data: UInt8(data & 0xFF))
         writeMemory(address + 1, data: UInt8((data & 0xFF00) >> 8))
     }
@@ -118,7 +118,7 @@ final class PPUMemory: Memory {
 	var nametableMirroring: NametableMirroringType = .oneScreen
 	var oneScreenUpper: Bool
 	
-	private var previousAddress: Int
+	private var previousAddress: UInt16
 	var a12Timer: Int
 	
 	override init(mapper: Mapper) {
@@ -135,7 +135,7 @@ final class PPUMemory: Memory {
 		self.mapper = mapper
 	}
 	
-	final override func readMemory(_ address: Int) -> UInt8 {
+	final override func readMemory(_ address: UInt16) -> UInt8 {
 		var address = address % 0x4000
 		
 		if address & 0x1000 == 0x1000 && previousAddress & 0x1000 == 0 {
@@ -175,7 +175,7 @@ final class PPUMemory: Memory {
 		return nametable[address - 0x2000]
 	}
 	
-	final override func writeMemory(_ address: Int, data: UInt8) {
+	final override func writeMemory(_ address: UInt16, data: UInt8) {
 		var address = address % 0x4000
 		
 		if address & 0x1000 == 0x1000 && previousAddress & 0x1000 == 0 {
@@ -222,7 +222,7 @@ final class PPUMemory: Memory {
 		nametable[address - 0x2000] = data
 	}
 	
-	func readPaletteMemory(_ address: Int) -> UInt8 {
+	func readPaletteMemory(_ address: UInt16) -> UInt8 {
 		var address = address % 0x20
 		
 		if address >= 0x10 && address < 0x20 && address & 0x3 == 0 {
@@ -287,7 +287,7 @@ final class CPUMemory: Memory {
 		self.mapper = mapper
 	}
 	
-	final override func readMemory(_ address: Int) -> UInt8 {
+	final override func readMemory(_ address: UInt16) -> UInt8 {
 		if address < 0x2000 {
 			return ram[address % 0x800]
 		} else if address < 0x4000 {
@@ -332,14 +332,14 @@ final class CPUMemory: Memory {
 		return mapper.read(address)
 	}
 	
-	final override func writeMemory(_ address: Int, data: UInt8) {
+	final override func writeMemory(_ address: UInt16, data: UInt8) {
 		var address = address
 		
 		if address < 0x2000 {
 			ram[address % 0x800] = data
 			return
 		} else if address < 0x4000 {
-			ppu?.cpuWrite(address % 8, data: data)
+			ppu?.cpuWrite(Int(address % 8), data: data)
 			return
 		} else if address == 0x4014 {
 			ppu?.OAMDMA = data

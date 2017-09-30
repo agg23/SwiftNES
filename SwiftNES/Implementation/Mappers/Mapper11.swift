@@ -17,13 +17,13 @@ final class Mapper11: Mapper {
 		chrBankOffset = 0
 	}
 	
-	override func read(_ address: Int) -> UInt8 {
+	override func read(_ address: UInt16) -> UInt8 {
 		switch address {
 			case 0x0000 ..< 0x2000:
 				return ppuMemory.banks[chrBankOffset + address]
 			case 0x2000 ..< 0x8000:
 				print("Invalid mapper 11 address \(address)")
-			case 0x8000 ..< 0x10000:
+			case 0x8000 ... 0xFFFF:
 				return cpuMemory.banks[prgBankOffset + address - 0x8000]
 			default:
 				break
@@ -32,13 +32,13 @@ final class Mapper11: Mapper {
 		return 0
 	}
 	
-	override func write(_ address: Int, data: UInt8) {
+	override func write(_ address: UInt16, data: UInt8) {
 		switch address {
 			case 0x0000 ..< 0x2000:
 				ppuMemory.banks[chrBankOffset + address] = data
 			case 0x2000 ..< 0x8000:
 				print("Invalid mapper 11 address \(address)")
-			case 0x8000 ..< 0x10000:
+			case 0x8000 ... 0xFFFF:
 				bankSelect(data)
 			default:
 				break
