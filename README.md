@@ -1,4 +1,5 @@
 <p align="center"><img src="../../wiki/images/swiftneslogo.png" alt="SwiftNES"/></p>
+
 # SwiftNES - The Accurate Swift NES Emulator
 SwiftNES is a NES emulator aiming to be one of the most accurate in existence, using Apple's latest technologies Swift and Metal.
 SwiftNES uses all original code, as I wanted to write the emulator from scratch. As such, certain design decisions were made that I now know were not optimal.
