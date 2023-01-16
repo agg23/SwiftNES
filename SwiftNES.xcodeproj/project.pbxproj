@@ -26,7 +26,6 @@
 		66796ECA1CDCD2F80015E810 /* APU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66796EC91CDCD2F80015E810 /* APU.swift */; };
 		668B05F21CE1515600315BCD /* APUChannels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668B05F11CE1515600315BCD /* APUChannels.swift */; };
 		668B05F41CE28D4500315BCD /* APUBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668B05F31CE28D4500315BCD /* APUBuffer.swift */; };
-		668CB6BA1D71F1A300E74FCF /* smb3.nes in Resources */ = {isa = PBXBuildFile; fileRef = 668CB6B91D71F1A300E74FCF /* smb3.nes */; };
 		668CB6BC1D72104100E74FCF /* MacControllerIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668CB6BB1D72104100E74FCF /* MacControllerIO.swift */; };
 		668CB6C01D73298A00E74FCF /* iOSControllerIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668CB6BF1D73298A00E74FCF /* iOSControllerIO.swift */; };
 		66A9C4371CA2EF3800936DBC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A9C4361CA2EF3800936DBC /* AppDelegate.swift */; };
@@ -92,7 +91,6 @@
 		66796EC91CDCD2F80015E810 /* APU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APU.swift; path = Implementation/APU.swift; sourceTree = "<group>"; };
 		668B05F11CE1515600315BCD /* APUChannels.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APUChannels.swift; path = Implementation/APUChannels.swift; sourceTree = "<group>"; };
 		668B05F31CE28D4500315BCD /* APUBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APUBuffer.swift; path = Implementation/APUBuffer.swift; sourceTree = "<group>"; };
-		668CB6B91D71F1A300E74FCF /* smb3.nes */ = {isa = PBXFileReference; lastKnownFileType = file; name = smb3.nes; path = ../../../testROMs/games/smb3.nes; sourceTree = "<group>"; };
 		668CB6BB1D72104100E74FCF /* MacControllerIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = MacControllerIO.swift; path = Implementation/MacControllerIO.swift; sourceTree = "<group>"; };
 		668CB6BF1D73298A00E74FCF /* iOSControllerIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iOSControllerIO.swift; sourceTree = "<group>"; };
 		66A9C4331CA2EF3800936DBC /* SwiftNES.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftNES.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -236,7 +234,6 @@
 				66C0E7FE1D171FE3008F6C3D /* Assets.xcassets */,
 				66C0E8001D171FE3008F6C3D /* LaunchScreen.storyboard */,
 				66C0E8031D171FE3008F6C3D /* Info.plist */,
-				668CB6B91D71F1A300E74FCF /* smb3.nes */,
 			);
 			path = "SwiftNES-iOS";
 			sourceTree = "<group>";
@@ -338,6 +335,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 				Base,
 			);
@@ -375,7 +373,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				66C0E8021D171FE3008F6C3D /* LaunchScreen.storyboard in Resources */,
-				668CB6BA1D71F1A300E74FCF /* smb3.nes in Resources */,
 				66C0E7FF1D171FE3008F6C3D /* Assets.xcassets in Resources */,
 				66C0E7FD1D171FE3008F6C3D /* Main.storyboard in Resources */,
 			);
@@ -529,6 +526,7 @@
 				SDKROOT = macosx;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = none;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -571,6 +569,7 @@
 				SWIFT_DISABLE_SAFETY_CHECKS = YES;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = none;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -587,7 +586,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.appcannon.SwiftNES;
 				PRODUCT_NAME = SwiftNES;
 				SWIFT_DISABLE_SAFETY_CHECKS = YES;
-				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -606,7 +604,6 @@
 				PRODUCT_NAME = SwiftNES;
 				SWIFT_DISABLE_SAFETY_CHECKS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
-				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
@@ -655,7 +652,6 @@
 				PROVISIONING_PROFILE_SPECIFIER = "Provisioning Profile";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_VERSION = 3.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -676,7 +672,6 @@
 				PROVISIONING_PROFILE = "58860516-5541-401d-b7b6-352ee966f14b";
 				PROVISIONING_PROFILE_SPECIFIER = "Provisioning Profile";
 				SDKROOT = iphoneos;
-				SWIFT_VERSION = 3.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};

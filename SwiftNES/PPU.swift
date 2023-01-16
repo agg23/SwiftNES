@@ -587,7 +587,7 @@ final class PPU: NSObject {
 					spriteAttributes = secondaryOAM[secondaryOAMIndex + 2]
 					spriteXCoord = secondaryOAM[secondaryOAMIndex + 3]
 					
-					spriteYShift = UInt16(scanline) - UInt16(spriteYCoord)
+					spriteYShift = UInt16(bitPattern: Int16(scanline) - Int16(spriteYCoord))
 					
 					if spriteYCoord == 0xFF {
 						spriteYShift = 0
