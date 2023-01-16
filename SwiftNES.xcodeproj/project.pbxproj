@@ -59,6 +59,7 @@
 		66C0E80B1D172024008F6C3D /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66C0E8091D172024008F6C3D /* MetalKit.framework */; };
 		66E186901CADB97300EFF583 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E1868F1CADB97300EFF583 /* Logger.swift */; };
 		66F46AB91CB039B9005B637E /* PPU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F46AB81CB039B9005B637E /* PPU.swift */; };
+		A2EA39012975E3BF00DA3D91 /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665F33E01F7FE01E00A24DAE /* Utility.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -435,6 +436,7 @@
 				668CB6C01D73298A00E74FCF /* iOSControllerIO.swift in Sources */,
 				66B2A31E1D1721ED00538CC1 /* Logger.swift in Sources */,
 				66B2A3221D1721ED00538CC1 /* APUBuffer.swift in Sources */,
+				A2EA39012975E3BF00DA3D91 /* Utility.swift in Sources */,
 				66B2A3211D1721ED00538CC1 /* APUChannels.swift in Sources */,
 				66C0E7F81D171FE3008F6C3D /* AppDelegate.swift in Sources */,
 				66B2A3201D1721ED00538CC1 /* APU.swift in Sources */,
