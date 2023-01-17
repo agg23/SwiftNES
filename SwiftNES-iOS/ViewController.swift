@@ -150,7 +150,7 @@ class ViewController: UIViewController, MTKViewDelegate {
 		
 		let ppuMemory = PPUMemory(mapper: mapper)
 		let fileIO = FileIO(mainMemory: mainMemory, ppuMemory: ppuMemory)
-		fileIO.loadFile(url.path)
+		let _ = fileIO.loadFile(url.path)
 		
 //		NSDocumentController.shared().noteNewRecentDocumentURL(url)
 		
@@ -253,7 +253,7 @@ class ViewController: UIViewController, MTKViewDelegate {
 		let now  = getTimestamp()
 		let diff = now - lastFrameUpdate
 		if diff >= 1000 {
-			let fps = (Double(frameCount) / diff) * 1000
+			let _ = (Double(frameCount) / diff) * 1000
 			
 //			self.window.title = String(format: "SwiftNES [%.0f]", fps)
 			

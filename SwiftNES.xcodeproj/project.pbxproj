@@ -13,8 +13,6 @@
 		661387451CFD09DB00564AE3 /* Mapper9.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661387441CFD09DB00564AE3 /* Mapper9.swift */; };
 		661387491CFD2F8500564AE3 /* Mapper11.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661387481CFD2F8500564AE3 /* Mapper11.swift */; };
 		6613874B1CFDDFF100564AE3 /* Mapper4.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6613874A1CFDDFF100564AE3 /* Mapper4.swift */; };
-		664032B61CC0317B00FF7C6B /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 664032B41CC0317B00FF7C6B /* Metal.framework */; };
-		664032B71CC0317B00FF7C6B /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 664032B51CC0317B00FF7C6B /* MetalKit.framework */; };
 		665345491CF5F5370066550A /* Mapper1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665345481CF5F5370066550A /* Mapper1.swift */; };
 		6653454C1CF5F56C0066550A /* Mapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6653454B1CF5F56C0066550A /* Mapper.swift */; };
 		6659408D1CC117D900BEA04C /* ControllerIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6659408C1CC117D900BEA04C /* ControllerIO.swift */; };
@@ -22,7 +20,6 @@
 		665F33E11F7FE01E00A24DAE /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665F33E01F7FE01E00A24DAE /* Utility.swift */; };
 		666146AE1CA347300022C10D /* Memory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AD1CA347300022C10D /* Memory.swift */; };
 		666146B01CA34BC40022C10D /* FileIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666146AF1CA34BC40022C10D /* FileIO.swift */; };
-		6675823B1D330E7F003C04D2 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6675823A1D330E7F003C04D2 /* QuartzCore.framework */; };
 		66796ECA1CDCD2F80015E810 /* APU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66796EC91CDCD2F80015E810 /* APU.swift */; };
 		668B05F21CE1515600315BCD /* APUChannels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668B05F11CE1515600315BCD /* APUChannels.swift */; };
 		668B05F41CE28D4500315BCD /* APUBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668B05F31CE28D4500315BCD /* APUBuffer.swift */; };
@@ -55,8 +52,6 @@
 		66C0E7FD1D171FE3008F6C3D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 66C0E7FB1D171FE3008F6C3D /* Main.storyboard */; };
 		66C0E7FF1D171FE3008F6C3D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 66C0E7FE1D171FE3008F6C3D /* Assets.xcassets */; };
 		66C0E8021D171FE3008F6C3D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 66C0E8001D171FE3008F6C3D /* LaunchScreen.storyboard */; };
-		66C0E80A1D172024008F6C3D /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66C0E8081D172024008F6C3D /* Metal.framework */; };
-		66C0E80B1D172024008F6C3D /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66C0E8091D172024008F6C3D /* MetalKit.framework */; };
 		66E186901CADB97300EFF583 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E1868F1CADB97300EFF583 /* Logger.swift */; };
 		66F46AB91CB039B9005B637E /* PPU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F46AB81CB039B9005B637E /* PPU.swift */; };
 		A2EA39012975E3BF00DA3D91 /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665F33E01F7FE01E00A24DAE /* Utility.swift */; };
@@ -79,8 +74,6 @@
 		661387441CFD09DB00564AE3 /* Mapper9.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper9.swift; path = Implementation/Mappers/Mapper9.swift; sourceTree = "<group>"; };
 		661387481CFD2F8500564AE3 /* Mapper11.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper11.swift; path = Implementation/Mappers/Mapper11.swift; sourceTree = "<group>"; };
 		6613874A1CFDDFF100564AE3 /* Mapper4.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper4.swift; path = Implementation/Mappers/Mapper4.swift; sourceTree = "<group>"; };
-		664032B41CC0317B00FF7C6B /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
-		664032B51CC0317B00FF7C6B /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		665345481CF5F5370066550A /* Mapper1.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper1.swift; path = Implementation/Mappers/Mapper1.swift; sourceTree = "<group>"; };
 		6653454B1CF5F56C0066550A /* Mapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Mapper.swift; path = Implementation/Mappers/Mapper.swift; sourceTree = "<group>"; };
 		6659408C1CC117D900BEA04C /* ControllerIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ControllerIO.swift; path = Implementation/ControllerIO.swift; sourceTree = "<group>"; };
@@ -88,7 +81,6 @@
 		665F33E01F7FE01E00A24DAE /* Utility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Utility.swift; path = Implementation/Utility.swift; sourceTree = "<group>"; };
 		666146AD1CA347300022C10D /* Memory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Memory.swift; path = Implementation/Memory.swift; sourceTree = "<group>"; };
 		666146AF1CA34BC40022C10D /* FileIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FileIO.swift; path = Implementation/FileIO.swift; sourceTree = "<group>"; };
-		6675823A1D330E7F003C04D2 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS10.0.sdk/System/Library/Frameworks/QuartzCore.framework; sourceTree = DEVELOPER_DIR; };
 		66796EC91CDCD2F80015E810 /* APU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APU.swift; path = Implementation/APU.swift; sourceTree = "<group>"; };
 		668B05F11CE1515600315BCD /* APUChannels.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APUChannels.swift; path = Implementation/APUChannels.swift; sourceTree = "<group>"; };
 		668B05F31CE28D4500315BCD /* APUBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = APUBuffer.swift; path = Implementation/APUBuffer.swift; sourceTree = "<group>"; };
@@ -110,8 +102,6 @@
 		66C0E7FE1D171FE3008F6C3D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		66C0E8011D171FE3008F6C3D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		66C0E8031D171FE3008F6C3D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		66C0E8081D172024008F6C3D /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS10.0.sdk/System/Library/Frameworks/Metal.framework; sourceTree = DEVELOPER_DIR; };
-		66C0E8091D172024008F6C3D /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS10.0.sdk/System/Library/Frameworks/MetalKit.framework; sourceTree = DEVELOPER_DIR; };
 		66E1868F1CADB97300EFF583 /* Logger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Logger.swift; path = Implementation/Logger.swift; sourceTree = "<group>"; };
 		66F46AB81CB039B9005B637E /* PPU.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PPU.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -121,8 +111,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				664032B61CC0317B00FF7C6B /* Metal.framework in Frameworks */,
-				664032B71CC0317B00FF7C6B /* MetalKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -137,9 +125,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6675823B1D330E7F003C04D2 /* QuartzCore.framework in Frameworks */,
-				66C0E80A1D172024008F6C3D /* Metal.framework in Frameworks */,
-				66C0E80B1D172024008F6C3D /* MetalKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,13 +149,10 @@
 		66A9C42A1CA2EF3800936DBC = {
 			isa = PBXGroup;
 			children = (
-				664032B41CC0317B00FF7C6B /* Metal.framework */,
-				664032B51CC0317B00FF7C6B /* MetalKit.framework */,
 				66A9C4351CA2EF3800936DBC /* SwiftNES */,
 				66A9C4451CA2EF3800936DBC /* SwiftNESTests */,
 				66C0E7F61D171FE3008F6C3D /* SwiftNES-iOS */,
 				66A9C4341CA2EF3800936DBC /* Products */,
-				66C0E8071D172024008F6C3D /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -239,16 +221,6 @@
 			path = "SwiftNES-iOS";
 			sourceTree = "<group>";
 		};
-		66C0E8071D172024008F6C3D /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				6675823A1D330E7F003C04D2 /* QuartzCore.framework */,
-				66C0E8081D172024008F6C3D /* Metal.framework */,
-				66C0E8091D172024008F6C3D /* MetalKit.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -311,7 +283,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0800;
-				LastUpgradeCheck = 0730;
+				LastUpgradeCheck = 1420;
 				ORGANIZATIONNAME = "Adam Gastineau";
 				TargetAttributes = {
 					66A9C4321CA2EF3800936DBC = {
@@ -333,10 +305,9 @@
 			};
 			buildConfigurationList = 66A9C42E1CA2EF3800936DBC /* Build configuration list for PBXProject "SwiftNES" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				English,
 				en,
 				Base,
 			);
@@ -492,17 +463,29 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -540,17 +523,29 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -581,9 +576,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_USE_OPTIMIZATION_PROFILE = NO;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEAD_CODE_STRIPPING = YES;
 				INFOPLIST_FILE = SwiftNES/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LLVM_LTO = NO;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.appcannon.SwiftNES;
 				PRODUCT_NAME = SwiftNES;
@@ -597,9 +594,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_USE_OPTIMIZATION_PROFILE = NO;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEAD_CODE_STRIPPING = YES;
 				INFOPLIST_FILE = SwiftNES/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LLVM_LTO = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_FAST_MATH = YES;
 				MTL_OPTIMIZATION_LEVEL = s;
 				PRODUCT_BUNDLE_IDENTIFIER = com.appcannon.SwiftNES;
@@ -614,11 +613,12 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
+				DEAD_CODE_STRIPPING = YES;
 				INFOPLIST_FILE = SwiftNESTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.appcannon.SwiftNESTests;
 				PRODUCT_NAME = SwiftNESTests;
-				SWIFT_VERSION = 3.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SwiftNES.app/Contents/MacOS/SwiftNES";
 			};
 			name = Debug;
@@ -628,11 +628,12 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
+				DEAD_CODE_STRIPPING = YES;
 				INFOPLIST_FILE = SwiftNESTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.appcannon.SwiftNESTests;
 				PRODUCT_NAME = SwiftNESTests;
-				SWIFT_VERSION = 3.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SwiftNES.app/Contents/MacOS/SwiftNES";
 			};
 			name = Release;
@@ -646,8 +647,9 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEVELOPMENT_TEAM = 58JLRGUCJQ;
 				INFOPLIST_FILE = "SwiftNES-iOS/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.appcannon.SwiftNES-iOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "58860516-5541-401d-b7b6-352ee966f14b";
@@ -667,8 +669,9 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEVELOPMENT_TEAM = 58JLRGUCJQ;
 				INFOPLIST_FILE = "SwiftNES-iOS/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.appcannon.SwiftNES-iOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "58860516-5541-401d-b7b6-352ee966f14b";

@@ -205,7 +205,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 	
 	@IBAction func setRenderScale(_ sender: AnyObject) {
-		var tag = sender.tag
+		let tag = sender.tag
 		let scaleTag: Int
 
 		if let unwrappedTag = tag,
