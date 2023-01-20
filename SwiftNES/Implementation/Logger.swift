@@ -32,7 +32,7 @@ final class Logger: NSObject {
 	func hexString<T : UnsignedInteger>(_ value: T, padding: Int) -> String {
 		var string = String(value, radix: 16)
 		
-		for _ in string.characters.count..<padding {
+		for _ in string.count..<padding {
 			string = "0" + string
 		}
 		

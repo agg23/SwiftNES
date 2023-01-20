@@ -44,7 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	var sizingRect: NSRect? = nil
 	
 	private var texture: MTLTexture! = nil
-	private var textureOptions = [MTKTextureLoaderOptionTextureUsage: Int(MTLTextureUsage.renderTarget.rawValue) as NSNumber]
+    private var textureOptions = [MTKTextureLoader.Option.textureUsage: Int(MTLTextureUsage.renderTarget.rawValue) as NSNumber]
 	private var textureDescriptor: MTLTextureDescriptor? = nil
 	
 	private let threadGroupCount = MTLSizeMake(8, 8, 1)
@@ -181,7 +181,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 		
 		paused = true
 		
-		if(openDialog.runModal() == NSFileHandlingPanelOKButton) {
+        if(openDialog.runModal() == .OK) {
 			let _ = loadROM(openDialog.url!)
 		}
 		
@@ -205,7 +205,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 	
 	@IBAction func setRenderScale(_ sender: AnyObject) {
-		var tag = sender.tag
+		let tag = sender.tag
 		let scaleTag: Int
 
 		if let unwrappedTag = tag,
@@ -227,7 +227,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	}
 	
 	
-	override func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+	func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
 		if(menuItem == playPauseEmulationButton) {
 			return fileLoaded
 		}
@@ -254,7 +254,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 			return false
 		}
 		
-		NSDocumentController.shared().noteNewRecentDocumentURL(url)
+		NSDocumentController.shared.noteNewRecentDocumentURL(url)
 		
 		playPauseEmulationButton.isEnabled = true
 		
@@ -325,20 +325,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, MTKViewDelegate {
 	
 	// MARK: - Graphics
 	
-	func render(_ screen: inout [UInt32]) {
+	func render(_ screen: UnsafeMutablePointer<UInt32>) {
 		let width = Int(256 * scalingFactor)
 		let height = Int(240 * scalingFactor)
 		
 		let bytesPerPixel = 4
 		let bytesPerRow = width * bytesPerPixel
-		
-        metalView.currentDrawable!.texture.replace(region: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: UnsafeRawPointer(screen), bytesPerRow: bytesPerRow)
+        
+        metalView.framebufferOnly = false
+        metalView.currentDrawable!.texture.replace(region: MTLRegionMake2D(0, 0, width, height),
+                                                   mipmapLevel: 0,
+                                                   withBytes: screen,
+                                                   bytesPerRow: bytesPerRow)
 		
         let commandBuffer = commandQueue.makeCommandBuffer()
 		
-		commandBuffer.present(metalView.currentDrawable!)
+        commandBuffer?.present(metalView.currentDrawable!)
 		
-		commandBuffer.commit()
+        commandBuffer?.commit()
 	}
 	
 	func applicationWillTerminate(_ aNotification: Notification) {

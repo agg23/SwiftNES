@@ -26,9 +26,9 @@ class Mapper {
 	func read(_ address: UInt16) -> UInt8 {
 		switch address {
 			case 0x0000 ..< 0x1000:
-				return ppuMemory.banks[address]
+            return ppuMemory.banks[Int(address)]
 			case 0x1000 ..< 0x2000:
-				return ppuMemory.banks[address]
+            return ppuMemory.banks[Int(address)]
 			case 0x2000 ..< 0x6000:
 //				print("Invalid mapper 0 address \(address)")
 				break
