@@ -284,7 +284,12 @@ class ViewController: UIViewController, MTKViewDelegate {
 	}
 	
 	@IBAction func run(_ sender: AnyObject) {
-		print(loadROM(Bundle.main.url(forResource: "smb3", withExtension: "nes")!))
+        let documentPickerViewController =
+        UIDocumentPickerViewController(documentTypes: ["com.appcannon.SwiftNES-iOS.nes"],
+                                       in: .import)
+        documentPickerViewController.allowsMultipleSelection = false
+        documentPickerViewController.delegate = self
+        present(documentPickerViewController, animated: true)
 	}
 	
 	@IBAction func touchDown(_ sender: AnyObject) {
@@ -297,3 +302,15 @@ class ViewController: UIViewController, MTKViewDelegate {
 	
 }
 
+extension ViewController: UIDocumentPickerDelegate
+{
+    func documentPicker(_ controller: UIDocumentPickerViewController,
+                        didPickDocumentsAt urls: [URL]) {
+        if let url = urls.last {
+            print(loadROM(url))
+        }
+    }
+    
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+    }
+}
